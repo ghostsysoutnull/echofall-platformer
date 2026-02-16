@@ -80,6 +80,18 @@
     ga1:["...PPPP...","..PIIIIP..",".PIIIIIIP.","PPIPPPIPPP",".PPPIIPPP.","...PIIP...","..PPIIPP..",".PP....PP.","..PP..PP..",".........."],
     t1:["PPPPPPPPPP","PPIIIIIPPP","PIIJIJIIIP","PIJJJJJIIP","PIJIIIIIIP","PIJJJJIJIP","PIIJIJIIIP","PPIIIIIPPP","PPPPPPPPPP","PPPPPPPPPP"],
     t4:["JJJJJJJJJJ","JIIIIIIIIJ","JIJJJJJJIJ","JIJIIIIJIJ","JIJIJJJIJ","JIJIIIIJIJ","JIJJJJJJIJ","JIIIIIIIIJ","JJJJJJJJJJ","JJJJJJJJJJ"],
+    jt1:["DDDDDDDDDD","DLOOLOOLOD","DOOLLLLOOD","DOLLLLLLOD","DOLLOOLLDD","DOLLLLLLOD","DOOLLLLOOD","DLOOLOOLOD","DDDDDDDDDD","DDDDDDDDDD"],
+    jt4:["LLLLLLLLLL","LDDDDDDDDL","LDLLLLLLDL","LDLDDDDLDL","LDLDLLDLDL","LDLDDDDLDL","LDLLLLLLDL","LDDDDDDDDL","LLLLLLLLLL","LLLLLLLLLL"],
+    ft1:["JJJJJJJJJJ","JIMMMMIIMJ","JMIJIIJIMJ","JMJJJJJJMJ","JMIIMMIIMJ","JMJJJJJJMJ","JMIJIIJIMJ","JIMMMMIIMJ","JJJJJJJJJJ","JJJJJJJJJJ"],
+    ft4:["MMMMMMMMMM","MJJJJJJJJM","MJMMMMMMJM","MJMJJJJMJM","MJMJMMJMJM","MJMJJJJMJM","MJMMMMMMJM","MJJJJJJJJM","MMMMMMMMMM","MMMMMMMMMM"],
+    ct1:["BBBBBBBBBB","BJJIIJJIIB","BJIJJJJIIB","BJIIIIJIIB","BJIJJJJIIB","BJIIIIJIIB","BJIJJJJIIB","BJJIIJJIIB","BBBBBBBBBB","BBBBBBBBBB"],
+    ct4:["IIIIIIIIII","IBBBBBBBBI","IBIIIIIIBI","IBIBBBIBBI","IBIBIIBIBI","IBIBBBIBBI","IBIIIIIIBI","IBBBBBBBBI","IIIIIIIIII","IIIIIIIIII"],
+    it1:["HHHHHHHHHH","HMMMMMMMMH","HMHHMMHHMH","HMHMMMMHMH","HMHHMMHHMH","HMHMMMMHMH","HMHHMMHHMH","HMMMMMMMMH","HHHHHHHHHH","HHHHHHHHHH"],
+    it4:["MMMMMMMMMM","MHHHHHHHHM","MHMMMMMMHM","MHMHHHHMHM","MHMHMMHMHM","MHMHHHHMHM","MHMMMMMMHM","MHHHHHHHHM","MMMMMMMMMM","MMMMMMMMMM"],
+    vt1:["KKKKKKKKKK","KCCFFCCFFK","KCFFFFFCFK","KCFFCCFFCK","KCCFFFFCCK","KCFFCCFFCK","KCFFFFFCFK","KCCFFCCFFK","KKKKKKKKKK","KKKKKKKKKK"],
+    vt4:["CCCCCCCCCC","CKKKKKKKKC","CKCCCCCCKC","CKCKKKCKKC","CKCKCCKCKC","CKCKKKCKKC","CKCCCCCCKC","CKKKKKKKKC","CCCCCCCCCC","CCCCCCCCCC"],
+    nt1:["AAAAAAAAAA","AJJJIIJJJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJJJIIJJJA","AAAAAAAAAA","AAAAAAAAAA"],
+    nt4:["JJJJJJJJJJ","JAAAAAAAAJ","JAJJJJJJAJ","JAJAAAAJAJ","JAJAJJJAJJ","JAJAAAAJAJ","JAJJJJJJAJ","JAAAAAAAAJ","JJJJJJJJJJ","JJJJJJJJJJ"],
     coin:["..........","....FF....","...FLLF...","..FLLLFF..","..FLLLFF..","..FFLLF...","...FFLF...","....FF....","..........",".........."],
     bcoin:["....FF....","...FLLF...","..FLLLLF..",".FLLLLLLF.","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FLLLLF..","...FLLF...","....FF...."],
     fruit:["..........","....DD....","...DLD....","..DLCLD...","..LCCCL...","..LCCCL...","...LCL....","....L.....","..........",".........."],
@@ -588,6 +600,27 @@
       return theme === "JUNGLE" ? SPRITES.bfruit : theme === "FACTORY" ? SPRITES.bgear : theme === "ICE" ? SPRITES.bgem : SPRITES.bcoin;
     }
 
+    tileSprite(tileId) {
+      const theme = getThemeForLevel(this.levelIndex);
+      if (tileId === 1) {
+        return theme === "JUNGLE" ? SPRITES.jt1 :
+               theme === "FACTORY" ? SPRITES.ft1 :
+               theme === "CASTLE" ? SPRITES.ct1 :
+               theme === "ICE" ? SPRITES.it1 :
+               theme === "VOLCANO" ? SPRITES.vt1 :
+               theme === "NITE" ? SPRITES.nt1 : SPRITES.t1;
+      }
+      if (tileId === 4) {
+        return theme === "JUNGLE" ? SPRITES.jt4 :
+               theme === "FACTORY" ? SPRITES.ft4 :
+               theme === "CASTLE" ? SPRITES.ct4 :
+               theme === "ICE" ? SPRITES.it4 :
+               theme === "VOLCANO" ? SPRITES.vt4 :
+               theme === "NITE" ? SPRITES.nt4 : SPRITES.t4;
+      }
+      return null;
+    }
+
     step() {
       if (this.levelNameBanner) this.levelNameBanner--;
 
@@ -923,8 +956,7 @@
         const px = x*TILE_SIZE - this.cameraX;
         const py = y*TILE_SIZE - this.cameraY;
 
-        if (id === 1) this.drawSprite(SPRITES.t1, px, py, 1);
-        else if (id === 4) this.drawSprite(SPRITES.t4, px, py, 1);
+        if (id === 1 || id === 4) this.drawSprite(this.tileSprite(id), px, py, 1);
         else if (id === 2 || id === 5) this.drawSprite(this.collectibleSprite(id), px, py, 1);
         else if (id === 6) this.drawSprite(theme === "CASTLE" ? SPRITES.coneup : SPRITES.oneup, px, py, 1);
         else if (id === 7) this.drawSprite((t & 1) ? SPRITES.lav0 : SPRITES.lav1, px, py, 1);
