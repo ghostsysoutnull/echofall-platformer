@@ -5,7 +5,7 @@
 //   name     - Display label shown in-game HUD
 //   sequence - Play order (sorted ascending at load time)
 //   theme    - Visual theme key used by drawBackground() and collectibleSprite()
-//   grid     - 18 rows × 96 chars; tile codes: . # B o O E V L U S F
+//   grid     - 18 rows × 96 chars; tile codes: . # B o O E V W Y L U S F
 //
 // GROUND_ROW is shared by all levels (row 17).
 

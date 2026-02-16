@@ -31,6 +31,15 @@
     const theme = LEVEL_THEMES[index];
     return PHYSICS_BY_THEME[theme] ? theme : DEFAULT_THEME;
   };
+  const EXTRA_FLYERS_BY_LEVEL = [
+    [{ type: 1, x: 26, y: 7 }, { type: 2, x: 58, y: 6 }, { type: 3, x: 80, y: 8 }],
+    [{ type: 1, x: 24, y: 6 }, { type: 2, x: 54, y: 7 }, { type: 3, x: 78, y: 5 }],
+    [{ type: 1, x: 22, y: 6 }, { type: 2, x: 50, y: 7 }, { type: 3, x: 74, y: 6 }],
+    [{ type: 1, x: 28, y: 7 }, { type: 2, x: 56, y: 6 }, { type: 3, x: 82, y: 8 }],
+    [{ type: 1, x: 26, y: 6 }, { type: 2, x: 52, y: 7 }, { type: 3, x: 76, y: 5 }],
+    [{ type: 1, x: 24, y: 7 }, { type: 2, x: 48, y: 6 }, { type: 3, x: 72, y: 8 }],
+    [{ type: 1, x: 22, y: 6 }, { type: 2, x: 46, y: 7 }, { type: 3, x: 70, y: 5 }]
+  ];
 
   // =========================
   // Canvas
@@ -65,6 +74,10 @@
     e1:["...PPPP...","..PPPPPP..",".PPIIIPPP.","PPPIIIIPPP","PPPIIIIPPP","PPPPPPPPPP","..PAA..P..",".PAA..P...","..P....P..","...PPPP..."],
     ba0:["..AAAAAA..",".A..AA..A.","A.AAAAAA.A","AA..AA..AA","AA.AA.A.AA","AA..AA..AA","A.AAAAAA.A",".A..AA..A.","..AAAAAA..",".........."],
     ba1:["..AAAAAA..","A..AAAA..A",".AA.AA.AA.","AA..AA..AA","AA.AA.A.AA","AA..AA..AA",".AA.AA.AA.","A..AAAA..A","..AAAAAA..",".........."],
+    fa0:["...AAAA...","..AIIIIA..",".AIIAAIIA.","AIIAAAAIIA","AIIIAAIIIA",".AIIIIIIA.","..AIAAIA..","...A..A...","..AA..AA..",".........."],
+    fa1:["...AAAA...","..AIIIIA..",".AIIAAIIA.","AIIAAAAIIA","AIIIAAIIIA",".AIIIIIIA.","...AIAA...","..A....A..",".AA....AA.",".........."],
+    ga0:["...PPPP...","..PIIIIP..",".PIIIIIIP.","PPIPPPIPPP",".PPPIIPPP.","..PPIIPP..","...PIIP...","..PP..PP..",".PP....PP.",".........."],
+    ga1:["...PPPP...","..PIIIIP..",".PIIIIIIP.","PPIPPPIPPP",".PPPIIPPP.","...PIIP...","..PPIIPP..",".PP....PP.","..PP..PP..",".........."],
     t1:["PPPPPPPPPP","PPIIIIIPPP","PIIJIJIIIP","PIJJJJJIIP","PIJIIIIIIP","PIJJJJIJIP","PIIJIJIIIP","PPIIIIIPPP","PPPPPPPPPP","PPPPPPPPPP"],
     t4:["JJJJJJJJJJ","JIIIIIIIIJ","JIJJJJJJIJ","JIJIIIIJIJ","JIJIJJJIJ","JIJIIIIJIJ","JIJJJJJJIJ","JIIIIIIIIJ","JJJJJJJJJJ","JJJJJJJJJJ"],
     coin:["..........","....FF....","...FLLF...","..FLLLFF..","..FLLLFF..","..FFLLF...","...FFLF...","....FF....","..........",".........."],
@@ -81,6 +94,10 @@
     ce1:["...JJJJ...","..JIIIIJ..",".JIBBBBIJ.",".JIBCCBIJ.",".JIIBBIIJ.","..JPPPPJ..","..PPAAPP..","..PPAAPP..",".PP....PP.","..PP..PP.."],
     cb0:["..JJJJJJ..",".JIIIIIIJ.","JIIJJJJIIJ","JIIJIIJIIJ",".JIIIIIIJ.","..JCCCCJ..",".JJJ..JJJ.","JJ......JJ",".J..JJ..J.","..J....J.."],
     cb1:["..JJJJJJ..",".JIIIIIIJ.","JIIJJJJIIJ","JIIJIIJIIJ",".JIIIIIIJ.","..JCCCCJ..","JJJ....JJJ",".JJ....JJ.",".J..JJ..J.","..J....J.."],
+    cf0:["...JJJJ...","..JIIIIJ..",".JIIJJIIJ.","JIIJJJJIIJ","JIIIJJIIIJ",".JIIIIIIJ.","..JIJJIJ..","...J..J...","..JJ..JJ..",".........."],
+    cf1:["...JJJJ...","..JIIIIJ..",".JIIJJIIJ.","JIIJJJJIIJ","JIIIJJIIIJ",".JIIIIIIJ.","...JIJJ...","..J....J..",".JJ....JJ.",".........."],
+    cg0:["...CCCC...","..CIIIIC..",".CIIIIIIC.","CCICCCICCC",".CCCIICCC.","..CCIICC..","...CIIC...","..CC..CC..",".CC....CC.",".........."],
+    cg1:["...CCCC...","..CIIIIC..",".CIIIIIIC.","CCICCCICCC",".CCCIICCC.","...CIIC...","..CCIICC..",".CC....CC.","..CC..CC..",".........."],
     lav0:["KKKKKKKKKK","KCCCCCCCCK","KCFFCCFFCK","KCFFCCFFCK","KCCCCCCCCK","KCFFCCFFCK","KCFFCCFFCK","KCCCCCCCCK","KCCCCCCCCK","KKKKKKKKKK"],
     lav1:["KKKKKKKKKK","KCCCCCCCCK","KCCFFCCFFK","KCCFFCCFFK","KCCCCCCCCK","KCCFFCCFFK","KCCFFCCFFK","KCCCCCCCCK","KCCCCCCCCK","KKKKKKKKKK"],
     pole0:["....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA.."],
@@ -292,6 +309,27 @@
       let spawnX = 10, spawnY = 10;
       let goalMarker = null;
 
+      const spawnFlyer = (type, tileX, tileY) => {
+        const px = tileX * TILE_SIZE;
+        const py = tileY * TILE_SIZE;
+        this.enemies.push({
+          type,
+          x: px,
+          y: py,
+          baseX: px,
+          baseY: py,
+          vx: 0,
+          vy: 0,
+          w: 10,
+          h: 10,
+          dir: (tileX & 1) ? 1 : -1,
+          onGround: 0,
+          dead: 0,
+          anim: 0,
+          phase: ((tileX * 17 + tileY * 11) % 628) * 0.01
+        });
+      };
+
       for (let y = 0; y < this.tileRows; y++) {
         for (let x = 0; x < this.tileCols; x++) {
           const ch = this.tileGrid[y][x];
@@ -303,13 +341,25 @@
             this.enemies.push({ type: 0, x: x*TILE_SIZE, y: y*TILE_SIZE, vx: 0, vy: 0, w: 10, h: 10, dir: -1, onGround: 0, dead: 0, anim: 0 });
             this.tileGrid[y][x] = ".";
           } else if (ch === "V") {
-            this.enemies.push({ type: 1, x: x*TILE_SIZE, y: y*TILE_SIZE, baseY: y*TILE_SIZE, vx: 0, vy: 0, w: 10, h: 10, dir: 1, onGround: 0, dead: 0, anim: 0 });
+            spawnFlyer(1, x, y);
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "W") {
+            spawnFlyer(2, x, y);
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "Y") {
+            spawnFlyer(3, x, y);
             this.tileGrid[y][x] = ".";
           } else if (ch === "F") {
             goalMarker = { x: x, y: y };
             this.tileGrid[y][x] = ".";
           }
         }
+      }
+
+      const extraFlyers = EXTRA_FLYERS_BY_LEVEL[this.levelIndex] || [];
+      for (let i = 0; i < extraFlyers.length; i++) {
+        const f = extraFlyers[i];
+        spawnFlyer(f.type, f.x, f.y);
       }
 
       if (goalMarker) {
@@ -673,10 +723,23 @@
         e.anim++;
 
         if (e.type) {
-          e.vx = e.dir * 1.25;
-          e.x += e.vx;
-          this.collideX(e);
-          e.y = e.baseY + Math.sin(e.anim * 0.15) * 6;
+          if (e.type === 1) {
+            e.vx = e.dir * 1.25;
+            e.x += e.vx;
+            this.collideX(e);
+            e.y = e.baseY + Math.sin(e.anim * 0.15 + e.phase) * 6;
+          } else if (e.type === 2) {
+            e.vx = e.dir * 0.95;
+            e.x += e.vx;
+            this.collideX(e);
+            const bob = Math.sin(e.anim * 0.10 + e.phase) * 3;
+            const dip = Math.max(0, Math.sin(e.anim * 0.05 + e.phase)) * 7;
+            e.y = e.baseY + bob + dip;
+          } else {
+            const loopT = e.anim * 0.09 + e.phase;
+            e.x = e.baseX + Math.cos(loopT) * 12;
+            e.y = e.baseY + Math.sin(loopT * 2) * 5;
+          }
         } else {
           e.vx = e.dir * ENEMY_SPEED;
           e.vy += gr;
@@ -882,10 +945,19 @@
       for (let i = 0; i < this.enemies.length; i++) {
         const e = this.enemies[i];
         if (e.dead) continue;
-        const spr =
-          theme === "CASTLE"
-            ? (e.type ? (((e.anim >> 3) & 1) ? SPRITES.cb1 : SPRITES.cb0) : (((e.anim >> 4) & 1) ? SPRITES.ce1 : SPRITES.ce0))
-            : (e.type ? (((e.anim >> 3) & 1) ? SPRITES.ba1 : SPRITES.ba0) : (((e.anim >> 4) & 1) ? SPRITES.e1 : SPRITES.e0));
+        const f = ((e.anim >> 3) & 1);
+        let spr;
+        if (e.type === 0) {
+          spr = theme === "CASTLE"
+            ? (((e.anim >> 4) & 1) ? SPRITES.ce1 : SPRITES.ce0)
+            : (((e.anim >> 4) & 1) ? SPRITES.e1 : SPRITES.e0);
+        } else if (e.type === 1) {
+          spr = theme === "CASTLE" ? (f ? SPRITES.cb1 : SPRITES.cb0) : (f ? SPRITES.ba1 : SPRITES.ba0);
+        } else if (e.type === 2) {
+          spr = theme === "CASTLE" ? (f ? SPRITES.cf1 : SPRITES.cf0) : (f ? SPRITES.fa1 : SPRITES.fa0);
+        } else {
+          spr = theme === "CASTLE" ? (f ? SPRITES.cg1 : SPRITES.cg0) : (f ? SPRITES.ga1 : SPRITES.ga0);
+        }
         this.drawSprite(spr, e.x - this.cameraX, e.y - this.cameraY, 1);
       }
 
