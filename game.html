@@ -80,8 +80,8 @@
     ga1:["...PPPP...","..PIIIIP..",".PIIIIIIP.","PPIPPPIPPP",".PPPIIPPP.","...PIIP...","..PPIIPP..",".PP....PP.","..PP..PP..",".........."],
     t1:["PPPPPPPPPP","PPIIIIIPPP","PIIJIJIIIP","PIJJJJJIIP","PIJIIIIIIP","PIJJJJIJIP","PIIJIJIIIP","PPIIIIIPPP","PPPPPPPPPP","PPPPPPPPPP"],
     t4:["JJJJJJJJJJ","JIIIIIIIIJ","JIJJJJJJIJ","JIJIIIIJIJ","JIJIJJJIJ","JIJIIIIJIJ","JIJJJJJJIJ","JIIIIIIIIJ","JJJJJJJJJJ","JJJJJJJJJJ"],
-    jt1:["DDDDDDDDDD","DLOOLOOLOD","DOOLLLLOOD","DOLLLLLLOD","DOLLOOLLDD","DOLLLLLLOD","DOOLLLLOOD","DLOOLOOLOD","DDDDDDDDDD","DDDDDDDDDD"],
-    jt4:["LLLLLLLLLL","LDDDDDDDDL","LDLLLLLLDL","LDLDDDDLDL","LDLDLLDLDL","LDLDDDDLDL","LDLLLLLLDL","LDDDDDDDDL","LLLLLLLLLL","LLLLLLLLLL"],
+    jt1:["PPPPPPPPPP","PJJDDDDJJP","PJDDPPDDJP","PJDPPPPDJP","PJDPPPPDJP","PJDPPPPDJP","PJDDPPDDJP","PJJDDDDJJP","PPPPPPPPPP","PPPPPPPPPP"],
+    jt4:["DDDDDDDDDD","DPPPPPPPPD","DPDDDDDDPD","DPDPPPPDPD","DPDPDDPDPD","DPDPPPPDPD","DPDDDDDDPD","DPPPPPPPPD","DDDDDDDDDD","DDDDDDDDDD"],
     ft1:["JJJJJJJJJJ","JIMMMMIIMJ","JMIJIIJIMJ","JMJJJJJJMJ","JMIIMMIIMJ","JMJJJJJJMJ","JMIJIIJIMJ","JIMMMMIIMJ","JJJJJJJJJJ","JJJJJJJJJJ"],
     ft4:["MMMMMMMMMM","MJJJJJJJJM","MJMMMMMMJM","MJMJJJJMJM","MJMJMMJMJM","MJMJJJJMJM","MJMMMMMMJM","MJJJJJJJJM","MMMMMMMMMM","MMMMMMMMMM"],
     ct1:["BBBBBBBBBB","BJJIIJJIIB","BJIJJJJIIB","BJIIIIJIIB","BJIJJJJIIB","BJIIIIJIIB","BJIJJJJIIB","BJJIIJJIIB","BBBBBBBBBB","BBBBBBBBBB"],
@@ -92,6 +92,9 @@
     vt4:["CCCCCCCCCC","CKKKKKKKKC","CKCCCCCCKC","CKCKKKCKKC","CKCKCCKCKC","CKCKKKCKKC","CKCCCCCCKC","CKKKKKKKKC","CCCCCCCCCC","CCCCCCCCCC"],
     nt1:["AAAAAAAAAA","AJJJIIJJJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJJJIIJJJA","AAAAAAAAAA","AAAAAAAAAA"],
     nt4:["JJJJJJJJJJ","JAAAAAAAAJ","JAJJJJJJAJ","JAJAAAAJAJ","JAJAJJJAJJ","JAJAAAAJAJ","JAJJJJJJAJ","JAAAAAAAAJ","JJJJJJJJJJ","JJJJJJJJJJ"],
+    hb0:["..FFFFFF..",".FLLLLLLF.","FLFBBBLFLF","FLFLLLFLFF","FLFBBBLFLF","FLLLLLLLLF",".FLLFFLLF.","..FLLLLF..","...FFFF...",".........."],
+    hb1:["..FFFFFF..",".FLLLLLLF.","FLFBBBFLFF","FLFLLLFLFF","FLFBBBFLFF","FLLLLLLLLF",".FLLFFLLF.","..FLLLLF..","...FFFF...",".........."],
+    hub:["..JJJJJJ..",".JIIIIIIJ.","JIJJJJJIIJ","JIJIIIIJIJ","JIJIIIIJIJ","JIJIIIIJIJ","JIJIIIIJIJ","JIJJJJJIIJ",".JIIIIIIJ.","..JJJJJJ.."],
     coin:["..........","....FF....","...FLLF...","..FLLLFF..","..FLLLFF..","..FFLLF...","...FFLF...","....FF....","..........",".........."],
     bcoin:["....FF....","...FLLF...","..FLLLLF..",".FLLLLLLF.","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FLLLLF..","...FLLF...","....FF...."],
     fruit:["..........","....DD....","...DLD....","..DLCLD...","..LCCCL...","..LCCCL...","...LCL....","....L.....","..........",".........."],
@@ -212,6 +215,8 @@
       this.score = 0;
       this.lives = 3;
       this.nextExtraLifeScore = 100;
+      this.helpTimer = 0;
+      this.helpShownBlocks = new Set();
 
       this.bindInput();
       this.fitCanvas();
@@ -317,6 +322,7 @@
       this.coinDrops = [];
 
       this.winPending = 0;
+      this.helpTimer = 0;
 
       let spawnX = 10, spawnY = 10;
       let goalMarker = null;
@@ -440,10 +446,22 @@
              ch === "o" ? 2 :
              ch === "O" ? 5 :
              ch === "U" ? 6 :
+             ch === "H" ? 8 :
+             ch === "h" ? 9 :
              ch === "L" ? 7 : 0;
     }
 
-    isSolid(tileId) { return tileId === 1 || tileId === 4; }
+    isSolid(tileId) { return tileId === 1 || tileId === 4 || tileId === 8 || tileId === 9; }
+
+    triggerHelpBlock(tx, ty) {
+      const key = this.levelIndex + ":" + tx + ":" + ty;
+      if (this.helpShownBlocks.has(key)) return;
+      this.helpShownBlocks.add(key);
+      this.helpTimer = 420;
+      this.setTile(tx, ty, "h");
+      this.audio.tone(680, 0.04);
+      this.audio.tone(920, 0.05, 0.05);
+    }
 
     setTile(tx, ty, v) {
       if (tx >= 0 && tx < this.tileCols && ty >= 0 && ty < this.tileRows) this.tileGrid[ty][tx] = v;
@@ -478,7 +496,9 @@
       const x1 = ((e.x + e.w - 1) / TILE_SIZE) | 0;
 
       for (let tx = x0; tx <= x1; tx++) {
-        if (this.isSolid(this.tileIdAt(tx, ty))) {
+        const tileId = this.tileIdAt(tx, ty);
+        if (this.isSolid(tileId)) {
+          if (dir < 0 && tileId === 8) this.triggerHelpBlock(tx, ty);
           e.y = dir > 0 ? ty*TILE_SIZE - e.h - 0.001 : (ty + 1)*TILE_SIZE + 0.001;
           e.vy = 0;
           if (dir > 0) e.onGround = 1;
@@ -623,6 +643,7 @@
 
     step() {
       if (this.levelNameBanner) this.levelNameBanner--;
+      if (this.helpTimer > 0) this.helpTimer--;
 
       const p = this.player;
       p.anim++;
@@ -844,13 +865,13 @@
           gfx.fillRect(x+170,36,70,14); gfx.fillRect(x+200,30,40,10);
         }
       } else if (theme === "JUNGLE") {
-        gfx.fillStyle = "#49c7b6"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        gfx.fillStyle = "#2f8f74"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const p1 = ((camx*0.18)|0) % CANVAS_W, p2 = ((camx*0.35)|0) % CANVAS_W;
-        gfx.fillStyle = "#2a8f5a";
+        gfx.fillStyle = "#1f6f45";
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x,104,210,90); gfx.fillRect(x+90,92,230,100); gfx.fillRect(x+170,98,160,96);}
-        gfx.fillStyle = "#165c35";
+        gfx.fillStyle = "#12472a";
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,120,240,70); gfx.fillRect(x+70,108,260,82); gfx.fillRect(x+170,114,200,76);}
-        gfx.fillStyle = "#0a2a18";
+        gfx.fillStyle = "#081f12";
         for (let i=0;i<22;i++){let x=((i*17-(camx*0.6))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,0,6,42);}
       } else if (theme === "FACTORY") {
         gfx.fillStyle = "#ffb36b"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
@@ -960,6 +981,8 @@
         else if (id === 2 || id === 5) this.drawSprite(this.collectibleSprite(id), px, py, 1);
         else if (id === 6) this.drawSprite(theme === "CASTLE" ? SPRITES.coneup : SPRITES.oneup, px, py, 1);
         else if (id === 7) this.drawSprite((t & 1) ? SPRITES.lav0 : SPRITES.lav1, px, py, 1);
+        else if (id === 8) this.drawSprite(((this.player.anim >> 3) & 1) ? SPRITES.hb1 : SPRITES.hb0, px, py, 1);
+        else if (id === 9) this.drawSprite(SPRITES.hub, px, py, 1);
       }
 
       if (this.goal) {
@@ -1013,6 +1036,19 @@
         gfx.fillStyle = "#fff";
         gfx.font = "14px monospace";
         gfx.fillText(LEVEL_NAMES[this.levelIndex], 94, 82);
+      }
+
+      if (this.helpTimer > 0) {
+        gfx.fillStyle = "#000c";
+        gfx.fillRect(16, 22, 288, 70);
+        gfx.fillStyle = "#fff";
+        gfx.font = "10px monospace";
+        gfx.fillText("SPECIAL KEYS", 112, 36);
+        gfx.fillText("MOVE: Arrows / A,D", 24, 50);
+        gfx.fillText("JUMP: Space / Up", 168, 50);
+        gfx.fillText("Z: Switch Character", 24, 62);
+        gfx.fillText("R: Restart   N: Next", 168, 62);
+        gfx.fillText("M: Mute Audio", 24, 74);
       }
 
       gfx.fillStyle = "#0008";
