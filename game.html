@@ -75,6 +75,12 @@
     bgear:["...JJJJ...","..JIIIIJ..",".JIJJJJIJ.","JIIJIIJIIJ","JIJJJJJJIJ","JIJJJJJJIJ","JIIJIIJIIJ",".JIJJJJIJ.","..JIIIIJ..","...JJJJ..."],
     gem:["..........","....HH....","...HMMH...","..HMMMMH..","..HMMMMH..","...HMMH...","....HH....",".....H....","..........",".........."],
     bgem:["....HH....","...HMMH...","..HMMMMH..",".HMMMMMMH.","HMMMMMMMMH","HMMMMMMMMH",".HMMMMMMH.","..HMMMMH..","...HMMH...","....HH...."],
+    ccoin:["..........","...FFFF...","..FJJJJF..",".FJFFFFJF.",".FJFJJFJF.",".FJFJJFJF.",".FJFFFFJF.","..FJJJJF..","...FFFF...",".........."],
+    bccoin:["..FFFFFF..",".FFJJJJFF.","FFJFFFFJFF","FJFFFFFFJF","FJFFJJFFJF","FJFFJJFFJF","FJFFFFFFJF","FFJFFFFJFF",".FFJJJJFF.","..FFFFFF.."],
+    ce0:["...JJJJ...","..JIIIIJ..",".JIBBBBIJ.",".JIBCCBIJ.",".JIIBBIIJ.","..JPPPPJ..","..PPAAPP..",".PPA..APP.","..P....P..","...PPPP..."],
+    ce1:["...JJJJ...","..JIIIIJ..",".JIBBBBIJ.",".JIBCCBIJ.",".JIIBBIIJ.","..JPPPPJ..","..PPAAPP..","..PPAAPP..",".PP....PP.","..PP..PP.."],
+    cb0:["..JJJJJJ..",".JIIIIIIJ.","JIIJJJJIIJ","JIIJIIJIIJ",".JIIIIIIJ.","..JCCCCJ..",".JJJ..JJJ.","JJ......JJ",".J..JJ..J.","..J....J.."],
+    cb1:["..JJJJJJ..",".JIIIIIIJ.","JIIJJJJIIJ","JIIJIIJIIJ",".JIIIIIIJ.","..JCCCCJ..","JJJ....JJJ",".JJ....JJ.",".J..JJ..J.","..J....J.."],
     lav0:["KKKKKKKKKK","KCCCCCCCCK","KCFFCCFFCK","KCFFCCFFCK","KCCCCCCCCK","KCFFCCFFCK","KCFFCCFFCK","KCCCCCCCCK","KCCCCCCCCK","KKKKKKKKKK"],
     lav1:["KKKKKKKKKK","KCCCCCCCCK","KCCFFCCFFK","KCCFFCCFFK","KCCCCCCCCK","KCCFFCCFFK","KCCFFCCFFK","KCCCCCCCCK","KCCCCCCCCK","KKKKKKKKKK"],
     pole0:["....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA.."],
@@ -524,6 +530,7 @@
 
     collectibleSprite(tileId) {
       const theme = getThemeForLevel(this.levelIndex);
+      if (theme === "CASTLE") return tileId === 2 ? SPRITES.ccoin : SPRITES.bccoin;
       if (tileId === 2) return theme === "JUNGLE" ? SPRITES.fruit : theme === "FACTORY" ? SPRITES.gear : theme === "ICE" ? SPRITES.gem : SPRITES.coin;
       return theme === "JUNGLE" ? SPRITES.bfruit : theme === "FACTORY" ? SPRITES.bgear : theme === "ICE" ? SPRITES.bgem : SPRITES.bcoin;
     }
@@ -870,7 +877,11 @@
       for (let i = 0; i < this.enemies.length; i++) {
         const e = this.enemies[i];
         if (e.dead) continue;
-        const spr = e.type ? (((e.anim >> 3) & 1) ? SPRITES.ba1 : SPRITES.ba0) : (((e.anim >> 4) & 1) ? SPRITES.e1 : SPRITES.e0);
+        const theme = getThemeForLevel(this.levelIndex);
+        const spr =
+          theme === "CASTLE"
+            ? (e.type ? (((e.anim >> 3) & 1) ? SPRITES.cb1 : SPRITES.cb0) : (((e.anim >> 4) & 1) ? SPRITES.ce1 : SPRITES.ce0))
+            : (e.type ? (((e.anim >> 3) & 1) ? SPRITES.ba1 : SPRITES.ba0) : (((e.anim >> 4) & 1) ? SPRITES.e1 : SPRITES.e0));
         this.drawSprite(spr, e.x - this.cameraX, e.y - this.cameraY, 1);
       }
 
