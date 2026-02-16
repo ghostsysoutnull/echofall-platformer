@@ -1,0 +1,155 @@
+<!doctype html><meta charset=utf-8><title>Mini Platformer</title><style>
+html,body{margin:0;height:100%;display:grid;place-items:center;background:#0b1020;overflow:hidden}
+#c{image-rendering:pixelated;image-rendering:crisp-edges;box-shadow:0 10px 40px #0008;border:2px solid #000}
+</style><canvas id=c></canvas><script>(()=>{const W=320,H=180,TS=10,DT=1/60,AX=.22,MX=2.2,COY=7,BUF=7,ES=1.0,J=-5.4,GRV=[.35,.34,.35,.30,.36,.35],FRG=[.80,.83,.82,.95,.80,.80],AFG=[.94,.95,.95,.97,.94,.94];const c=document.getElementById("c"),g=c.getContext("2d");c.width=W;c.height=H;g.imageSmoothingEnabled=false
+const pal={A:"#000000",B:"#ffffff",C:"#e23b3b",D:"#3bd16f",E:"#2f6cff",F:"#f3d44a",G:"#ff55d6",H:"#4ef3ff",I:"#b5b5b5",J:"#4a4a4a",K:"#ff8a2a",L:"#7dff3b",M:"#63b5ff",N:"#ff7fb5",O:"#2cffb0",P:"#7a4b2a"}
+const S={p0:["...CCCCC..","..CCCCCCC.","..BBCCBB..","..BBCCBB..","...CCCC...","..PAPAP...","..PAPAP...","..PAPAP...","..AA.AA...","..AA.AA..."],p1:["...CCCCC..","..CCCCCCC.","..BBCCBB..","..BBCCBB..","...CCCC...","..PAPAP...","..PAPAP...","..PAPAP...","..AA..AA..","...AA..AA."],
+b0:["..BB..BB..","..BN..NB..","..BN..NB..","..BB..BB..","...BBBB...","..B.A.B...","..B.N.B...","..BBBBBB..","...B..B...","..BB..BB.."],b1:["..BB..BB..","..BN..NB..","..BN..NB..","..BB..BB..","...BBBB...","..B.A.B...","..B.N.B...","..BBBBBB..","...B..B...","..B..B...."],
+n0:["...AAAA...","..AIIIIA..","..AIAIAA..","...AAAA...","..AAAAAA..","..AJJJJA..","..AJ..JA..","..AJ..JA..","...J..J...","..JJ..JJ.."],n1:["...AAAA...","..AIIIIA..","..AIAIAA..","...AAAA...","..AAAAAA..","..AJJJJA..","..AJ..JA..","..AJ..JA..","...J..J...","..J..J...."],
+r0:["...JJJJ...","..JMMMMJ..","..JMBBMJ..","..JMMMMJ..","...JJJJ...","..JIIIIJ..","..JIIIIJ..","..J.J..J..","...J..J...","..JJ..JJ.."],r1:["...JJJJ...","..JMMMMJ..","..JMBBMJ..","..JMMMMJ..","...JJJJ...","..JIIIIJ..","..JIIIIJ..","..J..J.J..","...J..J...","..J..J...."],
+du0:["....................",".......FFFFF........",".....FFFFFFFF.......","...FFFFFFFFFFFF.....","..FFFFFFFFFJFFK.....",".FFFFFFFFFFFFKKK....","..FFFFFFFFFFFFKK....","...FFFFFFFFFFFF.....","....FFFFFFFFF.......",".....FF..FF........."],
+du1:["....................",".......FFFFF........",".....FFFFFFFF.......","...FFFFFFFFFFFF.....","..FFFFFFFFFJFFK.....",".FFFFFFFFFFFFKKK....","..FFFFFFFFFFFFKK....","...FFFFFFFFFFF......","....FFFFFFFFF.......","......FF..FF........"],
+duq:["....................",".......FFFFF........",".....FFFFFFFF.......","...FFFFFFFFFFFF.....","..FFFFFFFFFJFFK.....",".FFFFFFFFFFFFKAK....","..FFFFFFFFFFFFKK....","...FFFFFFFFFFFF.....","....FFFFFFFFF.......",".....FF..FF........."],
+st0:["..AAAAAA..",".AABBBBA..",".ABABABBA.",".ABBBBBBA.",".AABBBBA..","..A.AA.A..","..A....A..","..AA..AA..","...A..A...",".........."],
+sb0:["..........","...AAAA...","..ABBBBA..","..ABBBBA..","..ABBBBA..","...AAAA...","..AA..AA..",".AA....AA.","AA......AA",".........."],
+st1:["..AAAAAA..",".AABBBBA..",".ABABABBA.",".ABBBBBBA.",".AABBBBA..","..A.AA.A..","..A....A..","..AA..AA..","..A....A..",".........."],
+sb1:["..........","...AAAA...","..ABBBBA..","..ABBBBA..","..ABBBBA..","...AAAA...","..AA..AA..","AA......AA",".AA....AA.",".........."],
+e0:["...PPPP...","..PPPPPP..",".PPIIIPPP.","PPPIIIIPPP","PPPIIIIPPP","PPPPPPPPPP","..PAA..P..","..PAA..P..",".P....P...","..PPPP...."],e1:["...PPPP...","..PPPPPP..",".PPIIIPPP.","PPPIIIIPPP","PPPIIIIPPP","PPPPPPPPPP","..PAA..P..",".PAA..P...","..P....P..","...PPPP..."],
+ba0:["..AAAAAA..",".A..AA..A.","A.AAAAAA.A","AA..AA..AA","AA.AA.A.AA","AA..AA..AA","A.AAAAAA.A",".A..AA..A.","..AAAAAA..",".........."],
+ba1:["..AAAAAA..","A..AAAA..A",".AA.AA.AA.","AA..AA..AA","AA.AA.A.AA","AA..AA..AA",".AA.AA.AA.","A..AAAA..A","..AAAAAA..",".........."],
+t1:["PPPPPPPPPP","PPIIIIIPPP","PIIJIJIIIP","PIJJJJJIIP","PIJIIIIIIP","PIJJJJIJIP","PIIJIJIIIP","PPIIIIIPPP","PPPPPPPPPP","PPPPPPPPPP"],t4:["JJJJJJJJJJ","JIIIIIIIIJ","JIJJJJJJIJ","JIJIIIIJIJ","JIJIJJJIJ","JIJIIIIJIJ","JIJJJJJJIJ","JIIIIIIIIJ","JJJJJJJJJJ","JJJJJJJJJJ"],
+coin:["..........","....FF....","...FLLF...","..FLLLFF..","..FLLLFF..","..FFLLF...","...FFLF...","....FF....","..........",".........."],
+bcoin:["....FF....","...FLLF...","..FLLLLF..",".FLLLLLLF.","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FLLLLF..","...FLLF...","....FF...."],
+fruit:["..........","....DD....","...DLD....","..DLCLD...","..LCCCL...","..LCCCL...","...LCL....","....L.....","..........",".........."],
+bfruit:["....DD....","...DLD....","..DLCLD...","..LCCCL...","..LCCCL...","..LCCCL...","..DLCLD...","...DLD....","....DD....",".....L...."],
+gear:["..........","...JJJJ...","..JIIIIJ..",".JIJJJJIJ.","JIIJIIJIIJ","JIIJIIJIIJ",".JIJJJJIJ.","..JIIIIJ..","...JJJJ...",".........."],
+bgear:["...JJJJ...","..JIIIIJ..",".JIJJJJIJ.","JIIJIIJIIJ","JIJJJJJJIJ","JIJJJJJJIJ","JIIJIIJIIJ",".JIJJJJIJ.","..JIIIIJ..","...JJJJ..."],
+gem:["..........","....HH....","...HMMH...","..HMMMMH..","..HMMMMH..","...HMMH...","....HH....",".....H....","..........",".........."],
+bgem:["....HH....","...HMMH...","..HMMMMH..",".HMMMMMMH.","HMMMMMMMMH","HMMMMMMMMH",".HMMMMMMH.","..HMMMMH..","...HMMH...","....HH...."],
+lav0:["KKKKKKKKKK","KCCCCCCCCK","KCFFCCFFCK","KCFFCCFFCK","KCCCCCCCCK","KCFFCCFFCK","KCFFCCFFCK","KCCCCCCCCK","KCCCCCCCCK","KKKKKKKKKK"],
+lav1:["KKKKKKKKKK","KCCCCCCCCK","KCCFFCCFFK","KCCFFCCFFK","KCCCCCCCCK","KCCFFCCFFK","KCCFFCCFFK","KCCCCCCCCK","KCCCCCCCCK","KKKKKKKKKK"],
+pole0:["....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA..","....ABBA.."],
+pole1:["....AIIA..","....AIIA..","....AIIA..","....AIIA..","....AIIA..","....AIIA..","....AIIA..","....AIIA..","....AIIA..","....AIIA.."],
+polet:["...AAAA...","..ABBBBA..",".ABBIBBBA.","ABBIBBBIBA","ABBIBBBIBA",".ABBIBBBA.","..ABBBBA..","...AAAA...","....ABBA..","....ABBA.."],
+flag0:["AAAAAAA...","ACCCCCA...","ACBCCCA...","ACCCCCA...","ACCCCCA...","ACBCCCA...","ACCCCCA...","ACCCCCA...","AAAAAAA...",".........."],
+flag1:["AAAAAA....","ACCCCCA...","ACBCCCA...","ACCCCCCA..","ACCCCCCA..","ACBCCCA...","ACCCCCA...","ACCCCCCA..","AAAAAA....",".........."],
+flag2:["AAAAAA....","ACCCCCCA..","ACBCCCA...","ACCCCCA...","ACCCCCA...","ACBCCCA...","ACCCCCCA..","ACCCCCA...","AAAAAA....",".........."],
+oneup:["...DDD....","..DLDLD...","..DLDDDD..","..DDDDDD..","..DDBBBD..","..DDDDDD..","...DDDD...","....DD....","..........",".........."]}
+const G="###########..#######.....####....#####....######....####....#####....######....####....#########"
+const LD=["................................................................................................","................................................................................................","................................................................................................","................................................................................................","................................................................................................","................................................................................................","................................................................................................","......................o.................o.................U.....................................",".............BBB..................BBB.............BBB...........................................","............................................................E...................................","....................o...................................................o.......................","..........BBB..................BBB....................BBB.......................................","...........................................E....................................................","....S.................................BBB.........................BBB...........................","..............o...........BBB..............................................o...............F....",".....................E.........................BBB..............................................","................................................................................................",G]
+const LJ=["................................................................................................","................................................................................................","................................................................................................",".............BBB.........................BBB.........................BBB........................","................................................................................................","..............o...........BBB....o...................BBB....U.................BBB...............",".....................BBB......................BBB..................BBB..........................","................................................................................................","...........E.......................E............................................................","..................o.....................o......................o................................",".....S.....................BBB..................BBB..................BBB........................","....................................................................................E....F......","...........BBB..................BBB..................BBB..................BBB...................","................................................................................................","......................o......................o......................o...........................","................................................................................................","................................................................................................",G]
+const LF=["................................................................................................","................................................................................................","................................................................................................",".............BBB.........................BBB.........................BBB........................","................................................................................................","..........o...........BBB....o...................BBB....o.................BBB.............U.....",".....................BBB......................BBB..................BBB..........................","................................................................................................","...........E.......................E.......................E....................................","..................o.....................o......................o................................",".....S.....................BBB..................BBB..................BBB........................","............................................................BBB......................E....F....","...........BBB..................BBB..................BBB..................BBB...................","................................................................................................","......................o......................o......................o...........................","................................................................................................","................................................................................................",G]
+const LI=["................................................................................................","................................................................................................","................................................................................................",".......................BBB..................BBB..................BBB............................","................................................................................................","..............o..................U..................o..................o........................","..................BBB..................BBB..................BBB..................BBB............","................................................................................................","...........E.............................................E......................................","..................o.....................o......................o................................",".....S.....................BBB..................BBB..................BBB........................",".........................................................................................F......","...........BBB..................BBB..................BBB..................BBB...................","................................................................................................","......................o......................o......................o...........................","................................................................................................","................................................................................................",G]
+const LVL=["................................................................................................","................................................................................................","................................................................................................",".............BBB.........................BBB.........................BBB........................","................................................................................................","..........L...........BBB....o...................BBB....L.................BBB.............U.....",".....................BBB......................BBB..................BBB..........................","................................................................................................","...........E.......................V.......................E....................................","..................o.....................LLLL....................o...............................",".....S.....................BBB..................BBB..................BBB........................","............................................................BBB......................V....F.....","...........BBB..................BBB..................BBB..................BBB...................","................................................................................................","......................o......................LLLLLLLL.................o.........................",".......................LLLLLLLLLLLLLLLL.........................................................","................................................................................................",G]
+const LN=["................................................................................................","................................................................................................","................................................................................................","................................................................................................","......................BBB.....................BBB..........................BBB..................","..............o..................o............................U.................................","..................BBB..................BBB.............BBB.............BBB......................","................................................................................................","...........E.......................E.......................E....................................","..................o.....................o......................o................................",".....S.....................BBB..................BBB..................BBB........................",".........................................................................................F......","...........BBB..................BBB..................BBB..................BBB...................","................................................................................................","......................o......................o......................o...........................","................................................................................................","................................................................................................",G]
+const LV=[LD,LJ,LF,LI,LVL,LN],LNAME=["DAY","JUNGLE","FACTORY","ICE","VOLCANO","NITE"]
+const CH=[{n:"MARIO",a:["p0","p1"],j:1,w:10,h:10,dj:0,fly:0},{n:"BUNNY",a:["b0","b1"],j:1.22,w:10,h:10,dj:0,fly:0},{n:"NINJA",a:["n0","n1"],j:1,w:10,h:10,dj:1,fly:0},{n:"ROBOT",a:["r0","r1"],j:1,w:10,h:10,dj:0,fly:0},{n:"DUCK",a:["du0","du1"],j:1,w:20,h:10,dj:0,fly:26},{n:"SKELETON",j:1,w:10,h:20,dj:0,fly:0}]
+let k={},jump=0,ctx=0,mute=0,lv=0,ci=0,skU=0,seed=1337,nextLife=100,rng=1,msg=0
+let stars=Array.from({length:90},()=>{seed=(seed*1664525+1013904223)>>>0;let x=seed%2600;seed=(seed*1664525+1013904223)>>>0;let y=seed%150;seed=(seed*1664525+1013904223)>>>0;let s=1+(seed%2);return[x,y,s]})
+const keys=new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyZ","KeyR"])
+addEventListener("keydown",e=>{if(keys.has(e.code))e.preventDefault();if(!k[e.code]){if(e.code=="Space"||e.code=="ArrowUp")jump=BUF
+if(e.code=="KeyM")mute^=1
+if(e.code=="KeyZ"){let n=skU?CH.length:CH.length-1;setChar((ci+1)%n);!mute&&snd(660,.04)}
+if(e.code=="KeyR")die(1)
+if(!ctx){ctx=new (AudioContext||webkitAudioContext)();ctx.resume&&ctx.resume()}}k[e.code]=1})
+addEventListener("keyup",e=>{if(keys.has(e.code))e.preventDefault();k[e.code]=0})
+const rnd=()=>{rng^=rng<<13;rng^=rng>>>17;rng^=rng<<5;return (rng>>>0)/4294967296}
+const snd=(f,t,at=0,tp="square")=>{if(mute||!ctx)return;let o=ctx.createOscillator(),n=ctx.createGain(),s=ctx.currentTime+at;o.type=tp;o.frequency.setValueAtTime(f,s);n.gain.setValueAtTime(.06,s);o.connect(n);n.connect(ctx.destination);o.start(s);o.stop(s+t)}
+const lifeS=()=>{snd(880,.06,0);snd(1175,.06,.07);snd(1760,.08,.14)}
+const quack=()=>{snd(560,.05,0,"square");snd(420,.08,.04,"square");snd(240,.08,.08,"triangle")}
+let T,tw,th,p,en,drop=[],camx=0,camy=0,score=0,lives=3
+const setChar=i=>{let ow=p?p.w:10,oh=p?p.h:10;ci=i;if(p){let nw=CH[ci].w,nh=CH[ci].h;p.x+=ow*.5-nw*.5;p.y+=oh-nh;p.w=nw;p.h=nh;p.q=0;p.jl=CH[ci].dj;p.ft=CH[ci].fly;p.fly=0}}
+const load=n=>{lv=n;rng=1234567+(lv+1)*99991;T=LV[lv].map(r=>r.split(""));th=T.length;tw=T[0].length;en=[];drop=[];let sx=10,sy=10
+for(let y=0;y<th;y++)for(let x=0;x<tw;x++){let ch=T[y][x]
+if(ch=="S"){sx=x*TS;sy=y*TS;T[y][x]="."}
+if(ch=="E"){en.push({t:0,x:x*TS,y:y*TS,vx:0,vy:0,w:10,h:10,dir:-1,ong:0,dead:0,a:0});T[y][x]="."}
+if(ch=="V"){en.push({t:1,x:x*TS,y:y*TS,by:y*TS,vx:0,vy:0,w:10,h:10,dir:1,ong:0,dead:0,a:0});T[y][x]="."}}
+p={x:sx,y:sy,vx:0,vy:0,w:10,h:10,ong:0,c:0,b:0,face:1,a:0,wr:0,q:0,jl:0,ft:0,fly:0};setChar(ci);camx=0;camy=0;msg=90}
+const tid=(x,y)=>{if(x<0||x>=tw)return 1;if(y<0||y>=th)return 0;let ch=T[y][x];return ch=="."?0:ch=="#"?1:ch=="B"?4:ch=="o"?2:ch=="O"?5:ch=="F"?3:ch=="U"?6:ch=="L"?7:0}
+const solid=t=>t==1||t==4
+const setTile=(x,y,v)=>{if(x>=0&&x<tw&&y>=0&&y<th)T[y][x]=v}
+const aabb=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y
+const clamp=(v,a,b)=>v<a?a:v>b?b:v
+const colX=e=>{if(!e.vx)return;let dir=e.vx>0?1:-1,px=dir>0?e.x+e.w:e.x,tx=(px/TS)|0,y0=(e.y/TS)|0,y1=((e.y+e.h-1)/TS)|0
+for(let ty=y0;ty<=y1;ty++)if(solid(tid(tx,ty))){e.x=dir>0?tx*TS-e.w-0.001:(tx+1)*TS+0.001;e.vx=0;if(e.dir)e.dir*=-1;break}}
+const colY=e=>{e.ong=0;if(!e.vy)return;let dir=e.vy>0?1:-1,py=dir>0?e.y+e.h:e.y,ty=(py/TS)|0,x0=(e.x/TS)|0,x1=((e.x+e.w-1)/TS)|0
+for(let tx=x0;tx<=x1;tx++)if(solid(tid(tx,ty))){e.y=dir>0?ty*TS-e.h-0.001:(ty+1)*TS+0.001;e.vy=0;if(dir>0)e.ong=1;break}}
+const move=e=>{e.x+=e.vx;colX(e);e.y+=e.vy;colY(e)}
+const colHasGround=x=>solid(tid(x,th-1))
+const safeCol=()=>{let cx=((p.x+p.w*.5)/TS)|0;if(colHasGround(cx))return cx;for(let d=1;d<tw;d++){let a=cx+d,b=cx-d;if(a<tw&&colHasGround(a))return a;if(b>=0&&colHasGround(b))return b}return cx}
+const wrap=()=>{let tx=safeCol();p.x=clamp(tx*TS+TS*.5-p.w*.5,0,tw*TS-p.w-0.001);p.y=-p.h-12;p.vy=0;p.c=0;p.b=0;p.ong=0;p.fly=0;p.ft=CH[ci].fly;p.jl=CH[ci].dj;p.vx*=.6;p.wr=26;!mute&&snd(300,.04)}
+const die=rst=>{if(!rst)lives--;!mute&&snd(120,.10);if(lives<0){lives=3;score=0;nextLife=100;skU=0;ci=0;load(0)}else load(lv)}
+const win=()=>{!mute&&snd(980,.10);if(lv==LV.length-1){skU=1;load(0)}else load(lv+1)}
+const addScore=v=>{score+=v;while(score>=nextLife){lives++;nextLife+=100;lifeS()}}
+const dropCoins=(x,y)=>{let n=5+((rnd()*6)|0);for(let i=0;i<n;i++){let a=rnd()*6.283,v=(rnd()*1.2+.4);drop.push({x:x+2,y:y-6,vx:Math.cos(a)*v,vy:-2.2-rnd()*1.2,w:10,h:10,ong:0,t:240})}}
+const collect=()=>{let x0=(p.x/TS)|0,x1=((p.x+p.w-1)/TS)|0,y0=(p.y/TS)|0,y1=((p.y+p.h-1)/TS)|0
+for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){let t=tid(x,y)
+if(t==7)return die(0)
+if(t==2){setTile(x,y,".");addScore(1);!mute&&snd(740,.03)}
+else if(t==5){setTile(x,y,".");addScore(10);!mute&&snd(1040,.05)}
+else if(t==6){setTile(x,y,".");lives++;lifeS()}
+else if(t==3)win()}}
+const ds=(spr,x,y,sc)=>{let py=y|0,px=x|0,cs=""
+for(let r=0;r<spr.length;r++){let row=spr[r];for(let i=0;i<row.length;i++){let ch=row[i];if(ch!="."){let col=pal[ch];if(col!=cs){cs=col;g.fillStyle=cs}g.fillRect(px+i*sc,py+r*sc,sc,sc)}}}}
+const bg=()=>{if(lv==0){g.fillStyle="#6bb7ff";g.fillRect(0,0,W,H);let bx=((camx*0.3)|0)%W;g.fillStyle="#bfe6ff";for(let i=-1;i<3;i++){let x=i*W-bx;g.fillRect(x+40,20,50,12);g.fillRect(x+65,14,30,10);g.fillRect(x+170,36,70,14);g.fillRect(x+200,30,40,10)}}
+else if(lv==1){g.fillStyle="#49c7b6";g.fillRect(0,0,W,H);let p1=((camx*0.18)|0)%W,p2=((camx*0.35)|0)%W;g.fillStyle="#2a8f5a";for(let i=-1;i<3;i++){let x=i*W-p1;g.fillRect(x,104,210,90);g.fillRect(x+90,92,230,100);g.fillRect(x+170,98,160,96)}
+g.fillStyle="#165c35";for(let i=-1;i<3;i++){let x=i*W-p2;g.fillRect(x,120,240,70);g.fillRect(x+70,108,260,82);g.fillRect(x+170,114,200,76)}
+g.fillStyle="#0a2a18";for(let i=0;i<22;i++){let x=((i*17-(camx*0.6))|0)%W;x=(x+W)%W;g.fillRect(x,0,6,42)}}
+else if(lv==2){g.fillStyle="#ffb36b";g.fillRect(0,0,W,H);let p1=((camx*0.2)|0)%W,p2=((camx*0.45)|0)%W;g.fillStyle="#3a2a2a";for(let i=-1;i<3;i++){let x=i*W-p1;g.fillRect(x,112,260,70);g.fillRect(x+60,96,280,86);g.fillRect(x+180,86,170,96)}
+g.fillStyle="#1b1414";for(let i=-1;i<3;i++){let x=i*W-p2;g.fillRect(x,128,290,62);g.fillRect(x+80,110,300,80)}
+g.fillStyle="#ffffff10";for(let i=0;i<26;i++){let x=((i*19-(camx*0.75))|0)%W;x=(x+W)%W;g.fillRect(x,0,6,28)}
+g.fillStyle="#00000010";for(let i=0;i<14;i++){let x=((i*37-(camx*0.25))|0)%W;x=(x+W)%W;g.fillRect(x,64,12,120)}}
+else if(lv==3){g.fillStyle="#87c9ff";g.fillRect(0,0,W,H);let p1=((camx*0.18)|0)%W,p2=((camx*0.33)|0)%W;g.fillStyle="#2a5a88";for(let i=-1;i<3;i++){let x=i*W-p1;g.fillRect(x,112,220,80);g.fillRect(x+80,96,260,96)}
+g.fillStyle="#163a66";for(let i=-1;i<3;i++){let x=i*W-p2;g.fillRect(x,128,260,62);g.fillRect(x+60,110,280,80)}
+g.fillStyle="#bfe9ff";for(let i=0;i<18;i++){let x=((i*33-(camx*0.55))|0)%W;x=(x+W)%W;g.fillRect(x,92,6,36);g.fillRect(x+3,104,10,6)}}
+else if(lv==4){g.fillStyle="#260013";g.fillRect(0,0,W,H);let p1=((camx*0.2)|0)%W,p2=((camx*0.45)|0)%W;g.fillStyle="#3b001c";for(let i=-1;i<3;i++){let x=i*W-p1;g.fillRect(x,120,280,70);g.fillRect(x+70,105,260,85);g.fillRect(x+190,92,170,98)}
+g.fillStyle="#12000a";for(let i=-1;i<3;i++){let x=i*W-p2;g.fillRect(x,132,320,58);g.fillRect(x+80,114,300,76)}
+g.fillStyle="#ff5a0030";for(let i=0;i<18;i++){let x=((i*37-(camx*0.6))|0)%W;x=(x+W)%W;g.fillRect(x,92,10,98)}
+g.fillStyle="#ff6a0020";for(let i=0;i<28;i++){let x=((i*19-(camx*0.9))|0)%W;x=(x+W)%W;g.fillRect(x,0,4,28)}}
+else{g.fillStyle="#0b0f2a";g.fillRect(0,0,W,H);g.fillStyle="#a8c7ff";for(let i=0;i<stars.length;i++){let s=stars[i],x=((s[0]-camx*0.10)|0)%2600,y=s[1];x=((x%W)+W)%W;g.fillRect(x,y,s[2],s[2])}
+g.fillStyle="#d9e6ff";g.beginPath();g.arc(W-52,36,20,0,6.283);g.fill();g.fillStyle="#0b0f2a";g.beginPath();g.arc(W-44,30,18,0,6.283);g.fill()
+let sx=((camx*0.12)|0)%W;g.fillStyle="#050711";for(let i=-1;i<3;i++){let x=i*W-sx;g.fillRect(x,110,160,70);g.fillRect(x+40,96,110,84);g.fillRect(x+90,86,80,94)}
+g.fillStyle="#ffffff10";for(let i=-1;i<3;i++){let x=i*W-((camx*0.5)|0)%W;g.fillRect(x,122,220,6);g.fillRect(x+60,134,240,7)}}}
+const coinSpr=t=>t==2?(lv==1?S.fruit:lv==2?S.gear:lv==3?S.gem:S.coin):(lv==1?S.bfruit:lv==2?S.bgear:lv==3?S.bgem:S.bcoin)
+const step=()=>{if(msg)msg--;p.a++;let L=k.ArrowLeft||k.KeyA,R=k.ArrowRight||k.KeyD,JH=k.Space||k.ArrowUp,gr=GRV[lv],fr=FRG[lv],af=AFG[lv],nm=CH[ci].n
+let dir=(R?1:0)-(L?1:0);if(dir){p.vx+=dir*AX;p.face=dir;p.vx=clamp(p.vx,-MX,MX)}else p.vx*=p.ong?fr:af
+if(jump){p.b=jump;jump=0}else p.b=Math.max(0,p.b-1)
+if(p.ong){p.c=COY;p.jl=CH[ci].dj;p.ft=CH[ci].fly;p.fly=0}else p.c=Math.max(0,p.c-1)
+if(p.fly){if(nm!="DUCK")p.fly=0;else if(JH&&p.ft>0){p.ft--;p.vy-=.16;if(p.vy<-2.4)p.vy=-2.4}else p.fly=0}
+if(p.b){if(p.c){p.vy=J*CH[ci].j;p.b=0;p.c=0;p.ong=0;nm=="DUCK"?(p.q=10,quack()):!mute&&snd(420,.05)}
+else if(nm=="NINJA"&&p.jl>0){p.jl--;p.vy=J*CH[ci].j;p.b=0;!mute&&snd(520,.05)}
+else if(nm=="DUCK"&&p.ft>0){p.fly=1;p.ft=Math.max(0,p.ft-6);p.vy=Math.min(p.vy,-2.2);p.b=0;p.q=10;quack()}}
+p.vy+=gr*(p.fly?.25:1);if(p.vy>8.5)p.vy=8.5
+if(!JH&&p.vy<0)p.vy*=.55
+move(p);if(p.fly&&p.vy==0&&!p.ong)p.fly=0;collect();if(p.q)p.q--
+for(let i=0;i<drop.length;i++){let d=drop[i];if(d.t--<=0){d.dead=1;continue}d.vy+=gr;d.vx*=.985;move(d);if(aabb(p,d)){d.dead=1;addScore(1);!mute&&snd(740,.03)}}
+drop=drop.filter(d=>!d.dead)
+for(let i=0;i<en.length;i++){let e=en[i];if(e.dead)continue;e.a++
+if(e.t){e.vx=e.dir*1.25;e.x+=e.vx;colX(e);e.y=e.by+Math.sin(e.a*.15)*6}
+else{e.vx=e.dir*ES;e.vy+=gr;if(e.vy>8.5)e.vy=8.5;move(e);if(e.ong){let ax=e.x+(e.dir>0?e.w+1:-1),tx=(ax/TS)|0,ty=((e.y+e.h+1)/TS)|0;if(!solid(tid(tx,ty)))e.dir*=-1}}
+if(aabb(p,e)){if(e.t&&nm=="SKELETON"){e.dead=1;dropCoins(e.x+2,e.y+2);!mute&&snd(180,.08)}
+else if(p.vy>0&&p.y+p.h-2<e.y+e.h*.55){e.dead=1;p.vy=J*.6;dropCoins(e.x+2,e.y+2);!mute&&snd(e.t?260:220,.08)}
+else die(0)}if(e.y>th*TS+90)e.dead=1}
+if(p.wr)p.wr--;else if(p.y>th*TS+40)wrap()
+let tx=p.x+p.w*.5-W*.5,ty=p.y+p.h*.5-H*.55;camx+=((clamp(tx,0,tw*TS-W))-camx)*.12;camy+=((clamp(ty,0,th*TS-H))-camy)*.10}
+const drawChar=(x,y)=>{let run=Math.abs(p.vx)>.2&&p.ong,alt=((p.a>>4)&1),nm=CH[ci].n
+if(nm=="SKELETON"){let T=run?(alt?S.st1:S.st0):S.st0,B=run?(alt?S.sb1:S.sb0):S.sb0;ds(T,x,y,1);ds(B,x,y+10,1);return}
+if(nm=="DUCK"){ds(p.q?S.duq:(run?(alt?S.du1:S.du0):S.du0),x,y,1);return}
+let A=CH[ci].a,spr=run?(alt?S[A[1]]:S[A[0]]):S[A[0]];ds(spr,x,y,1)}
+const draw=()=>{g.setTransform(1,0,0,1,0,0);bg()
+let sx=(camx/TS)|0,sy=(camy/TS)|0,ex=sx+((W/TS)|0)+3,ey=sy+((H/TS)|0)+3,t=((p.a>>3)%3),PH=9
+for(let y=sy;y<ey;y++)for(let x=sx;x<ex;x++){let id=tid(x,y),px=x*TS-camx,py=y*TS-camy
+if(id==1)ds(S.t1,px,py,1);else if(id==4)ds(S.t4,px,py,1);else if(id==2||id==5)ds(coinSpr(id),px,py,1);else if(id==6)ds(S.oneup,px,py,1);else if(id==7)ds((t&1)?S.lav0:S.lav1,px,py,1)
+else if(id==3){for(let j=1;j<=PH;j++)ds((j^t)&1?S.pole0:S.pole1,px,py-j*TS,1);ds(S.polet,px,py-(PH+1)*TS,1);ds(t==0?S.flag0:t==1?S.flag1:S.flag2,px+6,py-(PH-6)*TS,1)}}
+for(let i=0;i<drop.length;i++)ds(coinSpr(2),drop[i].x-camx,drop[i].y-camy,1)
+for(let i=0;i<en.length;i++){let e=en[i];if(e.dead)continue;ds(e.t?(((e.a>>3)&1)?S.ba1:S.ba0):(((e.a>>4)&1)?S.e1:S.e0),e.x-camx,e.y-camy,1)}
+let px=p.x-camx,py=p.y-camy
+if(p.face<0){g.save();g.translate(((px+p.w)|0),(py|0));g.scale(-1,1);drawChar(0,0);g.restore()}else drawChar(px,py)
+if(msg){g.fillStyle="#000a";g.fillRect(78,62,164,28);g.fillStyle="#fff";g.font="14px monospace";g.fillText(LNAME[lv],94,82)}
+g.fillStyle="#0008";g.fillRect(0,0,W,14);g.fillStyle="#fff";g.font="10px monospace"
+g.fillText("SCORE "+score,6,11);g.fillText("LIVES "+lives,92,11);g.fillText(LNAME[lv],152,11);g.fillText(CH[ci].n,210,11);mute&&g.fillText("MUTE",W-34,11)}
+const fit=()=>{let s=Math.max(1,Math.floor(Math.min(innerWidth/W,innerHeight/H)));c.style.width=W*s+"px";c.style.height=H*s+"px"};addEventListener("resize",fit);fit();load(0)
+let last=performance.now(),acc=0
+const loop=now=>{acc+=Math.min(.05,(now-last)/1000);last=now;while(acc>=DT){step();acc-=DT}draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop)
+})()</script>
