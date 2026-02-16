@@ -17,9 +17,20 @@
   const CANVAS_W = 320, CANVAS_H = 180, TILE_SIZE = 10, FIXED_DT = 1 / 60;
   const PLAYER_AX = 0.22, PLAYER_MAX_VX = 2.2, COYOTE_FRAMES = 7, JUMP_BUFFER_FRAMES = 7;
   const ENEMY_SPEED = 1.0, JUMP_VY = -5.4;
-  const GRAVITY = [0.35, 0.34, 0.35, 0.30, 0.36, 0.35];
-  const GROUND_FRICTION = [0.80, 0.83, 0.82, 0.95, 0.80, 0.80];
-  const AIR_FRICTION = [0.94, 0.95, 0.95, 0.97, 0.94, 0.94];
+  const PHYSICS_BY_THEME = {
+    DAY:     { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
+    JUNGLE:  { gravity: 0.34, groundFriction: 0.83, airFriction: 0.95 },
+    FACTORY: { gravity: 0.35, groundFriction: 0.82, airFriction: 0.95 },
+    CASTLE:  { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
+    ICE:     { gravity: 0.30, groundFriction: 0.95, airFriction: 0.97 },
+    VOLCANO: { gravity: 0.36, groundFriction: 0.80, airFriction: 0.94 },
+    NITE:    { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 }
+  };
+  const DEFAULT_THEME = "DAY";
+  const getThemeForLevel = (index) => {
+    const theme = LEVEL_THEMES[index];
+    return PHYSICS_BY_THEME[theme] ? theme : DEFAULT_THEME;
+  };
 
   // =========================
   // Canvas
@@ -77,9 +88,8 @@
 
   // =========================
   // Levels (loaded from levels.js)
+  // LEVELS and LEVEL_NAMES are derived in levels.js from the sorted GAME_LEVELS array
   // =========================
-  const LEVELS = LEVEL_ORDER.map(name => GAME_LEVELS[name]);
-  const LEVEL_NAMES = LEVEL_ORDER;
 
   // =========================
   // Characters
@@ -513,8 +523,9 @@
     }
 
     collectibleSprite(tileId) {
-      if (tileId === 2) return this.levelIndex === 1 ? SPRITES.fruit : this.levelIndex === 2 ? SPRITES.gear : this.levelIndex === 3 ? SPRITES.gem : SPRITES.coin;
-      return this.levelIndex === 1 ? SPRITES.bfruit : this.levelIndex === 2 ? SPRITES.bgear : this.levelIndex === 3 ? SPRITES.bgem : SPRITES.bcoin;
+      const theme = getThemeForLevel(this.levelIndex);
+      if (tileId === 2) return theme === "JUNGLE" ? SPRITES.fruit : theme === "FACTORY" ? SPRITES.gear : theme === "ICE" ? SPRITES.gem : SPRITES.coin;
+      return theme === "JUNGLE" ? SPRITES.bfruit : theme === "FACTORY" ? SPRITES.bgear : theme === "ICE" ? SPRITES.bgem : SPRITES.bcoin;
     }
 
     step() {
@@ -527,9 +538,10 @@
       const R = this.keyDown.ArrowRight || this.keyDown.KeyD;
       const JH = this.keyDown.Space || this.keyDown.ArrowUp;
 
-      const gr = GRAVITY[this.levelIndex];
-      const fr = GROUND_FRICTION[this.levelIndex];
-      const af = AIR_FRICTION[this.levelIndex];
+      const physics = PHYSICS_BY_THEME[getThemeForLevel(this.levelIndex)] || PHYSICS_BY_THEME[DEFAULT_THEME];
+      const gr = physics.gravity;
+      const fr = physics.groundFriction;
+      const af = physics.airFriction;
 
       const character = CHARACTERS[this.characterIndex];
       const name = character.name;
@@ -714,7 +726,8 @@
 
     drawBackground() {
       const camx = this.cameraX;
-      if (this.levelIndex === 0) {
+      const theme = getThemeForLevel(this.levelIndex);
+      if (theme === "DAY") {
         gfx.fillStyle = "#6bb7ff"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const bx = ((camx * 0.3) | 0) % CANVAS_W;
         gfx.fillStyle = "#bfe6ff";
@@ -723,7 +736,7 @@
           gfx.fillRect(x+40,20,50,12); gfx.fillRect(x+65,14,30,10);
           gfx.fillRect(x+170,36,70,14); gfx.fillRect(x+200,30,40,10);
         }
-      } else if (this.levelIndex === 1) {
+      } else if (theme === "JUNGLE") {
         gfx.fillStyle = "#49c7b6"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const p1 = ((camx*0.18)|0) % CANVAS_W, p2 = ((camx*0.35)|0) % CANVAS_W;
         gfx.fillStyle = "#2a8f5a";
@@ -732,7 +745,7 @@
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,120,240,70); gfx.fillRect(x+70,108,260,82); gfx.fillRect(x+170,114,200,76);}
         gfx.fillStyle = "#0a2a18";
         for (let i=0;i<22;i++){let x=((i*17-(camx*0.6))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,0,6,42);}
-      } else if (this.levelIndex === 2) {
+      } else if (theme === "FACTORY") {
         gfx.fillStyle = "#ffb36b"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const p1=((camx*0.2)|0)%CANVAS_W, p2=((camx*0.45)|0)%CANVAS_W;
         gfx.fillStyle="#3a2a2a";
@@ -743,7 +756,16 @@
         for (let i=0;i<26;i++){let x=((i*19-(camx*0.75))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,0,6,28);}
         gfx.fillStyle="#00000010";
         for (let i=0;i<14;i++){let x=((i*37-(camx*0.25))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,64,12,120);}
-      } else if (this.levelIndex === 3) {
+      } else if (theme === "CASTLE") {
+        gfx.fillStyle="#7fa0be"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        const p1=((camx*0.16)|0)%CANVAS_W, p2=((camx*0.30)|0)%CANVAS_W;
+        gfx.fillStyle="#3b4f66";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x,112,230,80); gfx.fillRect(x+70,98,260,94);}
+        gfx.fillStyle="#223448";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,126,280,64); gfx.fillRect(x+65,112,290,78);}
+        gfx.fillStyle="#b9d0e5";
+        for (let i=0;i<16;i++){let x=((i*41-(camx*0.5))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,94,8,30); gfx.fillRect(x+2,90,4,6);}
+      } else if (theme === "ICE") {
         gfx.fillStyle="#87c9ff"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const p1=((camx*0.18)|0)%CANVAS_W, p2=((camx*0.33)|0)%CANVAS_W;
         gfx.fillStyle="#2a5a88";
@@ -752,7 +774,7 @@
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,128,260,62); gfx.fillRect(x+60,110,280,80);}
         gfx.fillStyle="#bfe9ff";
         for (let i=0;i<18;i++){let x=((i*33-(camx*0.55))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,92,6,36); gfx.fillRect(x+3,104,10,6);}
-      } else if (this.levelIndex === 4) {
+      } else if (theme === "VOLCANO") {
         gfx.fillStyle="#260013"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const p1=((camx*0.2)|0)%CANVAS_W, p2=((camx*0.45)|0)%CANVAS_W;
         gfx.fillStyle="#3b001c";
@@ -763,7 +785,7 @@
         for (let i=0;i<18;i++){let x=((i*37-(camx*0.6))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,92,10,98);}
         gfx.fillStyle="#ff6a0020";
         for (let i=0;i<28;i++){let x=((i*19-(camx*0.9))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,0,4,28);}
-      } else {
+      } else if (theme === "NITE") {
         gfx.fillStyle="#0b0f2a"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         gfx.fillStyle="#a8c7ff";
         for (let i=0;i<this.starField.length;i++){
@@ -780,6 +802,9 @@
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-sx; gfx.fillRect(x,110,160,70); gfx.fillRect(x+40,96,110,84); gfx.fillRect(x+90,86,80,94);}
         gfx.fillStyle="#ffffff10";
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-(((camx*0.5)|0)%CANVAS_W); gfx.fillRect(x,122,220,6); gfx.fillRect(x+60,134,240,7);}
+      } else {
+        gfx.fillStyle = "#6bb7ff";
+        gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
       }
     }
 
