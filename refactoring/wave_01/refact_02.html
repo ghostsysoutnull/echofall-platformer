@@ -249,6 +249,7 @@
       osc.stop(start + dur);
     }
     extraLifeJingle() { this.tone(880,0.06,0); this.tone(1175,0.06,0.07); this.tone(1760,0.08,0.14); }
+    flagRaiseJingle() { this.tone(660,0.06,0.00); this.tone(990,0.08,0.08); }
     quack() { this.tone(560,0.05,0,"square"); this.tone(420,0.08,0.04,"square"); this.tone(240,0.08,0.08,"triangle"); }
   }
 
@@ -277,12 +278,16 @@
       this.tileRows = 0;
       this.tileCols = 0;
 
+      this.goal = null;
+
       this.player = null;
       this.enemies = [];
       this.coinDrops = [];
 
       this.cameraX = 0;
       this.cameraY = 0;
+
+      this.winPending = 0;
 
       this.score = 0;
       this.lives = 3;
@@ -383,7 +388,10 @@
       this.enemies = [];
       this.coinDrops = [];
 
+      this.winPending = 0;
+
       let spawnX = 10, spawnY = 10;
+      let goalMarker = null;
 
       for (let y = 0; y < this.tileRows; y++) {
         for (let x = 0; x < this.tileCols; x++) {
@@ -398,8 +406,54 @@
           } else if (ch === "V") {
             this.enemies.push({ type: 1, x: x*TILE_SIZE, y: y*TILE_SIZE, baseY: y*TILE_SIZE, vx: 0, vy: 0, w: 10, h: 10, dir: 1, onGround: 0, dead: 0, anim: 0 });
             this.tileGrid[y][x] = ".";
+          } else if (ch === "F") {
+            goalMarker = { x: x, y: y };
+            this.tileGrid[y][x] = ".";
           }
         }
+      }
+
+      if (goalMarker) {
+        const markerTx = goalMarker.x;
+        const markerTy = goalMarker.y;
+        let baseY = (this.tileRows - 1) * TILE_SIZE;
+        for (let ty = markerTy + 1; ty < this.tileRows; ty++) {
+          if (this.isSolid(this.tileIdAt(markerTx, ty))) { baseY = ty * TILE_SIZE; break; }
+        }
+
+        const poleHeightTiles = 9;
+        const poleWidthPx = 10;
+        let poleX = markerTx * TILE_SIZE;
+        const leftSolid = this.isSolid(this.tileIdAt(markerTx - 1, markerTy));
+        const rightSolid = this.isSolid(this.tileIdAt(markerTx + 1, markerTy));
+        if (leftSolid && !rightSolid) poleX += 0.001;
+        else if (rightSolid && !leftSolid) poleX -= 0.001;
+        const poleTopY = baseY - poleHeightTiles * TILE_SIZE;
+        const flagX = poleX + 6;
+        const flagYStart = baseY - (poleHeightTiles - 6) * TILE_SIZE;
+        const flagYEnd = baseY - (poleHeightTiles + 1) * TILE_SIZE;
+
+        const poleHitbox = { x: poleX, y: poleTopY, w: poleWidthPx, h: poleHeightTiles * TILE_SIZE };
+        const flagHitbox = { x: flagX, y: flagYStart, w: 10, h: 10 };
+
+        this.goal = {
+          x: poleX,
+          markerY: markerTy * TILE_SIZE,
+          baseY: baseY,
+          poleHeightTiles: poleHeightTiles,
+          poleWidthPx: poleWidthPx,
+          hitboxPole: poleHitbox,
+          hitboxFlag: flagHitbox,
+          flagX: flagX,
+          flagY: flagYStart,
+          flagYStart: flagYStart,
+          flagYEnd: flagYEnd,
+          raising: 0,
+          raiseFrame: 0,
+          raiseFrames: 90
+        };
+      } else {
+        this.goal = null;
       }
 
       this.player = {
@@ -424,7 +478,6 @@
              ch === "B" ? 4 :
              ch === "o" ? 2 :
              ch === "O" ? 5 :
-             ch === "F" ? 3 :
              ch === "U" ? 6 :
              ch === "L" ? 7 : 0;
     }
@@ -573,7 +626,6 @@
           if (id === 2) { this.setTile(x,y,"."); this.addScore(1); this.audio.tone(740,0.03); }
           else if (id === 5) { this.setTile(x,y,"."); this.addScore(10); this.audio.tone(1040,0.05); }
           else if (id === 6) { this.setTile(x,y,"."); this.lives++; this.audio.extraLifeJingle(); }
-          else if (id === 3) { this.win(); }
         }
       }
     }
@@ -677,6 +729,25 @@
       if (p.duckFlying && p.vy === 0 && !p.onGround) p.duckFlying = 0;
 
       this.collectTiles();
+      if (this.goal) {
+        if (!this.winPending && rectsOverlap(p, this.goal.hitboxFlag)) {
+          this.winPending = 1;
+          this.goal.raising = 1;
+          this.goal.raiseFrame = 0;
+          this.audio.flagRaiseJingle();
+        }
+
+        if (this.goal.raising) {
+          this.goal.raiseFrame = Math.min(this.goal.raiseFrames, this.goal.raiseFrame + 1);
+          const t = this.goal.raiseFrame / this.goal.raiseFrames;
+          this.goal.flagY = this.goal.flagYStart + (this.goal.flagYEnd - this.goal.flagYStart) * t;
+          this.goal.hitboxFlag.y = this.goal.flagY;
+          if (this.goal.raiseFrame >= this.goal.raiseFrames) {
+            this.goal.raising = 0;
+            if (this.winPending) this.win();
+          }
+        }
+      }
       if (p.quackFrame) p.quackFrame--;
 
       // Coin drops
@@ -865,8 +936,6 @@
       const ey = sy + ((CANVAS_H / TILE_SIZE) | 0) + 3;
 
       const t = ((this.player.anim >> 3) % 3);
-      const POLE_H = 9;
-
       for (let y = sy; y < ey; y++) for (let x = sx; x < ex; x++) {
         const id = this.tileIdAt(x, y);
         const px = x*TILE_SIZE - this.cameraX;
@@ -877,11 +946,16 @@
         else if (id === 2 || id === 5) this.drawSprite(this.collectibleSprite(id), px, py, 1);
         else if (id === 6) this.drawSprite(SPRITES.oneup, px, py, 1);
         else if (id === 7) this.drawSprite((t & 1) ? SPRITES.lav0 : SPRITES.lav1, px, py, 1);
-        else if (id === 3) {
-          for (let j = 1; j <= POLE_H; j++) this.drawSprite(((j ^ t) & 1) ? SPRITES.pole0 : SPRITES.pole1, px, py - j*TILE_SIZE, 1);
-          this.drawSprite(SPRITES.polet, px, py - (POLE_H + 1)*TILE_SIZE, 1);
-          this.drawSprite(t === 0 ? SPRITES.flag0 : t === 1 ? SPRITES.flag1 : SPRITES.flag2, px + 6, py - (POLE_H - 6)*TILE_SIZE, 1);
+      }
+
+      if (this.goal) {
+        const baseX = (this.goal.x - this.cameraX) | 0;
+        const baseY = (this.goal.baseY - this.cameraY) | 0;
+        for (let j = 1; j <= this.goal.poleHeightTiles; j++) {
+          this.drawSprite(((j ^ t) & 1) ? SPRITES.pole0 : SPRITES.pole1, baseX, baseY - j*TILE_SIZE, 1);
         }
+        this.drawSprite(SPRITES.polet, baseX, baseY - (this.goal.poleHeightTiles + 1) * TILE_SIZE, 1);
+        this.drawSprite(t === 0 ? SPRITES.flag0 : t === 1 ? SPRITES.flag1 : SPRITES.flag2, (this.goal.flagX - this.cameraX) | 0, (this.goal.flagY - this.cameraY) | 0, 1);
       }
 
       for (let i = 0; i < this.coinDrops.length; i++) this.drawSprite(this.collectibleSprite(2), this.coinDrops[i].x - this.cameraX, this.coinDrops[i].y - this.cameraY, 1);
