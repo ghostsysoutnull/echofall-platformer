@@ -24,7 +24,8 @@
     CASTLE:  { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     ICE:     { gravity: 0.30, groundFriction: 0.95, airFriction: 0.97 },
     VOLCANO: { gravity: 0.36, groundFriction: 0.80, airFriction: 0.94 },
-    NITE:    { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 }
+    NITE:    { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
+    SPACE:   { gravity: 0.28, groundFriction: 0.84, airFriction: 0.96 }
   };
   const DEFAULT_THEME = "DAY";
   const getThemeForLevel = (index) => {
@@ -38,7 +39,8 @@
     [{ type: 1, x: 28, y: 7 }, { type: 2, x: 56, y: 6 }, { type: 3, x: 82, y: 8 }],
     [{ type: 1, x: 26, y: 6 }, { type: 2, x: 52, y: 7 }, { type: 3, x: 76, y: 5 }],
     [{ type: 1, x: 24, y: 7 }, { type: 2, x: 48, y: 6 }, { type: 3, x: 72, y: 8 }],
-    [{ type: 1, x: 22, y: 6 }, { type: 2, x: 46, y: 7 }, { type: 3, x: 70, y: 5 }]
+    [{ type: 1, x: 22, y: 6 }, { type: 2, x: 46, y: 7 }, { type: 3, x: 70, y: 5 }],
+    [{ type: 1, x: 24, y: 6 }, { type: 2, x: 52, y: 5 }, { type: 3, x: 78, y: 7 }]
   ];
 
   // =========================
@@ -92,6 +94,8 @@
     vt4:["CCCCCCCCCC","CKKKKKKKKC","CKCCCCCCKC","CKCKKKCKKC","CKCKCCKCKC","CKCKKKCKKC","CKCCCCCCKC","CKKKKKKKKC","CCCCCCCCCC","CCCCCCCCCC"],
     nt1:["AAAAAAAAAA","AJJJIIJJJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJJJIIJJJA","AAAAAAAAAA","AAAAAAAAAA"],
     nt4:["JJJJJJJJJJ","JAAAAAAAAJ","JAJJJJJJAJ","JAJAAAAJAJ","JAJAJJJAJJ","JAJAAAAJAJ","JAJJJJJJAJ","JAAAAAAAAJ","JJJJJJJJJJ","JJJJJJJJJJ"],
+    spt1:["MMMMMMMMMM","MHHHHHHHHM","MHMHHMHHHM","MHHMMMHHHM","MHMHHMHHHM","MHHMMMHHHM","MHMHHMHHHM","MHHHHHHHHM","MMMMMMMMMM","MMMMMMMMMM"],
+    spt4:["HHHHHHHHHH","HMMMMMMMMH","HMHHHHHHMH","HMHMMMMHMH","HMHMHHMHMH","HMHMMMMHMH","HMHHHHHHMH","HMMMMMMMMH","HHHHHHHHHH","HHHHHHHHHH"],
     hbt0:["..FFFFFF..",".FLLLLLLF.","FLLLBBLLLF","FLLBBBBLLF","FLLBBLBLLF","FLLLBBLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
     hbt1:["..FFFFFF..",".FLLLLLLF.","FLLLBBLLLF","FLLBBBBLLF","FLLBBLBLLF","FLLLBBLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
     hbb0:["..FFFFFF..",".FLLLLLLF.","FLLLLBBLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLBBLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
@@ -651,8 +655,8 @@
     collectibleSprite(tileId) {
       const theme = getThemeForLevel(this.levelIndex);
       if (theme === "CASTLE") return tileId === 2 ? SPRITES.ccoin : SPRITES.bccoin;
-      if (tileId === 2) return theme === "JUNGLE" ? SPRITES.fruit : theme === "FACTORY" ? SPRITES.gear : theme === "ICE" ? SPRITES.gem : SPRITES.coin;
-      return theme === "JUNGLE" ? SPRITES.bfruit : theme === "FACTORY" ? SPRITES.bgear : theme === "ICE" ? SPRITES.bgem : SPRITES.bcoin;
+      if (tileId === 2) return theme === "JUNGLE" ? SPRITES.fruit : theme === "FACTORY" ? SPRITES.gear : (theme === "ICE" || theme === "SPACE") ? SPRITES.gem : SPRITES.coin;
+      return theme === "JUNGLE" ? SPRITES.bfruit : theme === "FACTORY" ? SPRITES.bgear : (theme === "ICE" || theme === "SPACE") ? SPRITES.bgem : SPRITES.bcoin;
     }
 
     tileSprite(tileId) {
@@ -663,6 +667,7 @@
                theme === "CASTLE" ? SPRITES.ct1 :
                theme === "ICE" ? SPRITES.it1 :
                theme === "VOLCANO" ? SPRITES.vt1 :
+               theme === "SPACE" ? SPRITES.spt1 :
                theme === "NITE" ? SPRITES.nt1 : SPRITES.t1;
       }
       if (tileId === 4) {
@@ -671,6 +676,7 @@
                theme === "CASTLE" ? SPRITES.ct4 :
                theme === "ICE" ? SPRITES.it4 :
                theme === "VOLCANO" ? SPRITES.vt4 :
+               theme === "SPACE" ? SPRITES.spt4 :
                theme === "NITE" ? SPRITES.nt4 : SPRITES.t4;
       }
       return null;
@@ -976,6 +982,24 @@
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-sx; gfx.fillRect(x,110,160,70); gfx.fillRect(x+40,96,110,84); gfx.fillRect(x+90,86,80,94);}
         gfx.fillStyle="#ffffff10";
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-(((camx*0.5)|0)%CANVAS_W); gfx.fillRect(x,122,220,6); gfx.fillRect(x+60,134,240,7);}
+      } else if (theme === "SPACE") {
+        gfx.fillStyle="#060815"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        gfx.fillStyle="#95b5ff";
+        for (let i=0;i<this.starField.length;i++){
+          const s=this.starField[i];
+          let x=((s[0]-camx*0.14)|0)%2600, y=(s[1]*0.9)|0;
+          x=((x%CANVAS_W)+CANVAS_W)%CANVAS_W;
+          gfx.fillRect(x,y,s[2],s[2]);
+        }
+        gfx.fillStyle="#4f6be0";
+        gfx.beginPath(); gfx.arc(CANVAS_W-54,32,16,0,6.283); gfx.fill();
+        gfx.fillStyle="#89a2ff";
+        gfx.beginPath(); gfx.arc(CANVAS_W-48,28,6,0,6.283); gfx.fill();
+        const p1=((camx*0.18)|0)%CANVAS_W, p2=((camx*0.34)|0)%CANVAS_W;
+        gfx.fillStyle="#1a2247";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x,124,250,66); gfx.fillRect(x+80,112,260,78);}
+        gfx.fillStyle="#0c122f";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,136,300,54); gfx.fillRect(x+70,118,290,72);}
       } else {
         gfx.fillStyle = "#6bb7ff";
         gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
