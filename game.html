@@ -92,8 +92,8 @@
     vt4:["CCCCCCCCCC","CKKKKKKKKC","CKCCCCCCKC","CKCKKKCKKC","CKCKCCKCKC","CKCKKKCKKC","CKCCCCCCKC","CKKKKKKKKC","CCCCCCCCCC","CCCCCCCCCC"],
     nt1:["AAAAAAAAAA","AJJJIIJJJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJJJIIJJJA","AAAAAAAAAA","AAAAAAAAAA"],
     nt4:["JJJJJJJJJJ","JAAAAAAAAJ","JAJJJJJJAJ","JAJAAAAJAJ","JAJAJJJAJJ","JAJAAAAJAJ","JAJJJJJJAJ","JAAAAAAAAJ","JJJJJJJJJJ","JJJJJJJJJJ"],
-    hb0:["..FFFFFF..",".FLLLLLLF.","FLFBBBLFLF","FLFLLLFLFF","FLFBBBLFLF","FLLLLLLLLF",".FLLFFLLF.","..FLLLLF..","...FFFF...",".........."],
-    hb1:["..FFFFFF..",".FLLLLLLF.","FLFBBBFLFF","FLFLLLFLFF","FLFBBBFLFF","FLLLLLLLLF",".FLLFFLLF.","..FLLLLF..","...FFFF...",".........."],
+    hb0:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLLLBBLLLF","FLLBBLBBLF","FLLLLBBLLF",".FLLBBLLF.","..FLLLLF..","...FFFF...",".........."],
+    hb1:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLLLBBLLLF","FLLBBLBBLF","FLLLLBBLLF",".FLLBBLLF.","..FLLLLF..","...FFFF...",".........."],
     hub:["..JJJJJJ..",".JIIIIIIJ.","JIJJJJJIIJ","JIJIIIIJIJ","JIJIIIIJIJ","JIJIIIIJIJ","JIJIIIIJIJ","JIJJJJJIIJ",".JIIIIIIJ.","..JJJJJJ.."],
     coin:["..........","....FF....","...FLLF...","..FLLLFF..","..FLLLFF..","..FFLLF...","...FFLF...","....FF....","..........",".........."],
     bcoin:["....FF....","...FLLF...","..FLLLLF..",".FLLLLLLF.","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FLLLLF..","...FLLF...","....FF...."],
@@ -206,6 +206,7 @@
       this.player = null;
       this.enemies = [];
       this.coinDrops = [];
+      this.blockDebris = [];
 
       this.cameraX = 0;
       this.cameraY = 0;
@@ -320,6 +321,7 @@
 
       this.enemies = [];
       this.coinDrops = [];
+      this.blockDebris = [];
 
       this.winPending = 0;
       this.helpTimer = 0;
@@ -459,6 +461,24 @@
       this.helpShownBlocks.add(key);
       this.helpTimer = 420;
       this.setTile(tx, ty, "h");
+
+      const cx = tx * TILE_SIZE + TILE_SIZE * 0.5;
+      const cy = ty * TILE_SIZE + TILE_SIZE * 0.5;
+      const n = 18;
+      for (let i = 0; i < n; i++) {
+        const a = this.rand01() * 6.283;
+        const v = 0.8 + this.rand01() * 1.8;
+        this.blockDebris.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(a) * v,
+          vy: -0.8 - this.rand01() * 2.1,
+          t: 34 + ((this.rand01() * 14) | 0),
+          s: 1 + (this.rand01() > 0.65 ? 1 : 0),
+          col: this.rand01() > 0.35 ? "#f3d44a" : "#7dff3b"
+        });
+      }
+
       this.audio.tone(680, 0.04);
       this.audio.tone(920, 0.05, 0.05);
     }
@@ -770,6 +790,17 @@
       }
       this.coinDrops = this.coinDrops.filter(d => !d.dead);
 
+      // Help block debris
+      for (let i = 0; i < this.blockDebris.length; i++) {
+        const d = this.blockDebris[i];
+        if (d.t-- <= 0) { d.dead = 1; continue; }
+        d.vy += gr * 0.6;
+        d.vx *= 0.98;
+        d.x += d.vx;
+        d.y += d.vy;
+      }
+      this.blockDebris = this.blockDebris.filter(d => !d.dead);
+
       // Enemies
       for (let i = 0; i < this.enemies.length; i++) {
         const e = this.enemies[i];
@@ -996,6 +1027,12 @@
       }
 
       for (let i = 0; i < this.coinDrops.length; i++) this.drawSprite(this.collectibleSprite(2), this.coinDrops[i].x - this.cameraX, this.coinDrops[i].y - this.cameraY, 1);
+
+      for (let i = 0; i < this.blockDebris.length; i++) {
+        const d = this.blockDebris[i];
+        gfx.fillStyle = d.col;
+        gfx.fillRect((d.x - this.cameraX) | 0, (d.y - this.cameraY) | 0, d.s, d.s);
+      }
 
       for (let i = 0; i < this.enemies.length; i++) {
         const e = this.enemies[i];
