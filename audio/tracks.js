@@ -4,7 +4,7 @@
     AFTERNOON: "AFTERNOON",
     JUNGLE: "JUNGLE",
     FACTORY: "FACTORY",
-    CASTLE: "FACTORY",
+    CASTLE: "CASTLE",
     ICE: "ICE",
     VOLCANO: "VOLCANO",
     NITE: "NITE",
@@ -42,6 +42,7 @@
       if (key === "AFTERNOON") return this.AFTERNOON(ctx, bus, aux, helpers);
       if (key === "JUNGLE") return this.JUNGLE(ctx, bus, aux, helpers);
       if (key === "FACTORY") return this.FACTORY(ctx, bus, aux, helpers);
+      if (key === "CASTLE") return this.CASTLE(ctx, bus, aux, helpers);
       if (key === "ICE") return this.ICE(ctx, bus, aux, helpers);
       if (key === "VOLCANO") return this.VOLCANO(ctx, bus, aux, helpers);
       if (key === "NITE") return this.NITE(ctx, bus, aux, helpers);
@@ -263,6 +264,55 @@
           nodes.push(...ping({ freq: f, type: "triangle", peak: 0.10, dur: 0.20, lpHz: 2600, toDelay: true, bus, aux }));
         }
       }, 430);
+      timers.push(id);
+
+      return { nodes, timers };
+    },
+
+    CASTLE: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      const padGain = ctx.createGain();
+      padGain.gain.value = 0.24;
+
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 1100;
+      lp.Q.value = 0.75;
+
+      padGain.connect(lp);
+      lp.connect(bus);
+
+      const freqs = [98.00, 123.47, 146.83];
+      for (let i = 0; i < freqs.length; i++) {
+        const osc = ctx.createOscillator();
+        osc.type = i === 0 ? "triangle" : "sine";
+        osc.frequency.value = freqs[i];
+        osc.connect(padGain);
+        osc.start();
+        nodes.push(osc);
+      }
+
+      const pulse = ctx.createOscillator();
+      pulse.type = "sine";
+      pulse.frequency.value = 0.09;
+      const pulseAmt = ctx.createGain();
+      pulseAmt.gain.value = 0.06;
+      pulse.connect(pulseAmt);
+      pulseAmt.connect(padGain.gain);
+      pulse.start();
+
+      nodes.push(padGain, lp, pulse, pulseAmt);
+
+      const id = setInterval(() => {
+        if (Math.random() < 0.62) {
+          const tones = [392, 440, 523.25, 587.33, 659.25, 783.99];
+          const f = tones[(Math.random() * tones.length) | 0] * (Math.random() < 0.25 ? 0.5 : 1);
+          nodes.push(...ping({ freq: f, type: "sine", peak: 0.08, dur: 0.24, lpHz: 2600, toDelay: true, bus, aux }));
+        }
+      }, 920);
       timers.push(id);
 
       return { nodes, timers };

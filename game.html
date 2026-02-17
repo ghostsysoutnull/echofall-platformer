@@ -192,6 +192,7 @@
       this.nextExtraLifeScore = 100;
       this.helpTimer = 0;
       this.helpShownBlocks = new Set();
+      this.isPaused = 0;
 
       this.bindInput();
       this.fitCanvas();
@@ -222,7 +223,7 @@
     }
 
     bindInput() {
-      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyZ","KeyQ","KeyR","KeyN","Digit9","Digit0"]);
+      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyZ","KeyQ","KeyR","KeyN","KeyP","Digit9","Digit0"]);
 
       addEventListener("keydown", (e) => {
         if (preventKeys.has(e.code)) e.preventDefault();
@@ -238,6 +239,10 @@
             this.audio.tone(660, 0.04);
           }
           if (e.code === "KeyQ") this.tryActivateRobotPulse();
+          if (e.code === "KeyP") {
+            this.isPaused ^= 1;
+            this.audio.tone(this.isPaused ? 360 : 620, 0.05);
+          }
           if (e.code === "KeyR") this.loadLevel(this.levelIndex);
           if (e.code === "KeyN") {
             if (this.levelIndex === LEVELS.length - 1) {
@@ -1861,7 +1866,7 @@
         gfx.fillText("JUMP: Space / Up", 168, 50);
         gfx.fillText("Z: Switch Character", 24, 62);
         gfx.fillText("Q: Robot Pulse", 168, 62);
-        gfx.fillText("R: Restart   N: Next", 168, 74);
+        gfx.fillText("R: Restart   N: Next   P: Pause", 110, 74);
         gfx.fillText("M: Mute   9/0: BGM -/+", 24, 74);
       }
 
@@ -1911,6 +1916,13 @@
         gfx.stroke();
         gfx.globalAlpha = 1;
       }
+
+      if (this.isPaused) {
+        gfx.fillStyle = "#000a";
+        gfx.fillRect(106, 78, 108, 24);
+        gfx.fillStyle = "#fff";
+        gfx.fillText("PAUSED", 140, 93);
+      }
     }
   }
 
@@ -1922,7 +1934,11 @@
   const loop = (now) => {
     acc += Math.min(0.05, (now - last) / 1000);
     last = now;
-    while (acc >= FIXED_DT) { game.step(); acc -= FIXED_DT; }
+    if (game.isPaused) {
+      acc = 0;
+    } else {
+      while (acc >= FIXED_DT) { game.step(); acc -= FIXED_DT; }
+    }
     game.render();
     requestAnimationFrame(loop);
   };
