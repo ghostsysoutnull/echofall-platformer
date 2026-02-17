@@ -115,6 +115,15 @@
     enemyHitRadius: 7,
     shimmerFrames: 14
   };
+  const BONECRYPT_WEATHER = {
+    zoneStartRatio: 0.30,
+    zoneEndRatio: 0.70,
+    rainTarget: 86,
+    rainWind: -0.26,
+    lightningChance: 0.006,
+    lightningFrames: 7,
+    lightningCooldownFrames: 92
+  };
   const PHYSICS_BY_THEME = {
     DAY:     { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     AFTERNOON:{ gravity: 0.35, groundFriction: 0.81, airFriction: 0.94 },
@@ -249,7 +258,6 @@
       this.winPending = 0;
 
       this.score = 0;
-      this.skeletonCoins = 0;
       this.lives = 3;
       this.nextExtraLifeScore = 100;
       this.helpTimer = 0;
@@ -269,6 +277,8 @@
       this.teleportNotice = "";
       this.teleportNoticeTimer = 0;
       this.pendingTeleportNotice = "";
+
+      this.boneCryptWeather = { rain: [], lightning: 0, lightningCooldown: 0, cloudDriftNear: 0, cloudDriftFar: 0 };
 
       this.bindInput();
       this.fitCanvas();
@@ -299,7 +309,7 @@
     }
 
     bindInput() {
-      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","Digit7","Digit9","Digit0"]);
+      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","Digit7","Digit9","Digit0"]);
 
       addEventListener("keydown", (e) => {
         if (preventKeys.has(e.code)) e.preventDefault();
@@ -310,11 +320,11 @@
           if (e.code === "Digit9") this.audio.adjustMusicVolume(-0.05);
           if (e.code === "Digit0") this.audio.adjustMusicVolume(0.05);
           if (e.code === "Digit7") {
-            this.addSkeletonCoins(70);
+            this.addScore(70);
             if (!this.skeletonBurst.phase2Charged && this.skeletonBurst.phase2ChargeFrames <= 0) {
               this.skeletonBurst.phase2ChargeFrames = SKELETON_BLOOD_BURST.phaseTwoRechargeFrames;
             }
-            this.teleportNotice = "DEBUG: +70 BONE";
+            this.teleportNotice = "DEBUG: +70 COINS";
             this.teleportNoticeTimer = 70;
             this.audio.tone(840, 0.03, 0.00, "triangle", 0.03);
             this.audio.tone(1040, 0.04, 0.02, "sine", 0.03);
@@ -384,6 +394,7 @@
       this.player.ninjaAirJumps = ch.doubleJumps;
       this.player.duckFuel = ch.duckFlight;
       this.player.duckFlying = 0;
+      this.player.skeletonCrouch = 0;
       this.rangerGrapple.active = 0;
       this.paladinDash.active = 0;
       this.paladinDash.timer = 0;
@@ -485,6 +496,11 @@
       this.winPending = 0;
       this.helpTimer = 0;
       this.helpShownBlocks.clear();
+      this.boneCryptWeather.rain = [];
+      this.boneCryptWeather.lightning = 0;
+      this.boneCryptWeather.lightningCooldown = 0;
+      this.boneCryptWeather.cloudDriftNear = 0;
+      this.boneCryptWeather.cloudDriftFar = 0;
       this.backgroundActors = this.buildLevelBackgroundActors(this.levelIndex);
       this.levelCheckpoints = [];
       this.activeCheckpointIndex = -1;
@@ -630,7 +646,7 @@
       this.player = {
         x: spawnX, y: spawnY, vx: 0, vy: 0, w: 10, h: 10,
         onGround: 0, coyote: 0, jumpBuf: 0, face: 1, anim: 0,
-        wrapGrace: 0, quackFrame: 0, ninjaAirJumps: 0, duckFuel: 0, duckFlying: 0
+        wrapGrace: 0, quackFrame: 0, ninjaAirJumps: 0, duckFuel: 0, duckFlying: 0, skeletonCrouch: 0
       };
 
       this.setCharacter(this.characterIndex);
@@ -884,6 +900,8 @@
       if (!this.player) return this.loadLevel(this.levelIndex);
       const p = this.player;
       const ch = CHARACTERS[this.characterIndex];
+      p.w = ch.w;
+      p.h = ch.h;
       const cp = this.activeCheckpointIndex >= 0 ? this.levelCheckpoints[this.activeCheckpointIndex] : null;
       const rx = cp ? (cp.x + TILE_SIZE * 0.5 - p.w * 0.5) : this.levelSpawnX;
       const ry = cp ? cp.y : this.levelSpawnY;
@@ -900,6 +918,7 @@
       p.ninjaAirJumps = ch.doubleJumps;
       p.duckFuel = ch.duckFlight;
       p.duckFlying = 0;
+      p.skeletonCrouch = 0;
 
       this.rangerGrapple.active = 0;
       this.paladinDash.active = 0;
@@ -1129,6 +1148,43 @@
       if (tx >= 0 && tx < this.tileCols && ty >= 0 && ty < this.tileRows) this.tileGrid[ty][tx] = v;
     }
 
+    rectHitsSolid(x, y, w, h) {
+      const x0 = (x / TILE_SIZE) | 0;
+      const x1 = ((x + w - 1) / TILE_SIZE) | 0;
+      const y0 = (y / TILE_SIZE) | 0;
+      const y1 = ((y + h - 1) / TILE_SIZE) | 0;
+      for (let ty = y0; ty <= y1; ty++) {
+        for (let tx = x0; tx <= x1; tx++) {
+          if (this.isSolid(this.tileIdAt(tx, ty))) return 1;
+        }
+      }
+      return 0;
+    }
+
+    updateSkeletonCrouch(name, downHeld) {
+      const p = this.player;
+      if (!p) return;
+      if (name !== "SKELETON") {
+        p.skeletonCrouch = 0;
+        return;
+      }
+
+      if (downHeld) {
+        if (!p.skeletonCrouch) {
+          p.y += 10;
+          p.h = 10;
+          p.skeletonCrouch = 1;
+        }
+        return;
+      }
+
+      if (!p.skeletonCrouch) return;
+      if (this.rectHitsSolid(p.x, p.y - 10, p.w, 10)) return;
+      p.y -= 10;
+      p.h = 20;
+      p.skeletonCrouch = 0;
+    }
+
     collideX(e) {
       if (!e.vx) return;
       const dir = e.vx > 0 ? 1 : -1;
@@ -1227,13 +1283,15 @@
     die(reset) {
       if (this.deathTimer > 0) return;
       if (!reset) this.lives--;
-      if (!reset) this.skeletonCoins = 0;
+      if (!reset) {
+        this.score = 0;
+        this.nextExtraLifeScore = 100;
+      }
       this.audio.tone(120, 0.10);
 
       if (this.lives < 0) {
         this.lives = 3;
         this.score = 0;
-        this.skeletonCoins = 0;
         this.nextExtraLifeScore = 100;
         this.paladinUnlocked = 0;
         this.skeletonUnlocked = 0;
@@ -1434,23 +1492,15 @@
       }
     }
 
-    addSkeletonCoins(v) {
-      if (!Number.isFinite(v) || v <= 0) return;
-      this.skeletonCoins = Math.max(0, (this.skeletonCoins | 0) + (v | 0));
-    }
-
     collectTileReward(tileId, cx, cy) {
       if (tileId === 2) {
         this.addScore(1);
-        this.addSkeletonCoins(1);
         this.audio.tone(740, 0.03);
       } else if (tileId === 13) {
         this.addScore(20);
-        this.addSkeletonCoins(20);
         this.audio.tone(1180, 0.06, 0.00, "triangle", 0.04);
       } else if (tileId === 5) {
         this.addScore(10);
-        this.addSkeletonCoins(10);
         this.audio.tone(1040, 0.05);
       } else if (tileId === 6) {
         this.lives++;
@@ -1647,7 +1697,7 @@
       if (this.skeletonBurst.cooldown > 0) this.skeletonBurst.cooldown--;
       if (this.skeletonBurst.flash > 0) this.skeletonBurst.flash--;
       if (this.skeletonBurst.phase2Notice > 0) this.skeletonBurst.phase2Notice--;
-      const phase2Eligible = this.skeletonCoins >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
+      const phase2Eligible = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
       if (!phase2Eligible) {
         this.skeletonBurst.phase2ReadyLatch = 0;
         this.skeletonBurst.phase2Charged = 0;
@@ -2155,6 +2205,9 @@
 
     collectibleSprite(tileId) {
       const theme = getThemeForLevel(this.levelIndex);
+      if (theme === "DAY") return tileId === 2 ? SPRITES.coinDay : SPRITES.coinDayBig;
+      if (theme === "AFTERNOON") return tileId === 2 ? SPRITES.coinAfternoon : SPRITES.coinAfternoonBig;
+      if (theme === "VOLCANO") return tileId === 2 ? SPRITES.coinVolcano : SPRITES.coinVolcanoBig;
       if (theme === "CASTLE") return tileId === 2 ? SPRITES.coinCastle : SPRITES.coinCastleBig;
       if (theme === "GOTHIC") return tileId === 2 ? SPRITES.coinGothic : SPRITES.coinGothicBig;
       if (theme === "SKYRUINS") return tileId === 2 ? SPRITES.coinSkyRuins : SPRITES.coinSkyRuinsBig;
@@ -2292,7 +2345,6 @@
         if (Math.hypot(cx - (d.x + d.w * 0.5), cy - (d.y + d.h * 0.5)) <= BAT_COMPANION.coinCollectRadius) {
           d.dead = 1;
           this.addScore(1);
-          this.addSkeletonCoins(1);
           this.audio.tone(760, 0.02);
         }
       }
@@ -2343,9 +2395,11 @@
       const p = this.player;
       p.anim++;
       this.updateGeometryDreamMusic();
+      this.updateBoneCryptWeather();
 
       const L = this.keyDown.ArrowLeft || this.keyDown.KeyA;
       const R = this.keyDown.ArrowRight || this.keyDown.KeyD;
+      const D = this.keyDown.ArrowDown || this.keyDown.KeyS;
       const JH = this.keyDown.Space || this.keyDown.ArrowUp;
 
       const physics = PHYSICS_BY_THEME[getThemeForLevel(this.levelIndex)] || PHYSICS_BY_THEME[DEFAULT_THEME];
@@ -2357,6 +2411,7 @@
       const name = character.name;
       const rangerGrappling = (name === "RANGER" && this.rangerGrapple.active);
       const paladinDashing = (name === "PALADIN" && this.paladinDash.active);
+      this.updateSkeletonCrouch(name, D);
       this.updateHolyZones();
 
       // Horizontal
@@ -2404,7 +2459,7 @@
         const isDuck = (name === "DUCK");
         const isNinja = (name === "NINJA");
 
-        const canCoyoteJump = (p.coyote > 0);
+        const canCoyoteJump = (p.coyote > 0) && !(name === "SKELETON" && p.skeletonCrouch);
         const canNinjaAirJump = isNinja && (p.ninjaAirJumps > 0);
         const canStartDuckFlight = isDuck && (p.duckFuel > 0);
 
@@ -2478,7 +2533,7 @@
         d.vy += gr;
         d.vx *= 0.985;
         this.moveAndCollide(d);
-        if (d.collectDelay <= 0 && rectsOverlap(p, d)) { d.dead = 1; this.addScore(1); this.addSkeletonCoins(1); this.audio.tone(740, 0.03); }
+        if (d.collectDelay <= 0 && rectsOverlap(p, d)) { d.dead = 1; this.addScore(1); this.audio.tone(740, 0.03); }
       }
       this.coinDrops = this.coinDrops.filter(d => !d.dead);
 
@@ -2828,6 +2883,109 @@
       gfx.fillRect(px + 4, py + 9, 2, 1);
     }
 
+    isBoneCryptMidWeatherActive() {
+      if (getThemeForLevel(this.levelIndex) !== "BONECRYPT") return 0;
+      const centerTile = ((this.cameraX + CANVAS_W * 0.5) / TILE_SIZE) | 0;
+      const startTile = (this.tileCols * BONECRYPT_WEATHER.zoneStartRatio) | 0;
+      const endTile = (this.tileCols * BONECRYPT_WEATHER.zoneEndRatio) | 0;
+      return centerTile >= startTile && centerTile <= endTile;
+    }
+
+    updateBoneCryptWeather() {
+      const weather = this.boneCryptWeather;
+      if (!weather) return;
+
+      weather.cloudDriftNear += 0.42;
+      weather.cloudDriftFar += 0.23;
+
+      if (getThemeForLevel(this.levelIndex) !== "BONECRYPT") {
+        weather.rain = [];
+        weather.lightning = 0;
+        weather.lightningCooldown = 0;
+        return;
+      }
+
+      const active = this.isBoneCryptMidWeatherActive();
+      if (!active) {
+        weather.rain = [];
+        weather.lightning = 0;
+        weather.lightningCooldown = Math.max(0, weather.lightningCooldown - 1);
+        return;
+      }
+
+      if (weather.lightningCooldown > 0) weather.lightningCooldown--;
+      if (weather.lightning > 0) weather.lightning--;
+      if (weather.lightning <= 0 && weather.lightningCooldown <= 0 && this.rand01() < BONECRYPT_WEATHER.lightningChance) {
+        weather.lightning = BONECRYPT_WEATHER.lightningFrames;
+        weather.lightningCooldown = BONECRYPT_WEATHER.lightningCooldownFrames;
+      }
+
+      while (weather.rain.length < BONECRYPT_WEATHER.rainTarget) {
+        weather.rain.push({
+          x: this.rand01() * CANVAS_W,
+          y: this.rand01() * CANVAS_H,
+          vx: BONECRYPT_WEATHER.rainWind + (this.rand01() - 0.5) * 0.18,
+          vy: 2.2 + this.rand01() * 2.0,
+          len: 7 + ((this.rand01() * 4) | 0)
+        });
+      }
+
+      for (let i = 0; i < weather.rain.length; i++) {
+        const drop = weather.rain[i];
+        drop.x += drop.vx;
+        drop.y += drop.vy;
+        if (drop.y > CANVAS_H + 10) {
+          drop.y = -6 - this.rand01() * 12;
+          drop.x = this.rand01() * CANVAS_W;
+        }
+        if (drop.x < -10) drop.x = CANVAS_W + this.rand01() * 12;
+        else if (drop.x > CANVAS_W + 10) drop.x = -this.rand01() * 12;
+      }
+    }
+
+    drawBoneCryptWeatherBackground(camx) {
+      if (!this.isBoneCryptMidWeatherActive()) return;
+      const weather = this.boneCryptWeather;
+      const nearShift = (((camx * 0.22) + weather.cloudDriftNear) | 0) % (CANVAS_W + 90);
+      const farShift = (((camx * 0.12) + weather.cloudDriftFar) | 0) % (CANVAS_W + 120);
+
+      gfx.fillStyle = "#cfd6e512";
+      for (let i = -1; i < 4; i++) {
+        const x = i * 110 - farShift;
+        gfx.fillRect(x + 24, 22, 58, 10);
+        gfx.fillRect(x + 40, 18, 34, 8);
+      }
+
+      gfx.fillStyle = "#d8deea18";
+      for (let i = -1; i < 4; i++) {
+        const x = i * 92 - nearShift;
+        gfx.fillRect(x + 12, 30, 66, 12);
+        gfx.fillRect(x + 34, 24, 30, 8);
+      }
+    }
+
+    drawBoneCryptWeatherOverlay() {
+      if (!this.isBoneCryptMidWeatherActive()) return;
+      const weather = this.boneCryptWeather;
+
+      gfx.strokeStyle = "#c4d7ee55";
+      for (let i = 0; i < weather.rain.length; i++) {
+        const drop = weather.rain[i];
+        gfx.beginPath();
+        gfx.moveTo(drop.x | 0, drop.y | 0);
+        gfx.lineTo((drop.x + drop.vx * 1.7) | 0, (drop.y + drop.len) | 0);
+        gfx.stroke();
+      }
+
+      if (weather.lightning > 0) {
+        const alpha = (weather.lightning / BONECRYPT_WEATHER.lightningFrames) * 0.30;
+        gfx.globalAlpha = alpha;
+        gfx.fillStyle = "#e9f4ff";
+        gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+        gfx.globalAlpha = 1;
+      }
+    }
+
     drawBackground() {
       const camx = this.cameraX;
       const theme = getThemeForLevel(this.levelIndex);
@@ -2960,6 +3118,7 @@
         for (let i=0;i<18;i++){let x=((i*27-(camx*0.58))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,82,7,108);}        
         gfx.fillStyle="#e8e4dd1e";
         for (let i=0;i<24;i++){let x=((i*19-(camx*0.76))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,16,2,2);}        
+        this.drawBoneCryptWeatherBackground(camx);
       } else if (theme === "GOTHIC") {
         gfx.fillStyle="#0e0b18"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const p1=((camx*0.16)|0)%CANVAS_W, p2=((camx*0.31)|0)%CANVAS_W;
@@ -3036,8 +3195,12 @@
       if (name === "SKELETON") {
         const top = running ? (alt ? SPRITES.playerSkeletonTopRun : SPRITES.playerSkeletonTopIdle) : SPRITES.playerSkeletonTopIdle;
         const bot = running ? (alt ? SPRITES.playerSkeletonBottomRun : SPRITES.playerSkeletonBottomIdle) : SPRITES.playerSkeletonBottomIdle;
-        this.drawSprite(top, px, py, 1);
-        this.drawSprite(bot, px, py + 10, 1);
+        if (p.skeletonCrouch) {
+          this.drawSprite(bot, px, py, 1);
+        } else {
+          this.drawSprite(top, px, py, 1);
+          this.drawSprite(bot, px, py + 10, 1);
+        }
         const phase2Charged = !!this.skeletonBurst.phase2Charged;
         if (phase2Charged) {
           const pulse = (Math.sin(this.player.anim * 0.18) + 1) * 0.5;
@@ -3236,6 +3399,8 @@
         }
       }
 
+      this.drawBoneCryptWeatherOverlay();
+
       if (this.batCompanion.active) {
         const bx = this.batCompanion.x - this.cameraX;
         const by = this.batCompanion.y - this.cameraY;
@@ -3343,7 +3508,7 @@
             : "Q READY";
         gfx.fillText(dashText, 258, 11);
       } else if (charName === "SKELETON") {
-        const phase2Eligible = this.skeletonCoins >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
+        const phase2Eligible = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
         const phase2Charged = !!this.skeletonBurst.phase2Charged;
         const phase2Charging = phase2Eligible && !phase2Charged && this.skeletonBurst.phase2ChargeFrames > 0;
         const burstText = this.skeletonBurst.flash > 0
@@ -3352,7 +3517,7 @@
             ? ("Q " + ((this.skeletonBurst.cooldown / 60) | 0) + "s")
             : (phase2Charged ? "Q READY+" : (phase2Charging ? ("Q CHRG " + Math.max(1, ((this.skeletonBurst.phase2ChargeFrames / 60) | 0)) + "s") : "Q READY"));
         gfx.fillText(burstText, 258, 11);
-        gfx.fillText("BONE " + this.skeletonCoins + "/" + ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold, 6, 23);
+        gfx.fillText("COIN " + this.score + "/" + ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold, 6, 23);
       }
       if (this.audio.muted) gfx.fillText("MUTE", CANVAS_W - 34, 11);
 
