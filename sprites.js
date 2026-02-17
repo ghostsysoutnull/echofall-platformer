@@ -18,7 +18,7 @@
     P:"#7a4b2a",
   };
   const SPRITES = {
-    p0:[
+    playerRangerIdle:[
       "...CCCCC..",
       "..CCCCCCC.",
       "..BBCCBB..",
@@ -30,7 +30,7 @@
       "..AA.AA...",
       "..AA.AA...",
     ],
-    p1:[
+    playerRangerRun:[
       "...CCCCC..",
       "..CCCCCCC.",
       "..BBCCBB..",
@@ -42,7 +42,7 @@
       "..AA..AA..",
       "...AA..AA.",
     ],
-    b0:[
+    playerBunnyIdle:[
       "..BB..BB..",
       "..BN..NB..",
       "..BN..NB..",
@@ -54,7 +54,7 @@
       "...B..B...",
       "..BB..BB..",
     ],
-    b1:[
+    playerBunnyRun:[
       "..BB..BB..",
       "..BN..NB..",
       "..BN..NB..",
@@ -66,7 +66,7 @@
       "...B..B...",
       "..B..B....",
     ],
-    n0:[
+    playerNinjaIdle:[
       "...AAAA...",
       "..AIIIIA..",
       "..AIAIAA..",
@@ -78,7 +78,7 @@
       "...J..J...",
       "..JJ..JJ..",
     ],
-    n1:[
+    playerNinjaRun:[
       "...AAAA...",
       "..AIIIIA..",
       "..AIAIAA..",
@@ -90,7 +90,7 @@
       "...J..J...",
       "..J..J....",
     ],
-    r0:[
+    playerRobotIdle:[
       "...JJJJ...",
       "..JMMMMJ..",
       "..JMBBMJ..",
@@ -102,7 +102,7 @@
       "...J..J...",
       "..JJ..JJ..",
     ],
-    r1:[
+    playerRobotRun:[
       "...JJJJ...",
       "..JMMMMJ..",
       "..JMBBMJ..",
@@ -114,7 +114,7 @@
       "...J..J...",
       "..J..J....",
     ],
-    du0:[
+    playerDuckIdle:[
       "....................",
       ".......FFFFF........",
       ".....FFFFFFFF.......",
@@ -126,7 +126,7 @@
       "....FFFFFFFFF.......",
       ".....FF..FF.........",
     ],
-    du1:[
+    playerDuckRun:[
       "....................",
       ".......FFFFF........",
       ".....FFFFFFFF.......",
@@ -138,7 +138,7 @@
       "....FFFFFFFFF.......",
       "......FF..FF........",
     ],
-    duq:[
+    playerDuckQuack:[
       "....................",
       ".......FFFFF........",
       ".....FFFFFFFF.......",
@@ -150,7 +150,7 @@
       "....FFFFFFFFF.......",
       ".....FF..FF.........",
     ],
-    st0:[
+    playerSkeletonTopIdle:[
       "..AAAAAA..",
       ".AABBBBA..",
       ".ABABABBA.",
@@ -162,7 +162,7 @@
       "...A..A...",
       "..........",
     ],
-    sb0:[
+    playerSkeletonBottomIdle:[
       "..........",
       "...AAAA...",
       "..ABBBBA..",
@@ -174,7 +174,7 @@
       "AA......AA",
       "..........",
     ],
-    st1:[
+    playerSkeletonTopRun:[
       "..AAAAAA..",
       ".AABBBBA..",
       ".ABABABBA.",
@@ -186,7 +186,7 @@
       "..A....A..",
       "..........",
     ],
-    sb1:[
+    playerSkeletonBottomRun:[
       "..........",
       "...AAAA...",
       "..ABBBBA..",
@@ -198,7 +198,7 @@
       ".AA....AA.",
       "..........",
     ],
-    e0:[
+    enemyWalkerIdle:[
       "...PPPP...",
       "..PPPPPP..",
       ".PPIIIPPP.",
@@ -210,7 +210,7 @@
       ".P....P...",
       "..PPPP....",
     ],
-    e1:[
+    enemyWalkerRun:[
       "...PPPP...",
       "..PPPPPP..",
       ".PPIIIPPP.",
@@ -222,7 +222,7 @@
       "..P....P..",
       "...PPPP...",
     ],
-    ba0:[
+    enemyBatFlapA:[
       "..AAAAAA..",
       ".A..AA..A.",
       "A.AAAAAA.A",
@@ -234,7 +234,7 @@
       "..AAAAAA..",
       "..........",
     ],
-    ba1:[
+    enemyBatFlapB:[
       "..AAAAAA..",
       "A..AAAA..A",
       ".AA.AA.AA.",
@@ -246,7 +246,7 @@
       "..AAAAAA..",
       "..........",
     ],
-    fa0:[
+    enemyFalconFlapA:[
       "...AAAA...",
       "..AIIIIA..",
       ".AIIAAIIA.",
@@ -258,7 +258,7 @@
       "..AA..AA..",
       "..........",
     ],
-    fa1:[
+    enemyFalconFlapB:[
       "...AAAA...",
       "..AIIIIA..",
       ".AIIAAIIA.",
@@ -270,7 +270,7 @@
       ".AA....AA.",
       "..........",
     ],
-    ga0:[
+    enemyGhostFlapA:[
       "...PPPP...",
       "..PIIIIP..",
       ".PIIIIIIP.",
@@ -282,7 +282,7 @@
       ".PP....PP.",
       "..........",
     ],
-    ga1:[
+    enemyGhostFlapB:[
       "...PPPP...",
       "..PIIIIP..",
       ".PIIIIIIP.",
@@ -294,7 +294,7 @@
       "..PP..PP..",
       "..........",
     ],
-    t1:[
+    tileDayA:[
       "PPPPPPPPPP",
       "PPIIIIIPPP",
       "PIIJIJIIIP",
@@ -306,7 +306,7 @@
       "PPPPPPPPPP",
       "PPPPPPPPPP",
     ],
-    t4:[
+    tileDayB:[
       "JJJJJJJJJJ",
       "JIIIIIIIIJ",
       "JIJJJJJJIJ",
@@ -318,7 +318,7 @@
       "JJJJJJJJJJ",
       "JJJJJJJJJJ",
     ],
-    jt1:[
+    tileJungleA:[
       "PPPPPPPPPP",
       "PJJDDDDJJP",
       "PJDDPPDDJP",
@@ -330,7 +330,7 @@
       "PPPPPPPPPP",
       "PPPPPPPPPP",
     ],
-    jt4:[
+    tileJungleB:[
       "DDDDDDDDDD",
       "DPPPPPPPPD",
       "DPDDDDDDPD",
@@ -342,7 +342,7 @@
       "DDDDDDDDDD",
       "DDDDDDDDDD",
     ],
-    ft1:[
+    tileFactoryA:[
       "JJJJJJJJJJ",
       "JIMMMMIIMJ",
       "JMIJIIJIMJ",
@@ -354,7 +354,7 @@
       "JJJJJJJJJJ",
       "JJJJJJJJJJ",
     ],
-    ft4:[
+    tileFactoryB:[
       "MMMMMMMMMM",
       "MJJJJJJJJM",
       "MJMMMMMMJM",
@@ -366,7 +366,7 @@
       "MMMMMMMMMM",
       "MMMMMMMMMM",
     ],
-    ct1:[
+    tileCastleA:[
       "BBBBBBBBBB",
       "BJJIIJJIIB",
       "BJIJJJJIIB",
@@ -378,7 +378,7 @@
       "BBBBBBBBBB",
       "BBBBBBBBBB",
     ],
-    ct4:[
+    tileCastleB:[
       "IIIIIIIIII",
       "IBBBBBBBBI",
       "IBIIIIIIBI",
@@ -390,7 +390,7 @@
       "IIIIIIIIII",
       "IIIIIIIIII",
     ],
-    it1:[
+    tileIceA:[
       "HHHHHHHHHH",
       "HMMMMMMMMH",
       "HMHHMMHHMH",
@@ -402,7 +402,7 @@
       "HHHHHHHHHH",
       "HHHHHHHHHH",
     ],
-    it4:[
+    tileIceB:[
       "MMMMMMMMMM",
       "MHHHHHHHHM",
       "MHMMMMMMHM",
@@ -414,7 +414,7 @@
       "MMMMMMMMMM",
       "MMMMMMMMMM",
     ],
-    vt1:[
+    tileVolcanoA:[
       "JJJJJJJJJJ",
       "JPPPPPPPPJ",
       "JPPJPPJPPJ",
@@ -426,7 +426,7 @@
       "JJJJJJJJJJ",
       "JJJJJJJJJJ",
     ],
-    vt4:[
+    tileVolcanoB:[
       "PPPPPPPPPP",
       "PJJJJJJJJP",
       "PJPPCCPPJP",
@@ -438,7 +438,7 @@
       "PPPPPPPPPP",
       "PPPPPPPPPP",
     ],
-    nt1:[
+    tileNiteA:[
       "AAAAAAAAAA",
       "AJJJIIJJJA",
       "AJIAAAAIJA",
@@ -450,7 +450,7 @@
       "AAAAAAAAAA",
       "AAAAAAAAAA",
     ],
-    nt4:[
+    tileNiteB:[
       "JJJJJJJJJJ",
       "JAAAAAAAAJ",
       "JAJJJJJJAJ",
@@ -462,7 +462,7 @@
       "JJJJJJJJJJ",
       "JJJJJJJJJJ",
     ],
-    spt1:[
+    tileSpaceA:[
       "JJJJJJJJJJ",
       "JIIIIIIIIJ",
       "JIHIIJIIIJ",
@@ -474,7 +474,7 @@
       "JJJJJJJJJJ",
       "JJJJJJJJJJ",
     ],
-    spt4:[
+    tileSpaceB:[
       "IIIIIIIIII",
       "IJJJJJJJJI",
       "IJIJJJIJJI",
@@ -486,7 +486,31 @@
       "IIIIIIIIII",
       "IIIIIIIIII",
     ],
-    hbt0:[
+    tileSkyRuinsA:[
+      "IIIIIIIIII",
+      "IHHHHHHHHI",
+      "IHIIHHIIHI",
+      "IHIHHHHIHI",
+      "IHIHIIHIHI",
+      "IHIHHHHIHI",
+      "IHIIHHIIHI",
+      "IHHHHHHHHI",
+      "IIIIIIIIII",
+      "IIIIIIIIII",
+    ],
+    tileSkyRuinsB:[
+      "HHHHHHHHHH",
+      "HIIIIIIIIH",
+      "HIHHHHHHIH",
+      "HIHIIIIHIH",
+      "HIHIHHIHIH",
+      "HIHIIIIHIH",
+      "HIHHHHHHIH",
+      "HIIIIIIIIH",
+      "HHHHHHHHHH",
+      "HHHHHHHHHH",
+    ],
+    helpBlockTopUnusedA:[
       "..FFFFFF..",
       ".FLLLLLLF.",
       "FLLBBBBLLF",
@@ -498,7 +522,7 @@
       "FLLLLLLLLF",
       "FLLLLLLLLF",
     ],
-    hbt1:[
+    helpBlockTopUnusedB:[
       "..FFFFFF..",
       ".FLLLLLLF.",
       "FLLBBBBLLF",
@@ -510,7 +534,7 @@
       "FLLLLLLLLF",
       "FLLLLLLLLF",
     ],
-    hbb0:[
+    helpBlockBottomUnusedA:[
       "FLLLLLLLLF",
       "FLLLLLLLLF",
       "FLLLLLLLLF",
@@ -522,7 +546,7 @@
       ".FLLLLLLF.",
       "..FFFFFF..",
     ],
-    hbb1:[
+    helpBlockBottomUnusedB:[
       "FLLLLLLLLF",
       "FLLLLLLLLF",
       "FLLLLLLLLF",
@@ -534,7 +558,7 @@
       ".FLLLLLLF.",
       "..FFFFFF..",
     ],
-    hut:[
+    helpBlockTopUsed:[
       "..FFFFFF..",
       ".FBBBBBBF.",
       "FBBBBBBBBF",
@@ -546,7 +570,7 @@
       "FBBBBBBBBF",
       "FBBBBBBBBF",
     ],
-    hub:[
+    helpBlockBottomUsed:[
       "FBBBBBBBBF",
       "FBBBBBBBBF",
       "FBBBBBBBBF",
@@ -558,7 +582,7 @@
       ".FBBBBBBF.",
       "..FFFFFF..",
     ],
-    coin:[
+    coinDay:[
       "..........",
       "....FF....",
       "...FLLF...",
@@ -570,7 +594,7 @@
       "..........",
       "..........",
     ],
-    bcoin:[
+    coinDayBig:[
       "....FF....",
       "...FLLF...",
       "..FLLLLF..",
@@ -606,7 +630,7 @@
       "....DD....",
       ".....L....",
     ],
-    berry:[
+    coinJungle:[
       "..........",
       "...CCCCC..",
       "..CCCCCCC.",
@@ -618,7 +642,7 @@
       "..........",
       "..........",
     ],
-    bberry:[
+    coinJungleBig:[
       "...CCCCC..",
       "..CCCCCCC.",
       ".CCCCCCCCC",
@@ -630,7 +654,7 @@
       "....L.L...",
       "..........",
     ],
-    banana:[
+    oneUpJungle:[
       "..........",
       "....FFFF..",
       "...FFFF...",
@@ -642,7 +666,7 @@
       "..........",
       "..........",
     ],
-    gear:[
+    coinFactory:[
       "..........",
       "...JJJJ...",
       "..JIIIIJ..",
@@ -654,7 +678,7 @@
       "...JJJJ...",
       "..........",
     ],
-    bgear:[
+    coinFactoryBig:[
       "...JJJJ...",
       "..JIIIIJ..",
       ".JIJJJJIJ.",
@@ -666,7 +690,7 @@
       "..JIIIIJ..",
       "...JJJJ...",
     ],
-    gem:[
+    coinGem:[
       "..........",
       "....HH....",
       "...HMMH...",
@@ -678,7 +702,7 @@
       "..........",
       "..........",
     ],
-    bgem:[
+    coinGemBig:[
       "....HH....",
       "...HMMH...",
       "..HMMMMH..",
@@ -690,7 +714,7 @@
       "...HMMH...",
       "....HH....",
     ],
-    ccoin:[
+    coinCastle:[
       "..........",
       "...FFFF...",
       "..FJJJJF..",
@@ -702,7 +726,7 @@
       "...FFFF...",
       "..........",
     ],
-    bccoin:[
+    coinCastleBig:[
       "..FFFFFF..",
       ".FFJJJJFF.",
       "FFJFFFFJFF",
@@ -714,7 +738,31 @@
       ".FFJJJJFF.",
       "..FFFFFF..",
     ],
-    ce0:[
+    coinSkyRuins:[
+      "..........",
+      "....HH....",
+      "...HMMH...",
+      "..HMIIMH..",
+      "..HMIIMH..",
+      "..HMIIMH..",
+      "...HMMH...",
+      "....HH....",
+      "..........",
+      "..........",
+    ],
+    coinSkyRuinsBig:[
+      "....HH....",
+      "...HMMH...",
+      "..HMMMMH..",
+      ".HMMIIMMH.",
+      "HMMIIIIMMH",
+      "HMMIIIIMMH",
+      ".HMMIIMMH.",
+      "..HMMMMH..",
+      "...HMMH...",
+      "....HH....",
+    ],
+    enemyCastleWalkerIdle:[
       "...JJJJ...",
       "..JIIIIJ..",
       ".JIBBBBIJ.",
@@ -726,7 +774,7 @@
       "..P....P..",
       "...PPPP...",
     ],
-    ce1:[
+    enemyCastleWalkerRun:[
       "...JJJJ...",
       "..JIIIIJ..",
       ".JIBBBBIJ.",
@@ -738,7 +786,7 @@
       ".PP....PP.",
       "..PP..PP..",
     ],
-    cb0:[
+    enemyCastleBatFlapA:[
       "..JJJJJJ..",
       ".JIIIIIIJ.",
       "JIIJJJJIIJ",
@@ -750,7 +798,7 @@
       ".J..JJ..J.",
       "..J....J..",
     ],
-    cb1:[
+    enemyCastleBatFlapB:[
       "..JJJJJJ..",
       ".JIIIIIIJ.",
       "JIIJJJJIIJ",
@@ -762,7 +810,7 @@
       ".J..JJ..J.",
       "..J....J..",
     ],
-    cf0:[
+    enemyCastleFalconFlapA:[
       "...JJJJ...",
       "..JIIIIJ..",
       ".JIIJJIIJ.",
@@ -774,7 +822,7 @@
       "..JJ..JJ..",
       "..........",
     ],
-    cf1:[
+    enemyCastleFalconFlapB:[
       "...JJJJ...",
       "..JIIIIJ..",
       ".JIIJJIIJ.",
@@ -786,7 +834,7 @@
       ".JJ....JJ.",
       "..........",
     ],
-    cg0:[
+    enemyCastleGhostFlapA:[
       "...CCCC...",
       "..CIIIIC..",
       ".CIIIIIIC.",
@@ -798,7 +846,7 @@
       ".CC....CC.",
       "..........",
     ],
-    cg1:[
+    enemyCastleGhostFlapB:[
       "...CCCC...",
       "..CIIIIC..",
       ".CIIIIIIC.",
@@ -810,7 +858,7 @@
       "..CC..CC..",
       "..........",
     ],
-    lav0:[
+    lavaTileA:[
       "KKKKKKKKKK",
       "KCCCCCCCCK",
       "KCFFCCFFCK",
@@ -822,7 +870,7 @@
       "KCCCCCCCCK",
       "KKKKKKKKKK",
     ],
-    lav1:[
+    lavaTileB:[
       "KKKKKKKKKK",
       "KCCCCCCCCK",
       "KCCFFCCFFK",
@@ -834,7 +882,7 @@
       "KCCCCCCCCK",
       "KKKKKKKKKK",
     ],
-    pole0:[
+    goalPoleSegmentA:[
       "....ABBA..",
       "....ABBA..",
       "....ABBA..",
@@ -846,7 +894,7 @@
       "....ABBA..",
       "....ABBA..",
     ],
-    pole1:[
+    goalPoleSegmentB:[
       "....AIIA..",
       "....AIIA..",
       "....AIIA..",
@@ -858,7 +906,7 @@
       "....AIIA..",
       "....AIIA..",
     ],
-    polet:[
+    goalPoleTop:[
       "...AAAA...",
       "..ABBBBA..",
       ".ABBIBBBA.",
@@ -870,7 +918,7 @@
       "....ABBA..",
       "....ABBA..",
     ],
-    flag0:[
+    goalFlagA:[
       "AAAAAAA...",
       "ACCCCCA...",
       "ACBCCCA...",
@@ -882,7 +930,7 @@
       "AAAAAAA...",
       "..........",
     ],
-    flag1:[
+    goalFlagB:[
       "AAAAAA....",
       "ACCCCCA...",
       "ACBCCCA...",
@@ -894,7 +942,7 @@
       "AAAAAA....",
       "..........",
     ],
-    flag2:[
+    goalFlagC:[
       "AAAAAA....",
       "ACCCCCCA..",
       "ACBCCCA...",
@@ -906,7 +954,7 @@
       "AAAAAA....",
       "..........",
     ],
-    oneup:[
+    oneUpDay:[
       "...DDD....",
       "..DLDLD...",
       "..DLDDDD..",
@@ -918,7 +966,31 @@
       "..........",
       "..........",
     ],
-    coneup:[
+    oneUpAfternoon:[
+      "...KKKK...",
+      "..KNNNNK..",
+      "..KNKKNK..",
+      "..KNNNNK..",
+      "..KNBBNK..",
+      "..KNNNNK..",
+      "...KNNK...",
+      "....KK....",
+      "..........",
+      "..........",
+    ],
+    oneUpFactory:[
+      "...JMMJ...",
+      "..JMIIMJ..",
+      "..MIJJIM..",
+      "..MIIIMM..",
+      "..MIBBIM..",
+      "..MIIIMM..",
+      "...JMMJ...",
+      "....JJ....",
+      "..........",
+      "..........",
+    ],
+    oneUpCastle:[
       "...JJJJ...",
       "..JIIIIJ..",
       "..JIJJIJ..",
@@ -927,6 +999,66 @@
       "..JIIIIJ..",
       "...JIIJ...",
       "....JJ....",
+      "..........",
+      "..........",
+    ],
+    oneUpIce:[
+      "...HHHH...",
+      "..HMMMMH..",
+      "..HMHHMH..",
+      "..HMMMMH..",
+      "..HMBBMH..",
+      "..HMMMMH..",
+      "...HMMH...",
+      "....HH....",
+      "..........",
+      "..........",
+    ],
+    oneUpVolcano:[
+      "...KKKK...",
+      "..KCCCCK..",
+      "..KCKKCK..",
+      "..KCCCCK..",
+      "..KCBBCK..",
+      "..KCCCCK..",
+      "...KCCK...",
+      "....KK....",
+      "..........",
+      "..........",
+    ],
+    oneUpNite:[
+      "...BBBB...",
+      "..BAAAAB..",
+      "..BAJJAB..",
+      "..BAAAAB..",
+      "..BA.BAB..",
+      "..BAAAAB..",
+      "...BAAB...",
+      "....BB....",
+      "..........",
+      "..........",
+    ],
+    oneUpSpace:[
+      "...HHHH...",
+      "..HMMMMH..",
+      "..HMEEMH..",
+      "..HMMMMH..",
+      "..HMBBMH..",
+      "..HMMMMH..",
+      "...HMMH...",
+      "....HH....",
+      "..........",
+      "..........",
+    ],
+    oneUpSkyRuins:[
+      "...HHHH...",
+      "..HIIIIH..",
+      "..HIHHIH..",
+      "..HIIIIH..",
+      "..HIBBIH..",
+      "..HIIIIH..",
+      "...HIIH...",
+      "....HH....",
       "..........",
       "..........",
     ],
@@ -976,6 +1108,14 @@
       "..APA.......",
       "...A........"
     ],
+    bgChainBirdSmall:[
+      "..A..A......",
+      ".AHAAHA.....",
+      "AHHHHHAI....",
+      ".AHHHIA.....",
+      "..AIA.......",
+      "...A........"
+    ],
     bgDroneSmall:[
       "..IIIIIIII..",
       ".IIJJIIJJII.",
@@ -1013,6 +1153,36 @@
       "JJJJJJJJJJJJJJJJJJ......",
       "JJJJJJJJJJJJJJJJJJ......",
       "........................"
+    ],
+    bgSkyRuinsLarge:[
+      "......IIIIIIII......IIII",
+      "....IIHHHHHHHHII..IIHHHH",
+      "...IIHHIIIIIIHHIIIIHHIIH",
+      "..IIHHIIHHHHIIHHIIHHIIHH",
+      "..IIHHIIHHHHIIHHIIHHIIHH",
+      "...IIHHIIIIIIHHIIIIHHIIH",
+      "....IIHHHHHHHHII..IIHHHH",
+      "......IIIIIIII......IIII",
+      ".........PP.............",
+      "........PPPP............",
+      ".......PPJJPP...........",
+      "........................"
+    ],
+    bgGrappleSpireLarge:[
+      "........HH........",
+      ".......HIIH.......",
+      "......HIIIIH......",
+      ".....HIIHHIIH.....",
+      "....HIIH..HIIH....",
+      "....HIIH..HIIH....",
+      "....HIIH..HIIH....",
+      "....HIIH..HIIH....",
+      "....HIIH..HIIH....",
+      "....HIIH..HIIH....",
+      "...HHIIHHHHIIHH...",
+      "..HHIIIIIIIIIIHH..",
+      ".HHHHHHHHHHHHHHHH.",
+      ".................."
     ],
     bgVineLarge:[
       "....L.......",

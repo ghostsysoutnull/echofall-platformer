@@ -92,6 +92,7 @@
     CASTLE:  { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     ICE:     { gravity: 0.30, groundFriction: 0.95, airFriction: 0.97 },
     VOLCANO: { gravity: 0.36, groundFriction: 0.80, airFriction: 0.94 },
+    SKYRUINS:{ gravity: 0.33, groundFriction: 0.83, airFriction: 0.95 },
     NITE:    { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     SPACE:   { gravity: 0.28, groundFriction: 0.84, airFriction: 0.96 }
   };
@@ -108,6 +109,7 @@
     [{ type: 1, x: 28, y: 7 }, { type: 2, x: 56, y: 6 }, { type: 3, x: 82, y: 8 }],
     [{ type: 1, x: 26, y: 6 }, { type: 2, x: 52, y: 7 }, { type: 3, x: 76, y: 5 }],
     [{ type: 1, x: 24, y: 7 }, { type: 2, x: 48, y: 6 }, { type: 3, x: 72, y: 8 }],
+    [{ type: 1, x: 30, y: 6 }, { type: 2, x: 58, y: 7 }, { type: 3, x: 86, y: 6 }],
     [{ type: 1, x: 22, y: 6 }, { type: 2, x: 46, y: 7 }, { type: 3, x: 70, y: 5 }],
     [{ type: 1, x: 24, y: 6 }, { type: 2, x: 58, y: 7 }, { type: 3, x: 84, y: 6 }, { type: 2, x: 72, y: 5 }]
   ];
@@ -137,11 +139,11 @@
   // Characters
   // =========================
   const CHARACTERS = [
-    { name: "RANGER",   anim: ["p0","p1"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
-    { name: "BUNNY",    anim: ["b0","b1"], jumpMul: 1.22, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
-    { name: "NINJA",    anim: ["n0","n1"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 1, duckFlight: 0  },
-    { name: "ROBOT",    anim: ["r0","r1"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
-    { name: "DUCK",     anim: ["du0","du1"],jumpMul: 1.00, w: 20, h: 10, doubleJumps: 0, duckFlight: 26 },
+    { name: "RANGER",   anim: ["playerRangerIdle","playerRangerRun"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
+    { name: "BUNNY",    anim: ["playerBunnyIdle","playerBunnyRun"], jumpMul: 1.22, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
+    { name: "NINJA",    anim: ["playerNinjaIdle","playerNinjaRun"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 1, duckFlight: 0  },
+    { name: "ROBOT",    anim: ["playerRobotIdle","playerRobotRun"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
+    { name: "DUCK",     anim: ["playerDuckIdle","playerDuckRun"],jumpMul: 1.00, w: 20, h: 10, doubleJumps: 0, duckFlight: 26 },
     { name: "SKELETON", anim: null,        jumpMul: 1.00, w: 10, h: 20, doubleJumps: 0, duckFlight: 0  }
   ];
 
@@ -529,6 +531,10 @@
         this.drawSprite(SPRITES.bgBlimpLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "rockChunk") {
         this.drawSprite(SPRITES.bgRockChunkLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "skyRuins") {
+        this.drawSprite(SPRITES.bgSkyRuinsLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "grappleSpire") {
+        this.drawSprite(SPRITES.bgGrappleSpireLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "moonBalloon") {
         this.drawSprite(SPRITES.bgMoonBalloonLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "shootingGlider" || actor.type === "stationShuttle" || actor.type === "airplane") {
@@ -537,6 +543,8 @@
         this.drawSprite(SPRITES.bgTugLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "bird") {
         this.drawSprite(SPRITES.bgBirdSmall, sx, sy, actor.scale || 1);
+      } else if (actor.type === "chainBird") {
+        this.drawSprite(SPRITES.bgChainBirdSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "canopyBird" || actor.type === "raven" || actor.type === "snowOwl") {
         this.drawSprite(SPRITES.bgBirdSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "drone") {
@@ -712,13 +720,13 @@
       const alt = ((p.anim >> 4) & 1);
 
       if (name === "SKELETON") {
-        const top = running ? (alt ? SPRITES.st1 : SPRITES.st0) : SPRITES.st0;
-        const bot = running ? (alt ? SPRITES.sb1 : SPRITES.sb0) : SPRITES.sb0;
+        const top = running ? (alt ? SPRITES.playerSkeletonTopRun : SPRITES.playerSkeletonTopIdle) : SPRITES.playerSkeletonTopIdle;
+        const bot = running ? (alt ? SPRITES.playerSkeletonBottomRun : SPRITES.playerSkeletonBottomIdle) : SPRITES.playerSkeletonBottomIdle;
         return top.concat(bot);
       }
 
       if (name === "DUCK") {
-        const spr = p.quackFrame ? SPRITES.duq : (running ? (alt ? SPRITES.du1 : SPRITES.du0) : SPRITES.du0);
+        const spr = p.quackFrame ? SPRITES.playerDuckQuack : (running ? (alt ? SPRITES.playerDuckRun : SPRITES.playerDuckIdle) : SPRITES.playerDuckIdle);
         return spr;
       }
 
@@ -1207,12 +1215,12 @@
       const f = ((enemy.anim >> 3) & 1);
       if (enemy.type === 0) {
         return theme === "CASTLE"
-          ? (((enemy.anim >> 4) & 1) ? SPRITES.ce1 : SPRITES.ce0)
-          : (((enemy.anim >> 4) & 1) ? SPRITES.e1 : SPRITES.e0);
+          ? (((enemy.anim >> 4) & 1) ? SPRITES.enemyCastleWalkerRun : SPRITES.enemyCastleWalkerIdle)
+          : (((enemy.anim >> 4) & 1) ? SPRITES.enemyWalkerRun : SPRITES.enemyWalkerIdle);
       }
-      if (enemy.type === 1) return theme === "CASTLE" ? (f ? SPRITES.cb1 : SPRITES.cb0) : (f ? SPRITES.ba1 : SPRITES.ba0);
-      if (enemy.type === 2) return theme === "CASTLE" ? (f ? SPRITES.cf1 : SPRITES.cf0) : (f ? SPRITES.fa1 : SPRITES.fa0);
-      return theme === "CASTLE" ? (f ? SPRITES.cg1 : SPRITES.cg0) : (f ? SPRITES.ga1 : SPRITES.ga0);
+      if (enemy.type === 1) return theme === "CASTLE" ? (f ? SPRITES.enemyCastleBatFlapB : SPRITES.enemyCastleBatFlapA) : (f ? SPRITES.enemyBatFlapB : SPRITES.enemyBatFlapA);
+      if (enemy.type === 2) return theme === "CASTLE" ? (f ? SPRITES.enemyCastleFalconFlapB : SPRITES.enemyCastleFalconFlapA) : (f ? SPRITES.enemyFalconFlapB : SPRITES.enemyFalconFlapA);
+      return theme === "CASTLE" ? (f ? SPRITES.enemyCastleGhostFlapB : SPRITES.enemyCastleGhostFlapA) : (f ? SPRITES.enemyGhostFlapB : SPRITES.enemyGhostFlapA);
     }
 
     spawnEnemyShatter(enemy, theme) {
@@ -1313,30 +1321,46 @@
 
     collectibleSprite(tileId) {
       const theme = getThemeForLevel(this.levelIndex);
-      if (theme === "CASTLE") return tileId === 2 ? SPRITES.ccoin : SPRITES.bccoin;
-      if (tileId === 2) return theme === "JUNGLE" ? SPRITES.berry : theme === "FACTORY" ? SPRITES.gear : (theme === "ICE" || theme === "SPACE") ? SPRITES.gem : SPRITES.coin;
-      return theme === "JUNGLE" ? SPRITES.bberry : theme === "FACTORY" ? SPRITES.bgear : (theme === "ICE" || theme === "SPACE") ? SPRITES.bgem : SPRITES.bcoin;
+      if (theme === "CASTLE") return tileId === 2 ? SPRITES.coinCastle : SPRITES.coinCastleBig;
+      if (theme === "SKYRUINS") return tileId === 2 ? SPRITES.coinSkyRuins : SPRITES.coinSkyRuinsBig;
+      if (tileId === 2) return theme === "JUNGLE" ? SPRITES.coinJungle : theme === "FACTORY" ? SPRITES.coinFactory : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGem : SPRITES.coinDay;
+      return theme === "JUNGLE" ? SPRITES.coinJungleBig : theme === "FACTORY" ? SPRITES.coinFactoryBig : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGemBig : SPRITES.coinDayBig;
+    }
+
+    oneUpSpriteForTheme(theme) {
+      if (theme === "JUNGLE") return SPRITES.oneUpJungle;
+      if (theme === "AFTERNOON") return SPRITES.oneUpAfternoon;
+      if (theme === "FACTORY") return SPRITES.oneUpFactory;
+      if (theme === "CASTLE") return SPRITES.oneUpCastle;
+      if (theme === "ICE") return SPRITES.oneUpIce;
+      if (theme === "VOLCANO") return SPRITES.oneUpVolcano;
+      if (theme === "SKYRUINS") return SPRITES.oneUpSkyRuins;
+      if (theme === "NITE") return SPRITES.oneUpNite;
+      if (theme === "SPACE") return SPRITES.oneUpSpace;
+      return SPRITES.oneUpDay;
     }
 
     tileSprite(tileId) {
       const theme = getThemeForLevel(this.levelIndex);
       if (tileId === 1) {
-        return theme === "JUNGLE" ? SPRITES.jt1 :
-               theme === "FACTORY" ? SPRITES.ft1 :
-               theme === "CASTLE" ? SPRITES.ct1 :
-               theme === "ICE" ? SPRITES.it1 :
-               theme === "VOLCANO" ? SPRITES.vt1 :
-               theme === "SPACE" ? SPRITES.spt1 :
-               theme === "NITE" ? SPRITES.nt1 : SPRITES.t1;
+         return theme === "JUNGLE" ? SPRITES.tileJungleA :
+           theme === "FACTORY" ? SPRITES.tileFactoryA :
+           theme === "CASTLE" ? SPRITES.tileCastleA :
+           theme === "ICE" ? SPRITES.tileIceA :
+           theme === "VOLCANO" ? SPRITES.tileVolcanoA :
+           theme === "SKYRUINS" ? SPRITES.tileSkyRuinsA :
+           theme === "SPACE" ? SPRITES.tileSpaceA :
+           theme === "NITE" ? SPRITES.tileNiteA : SPRITES.tileDayA;
       }
       if (tileId === 4) {
-        return theme === "JUNGLE" ? SPRITES.jt4 :
-               theme === "FACTORY" ? SPRITES.ft4 :
-               theme === "CASTLE" ? SPRITES.ct4 :
-               theme === "ICE" ? SPRITES.it4 :
-               theme === "VOLCANO" ? SPRITES.vt4 :
-               theme === "SPACE" ? SPRITES.spt4 :
-               theme === "NITE" ? SPRITES.nt4 : SPRITES.t4;
+         return theme === "JUNGLE" ? SPRITES.tileJungleB :
+           theme === "FACTORY" ? SPRITES.tileFactoryB :
+           theme === "CASTLE" ? SPRITES.tileCastleB :
+           theme === "ICE" ? SPRITES.tileIceB :
+           theme === "VOLCANO" ? SPRITES.tileVolcanoB :
+           theme === "SKYRUINS" ? SPRITES.tileSkyRuinsB :
+           theme === "SPACE" ? SPRITES.tileSpaceB :
+           theme === "NITE" ? SPRITES.tileNiteB : SPRITES.tileDayB;
       }
       return null;
     }
@@ -1814,6 +1838,15 @@
         for (let i=0;i<18;i++){let x=((i*37-(camx*0.6))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,92,10,98);}
         gfx.fillStyle="#ff6a0020";
         for (let i=0;i<28;i++){let x=((i*19-(camx*0.9))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,0,4,28);}
+      } else if (theme === "SKYRUINS") {
+        gfx.fillStyle="#8fc0ff"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        const p1=((camx*0.14)|0)%CANVAS_W, p2=((camx*0.28)|0)%CANVAS_W;
+        gfx.fillStyle="#d9ecff";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x+20,24,58,10); gfx.fillRect(x+148,38,74,12); gfx.fillRect(x+250,20,50,10);}
+        gfx.fillStyle="#5577a8";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,120,240,70); gfx.fillRect(x+90,102,260,88); gfx.fillRect(x+200,114,180,76);}
+        gfx.fillStyle="#2f4568";
+        for (let i=0;i<14;i++){let x=((i*33-(camx*0.46))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,84,9,106);}
       } else if (theme === "NITE") {
         gfx.fillStyle="#0b0f2a"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         gfx.fillStyle="#a8c7ff";
@@ -1864,15 +1897,15 @@
       const alt = ((p.anim >> 4) & 1);
 
       if (name === "SKELETON") {
-        const top = running ? (alt ? SPRITES.st1 : SPRITES.st0) : SPRITES.st0;
-        const bot = running ? (alt ? SPRITES.sb1 : SPRITES.sb0) : SPRITES.sb0;
+        const top = running ? (alt ? SPRITES.playerSkeletonTopRun : SPRITES.playerSkeletonTopIdle) : SPRITES.playerSkeletonTopIdle;
+        const bot = running ? (alt ? SPRITES.playerSkeletonBottomRun : SPRITES.playerSkeletonBottomIdle) : SPRITES.playerSkeletonBottomIdle;
         this.drawSprite(top, px, py, 1);
         this.drawSprite(bot, px, py + 10, 1);
         return;
       }
 
       if (name === "DUCK") {
-        const spr = p.quackFrame ? SPRITES.duq : (running ? (alt ? SPRITES.du1 : SPRITES.du0) : SPRITES.du0);
+        const spr = p.quackFrame ? SPRITES.playerDuckQuack : (running ? (alt ? SPRITES.playerDuckRun : SPRITES.playerDuckIdle) : SPRITES.playerDuckIdle);
         this.drawSprite(spr, px, py, 1);
         return;
       }
@@ -1906,29 +1939,29 @@
           }
         }
         else if (id === 2 || id === 5) this.drawSprite(this.collectibleSprite(id), px, py, 1);
-        else if (id === 6) this.drawSprite(theme === "CASTLE" ? SPRITES.coneup : theme === "JUNGLE" ? SPRITES.banana : SPRITES.oneup, px, py, 1);
-        else if (id === 7) this.drawSprite((t & 1) ? SPRITES.lav0 : SPRITES.lav1, px, py, 1);
-        else if (id === 10) this.drawSprite(((this.player.anim >> 3) & 1) ? SPRITES.hbt1 : SPRITES.hbt0, px, py, 1);
-        else if (id === 8) this.drawSprite(((this.player.anim >> 3) & 1) ? SPRITES.hbb1 : SPRITES.hbb0, px, py, 1);
-        else if (id === 11) this.drawSprite(SPRITES.hut, px, py, 1);
-        else if (id === 9) this.drawSprite(SPRITES.hub, px, py, 1);
+        else if (id === 6) this.drawSprite(this.oneUpSpriteForTheme(theme), px, py, 1);
+        else if (id === 7) this.drawSprite((t & 1) ? SPRITES.lavaTileA : SPRITES.lavaTileB, px, py, 1);
+        else if (id === 10) this.drawSprite(((this.player.anim >> 3) & 1) ? SPRITES.helpBlockTopUnusedB : SPRITES.helpBlockTopUnusedA, px, py, 1);
+        else if (id === 8) this.drawSprite(((this.player.anim >> 3) & 1) ? SPRITES.helpBlockBottomUnusedB : SPRITES.helpBlockBottomUnusedA, px, py, 1);
+        else if (id === 11) this.drawSprite(SPRITES.helpBlockTopUsed, px, py, 1);
+        else if (id === 9) this.drawSprite(SPRITES.helpBlockBottomUsed, px, py, 1);
       }
 
       if (this.goal) {
         const baseX = (this.goal.x - this.cameraX) | 0;
         const baseY = (this.goal.baseY - this.cameraY) | 0;
         for (let j = 1; j <= this.goal.poleHeightTiles; j++) {
-          this.drawSprite(((j ^ t) & 1) ? SPRITES.pole0 : SPRITES.pole1, baseX, baseY - j*TILE_SIZE, 1);
+          this.drawSprite(((j ^ t) & 1) ? SPRITES.goalPoleSegmentA : SPRITES.goalPoleSegmentB, baseX, baseY - j*TILE_SIZE, 1);
         }
-        this.drawSprite(SPRITES.polet, baseX, baseY - (this.goal.poleHeightTiles + 1) * TILE_SIZE, 1);
-        this.drawSprite(t === 0 ? SPRITES.flag0 : t === 1 ? SPRITES.flag1 : SPRITES.flag2, (this.goal.flagX - this.cameraX) | 0, (this.goal.flagY - this.cameraY) | 0, 1);
+        this.drawSprite(SPRITES.goalPoleTop, baseX, baseY - (this.goal.poleHeightTiles + 1) * TILE_SIZE, 1);
+        this.drawSprite(t === 0 ? SPRITES.goalFlagA : t === 1 ? SPRITES.goalFlagB : SPRITES.goalFlagC, (this.goal.flagX - this.cameraX) | 0, (this.goal.flagY - this.cameraY) | 0, 1);
       }
 
       for (let i = 0; i < this.coinDrops.length; i++) this.drawSprite(this.collectibleSprite(2), this.coinDrops[i].x - this.cameraX, this.coinDrops[i].y - this.cameraY, 1);
       for (let i = 0; i < this.magnetItems.length; i++) {
         const item = this.magnetItems[i];
         if (item.tileId === 6) {
-          this.drawSprite(theme === "CASTLE" ? SPRITES.coneup : theme === "JUNGLE" ? SPRITES.banana : SPRITES.oneup, item.x - this.cameraX, item.y - this.cameraY, 1);
+          this.drawSprite(this.oneUpSpriteForTheme(theme), item.x - this.cameraX, item.y - this.cameraY, 1);
         } else {
           this.drawSprite(this.collectibleSprite(item.tileId), item.x - this.cameraX, item.y - this.cameraY, 1);
         }

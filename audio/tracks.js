@@ -7,6 +7,7 @@
     CASTLE: "CASTLE",
     ICE: "ICE",
     VOLCANO: "VOLCANO",
+    SKYRUINS: "SKYRUINS",
     NITE: "NITE",
     SPACE: "SPACE_01"
   };
@@ -45,6 +46,7 @@
       if (key === "CASTLE") return this.CASTLE(ctx, bus, aux, helpers);
       if (key === "ICE") return this.ICE(ctx, bus, aux, helpers);
       if (key === "VOLCANO") return this.VOLCANO(ctx, bus, aux, helpers);
+      if (key === "SKYRUINS") return this.SKYRUINS(ctx, bus, aux, helpers);
       if (key === "NITE") return this.NITE(ctx, bus, aux, helpers);
       return this.SPACE_01(ctx, bus, aux, helpers);
     },
@@ -423,6 +425,54 @@
           nodes.push(...ping({ freq: f, type: "triangle", peak: 0.10, dur: 0.20, lpHz: 1400, toDelay: Math.random() < 0.30, bus, aux }));
         }
       }, 800);
+      timers.push(id);
+
+      return { nodes, timers };
+    },
+
+    SKYRUINS: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      const padGain = ctx.createGain();
+      padGain.gain.value = 0.24;
+
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 1900;
+      lp.Q.value = 0.7;
+      padGain.connect(lp);
+      lp.connect(bus);
+
+      const freqs = [174.61, 220.00, 261.63];
+      for (let i = 0; i < freqs.length; i++) {
+        const osc = ctx.createOscillator();
+        osc.type = i === 0 ? "triangle" : "sine";
+        osc.frequency.value = freqs[i] * (i === 2 ? 0.5 : 1);
+        osc.connect(padGain);
+        osc.start();
+        nodes.push(osc);
+      }
+
+      const sway = ctx.createOscillator();
+      sway.type = "sine";
+      sway.frequency.value = 0.10;
+      const swayAmt = ctx.createGain();
+      swayAmt.gain.value = 0.08;
+      sway.connect(swayAmt);
+      swayAmt.connect(padGain.gain);
+      sway.start();
+
+      nodes.push(padGain, lp, sway, swayAmt);
+
+      const id = setInterval(() => {
+        if (Math.random() < 0.72) {
+          const tones = [523.25, 587.33, 659.25, 783.99, 880.00];
+          const f = tones[(Math.random() * tones.length) | 0] * (Math.random() < 0.35 ? 0.5 : 1);
+          nodes.push(...ping({ freq: f, type: "triangle", peak: 0.09, dur: 0.22, lpHz: 3600, toDelay: Math.random() < 0.35, bus, aux }));
+        }
+      }, 760);
       timers.push(id);
 
       return { nodes, timers };
