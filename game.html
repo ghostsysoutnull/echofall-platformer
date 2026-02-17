@@ -3231,6 +3231,46 @@
       const spr = running ? (alt ? SPRITES[anim[1]] : SPRITES[anim[0]]) : SPRITES[anim[0]];
       this.drawSprite(spr, px, py, 1);
 
+      if (name === "ROBOT") {
+        const pulseReady = this.robotPulse.timer <= 0 && this.robotPulse.cooldown <= 0;
+        const phase2Ratio = ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold > 0 ? (this.score / ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold) : 0;
+        const phase2Near = phase2Ratio >= 0.8 && phase2Ratio < 1;
+        const phase2Ready = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
+        const phase1Ready = pulseReady && !phase2Ready;
+        if (phase1Ready) {
+          const readyPulse = (Math.sin(this.player.anim * 0.18) + 1) * 0.5;
+          gfx.globalAlpha = 0.10 + readyPulse * 0.12;
+          gfx.fillStyle = "#3be7ff";
+          gfx.fillRect((px + 2) | 0, (py + 2) | 0, 6, 5);
+          gfx.globalAlpha = 1;
+        }
+        if (pulseReady && phase2Near) {
+          const nearPulse = (Math.sin(this.player.anim * 0.24) + 1) * 0.5;
+          gfx.globalAlpha = 0.12 + nearPulse * 0.20;
+          gfx.fillStyle = "#73f1ff";
+          gfx.fillRect((px + 2) | 0, (py + 2) | 0, 6, 5);
+          gfx.globalAlpha = 1;
+        }
+        if (pulseReady && phase2Ready) {
+          const pulse = (Math.sin(this.player.anim * 0.20) + 1) * 0.5;
+          gfx.globalAlpha = 0.35 + pulse * 0.45;
+          gfx.fillStyle = "#ff2a43";
+          gfx.fillRect((px + 2) | 0, (py + 2) | 0, 6, 5);
+          gfx.fillStyle = "#ffd0d0";
+          gfx.fillRect((px + 3) | 0, (py + 3) | 0, 1, 1);
+          gfx.fillRect((px + 6) | 0, (py + 3) | 0, 1, 1);
+          gfx.globalAlpha = 1;
+        }
+
+        if (this.robotPulse.timer > 0 && this.robotPulse.phase2Active) {
+          const activePulse = (Math.sin(this.player.anim * 0.28) + 1) * 0.5;
+          gfx.globalAlpha = 0.35 + activePulse * 0.35;
+          gfx.strokeStyle = "#8ef6ff";
+          gfx.strokeRect((px - 2) | 0, (py - 2) | 0, p.w + 4, p.h + 4);
+          gfx.globalAlpha = 1;
+        }
+      }
+
       if (name === "PALADIN" && (this.paladinDash.active || this.paladinDash.afterglow > 0)) {
         gfx.globalAlpha = this.paladinDash.active ? 0.65 : Math.max(0.2, this.paladinDash.afterglow / PALADIN_AEGIS.afterglowFrames);
         gfx.strokeStyle = this.holyWard ? "#f3d44a" : "#9fd8ff";
