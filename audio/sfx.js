@@ -6,6 +6,13 @@
       engine.tone(1760, 0.08, 0.14);
     },
 
+    oneUpBurstSparkle(engine) {
+      engine.tone(1320, 0.04, 0.00, "sine", 0.05);
+      engine.tone(1568, 0.04, 0.05, "sine", 0.05);
+      engine.tone(1760, 0.05, 0.10, "triangle", 0.05);
+      engine.tone(2093, 0.05, 0.16, "triangle", 0.045);
+    },
+
     flagRaise(engine) {
       engine.tone(660, 0.06, 0.00);
       engine.tone(990, 0.08, 0.08);

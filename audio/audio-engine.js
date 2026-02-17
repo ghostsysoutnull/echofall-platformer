@@ -195,6 +195,14 @@
       this.tone(1760, 0.08, 0.14);
     }
 
+    oneUpBurstSparkle() {
+      if (this.sfx && this.sfx.oneUpBurstSparkle) return this.sfx.oneUpBurstSparkle(this);
+      this.tone(1320, 0.04, 0.00, "sine", 0.05);
+      this.tone(1568, 0.04, 0.05, "sine", 0.05);
+      this.tone(1760, 0.05, 0.10, "triangle", 0.05);
+      this.tone(2093, 0.05, 0.16, "triangle", 0.045);
+    }
+
     flagRaiseJingle() {
       if (this.sfx && this.sfx.flagRaise) return this.sfx.flagRaise(this);
       this.tone(660, 0.06, 0.00);
