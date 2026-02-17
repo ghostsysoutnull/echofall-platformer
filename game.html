@@ -132,7 +132,7 @@
     ],
     1: [
       {
-        type: "balloon",
+        type: "airplane",
         theme: "AFTERNOON",
         x: 72,
         y: 26,
@@ -145,7 +145,7 @@
         scale: 1
       },
       {
-        type: "blimp",
+        type: "zeppelin",
         theme: "AFTERNOON",
         x: 222,
         y: 52,
@@ -777,18 +777,18 @@
       "......PPPPPP......"
     ],
     bgShuttleLarge:[
-      "........IIIIIIIIIIII........",
-      "......IIIMMMMMMMMMMIII......",
+      ".............II.............",
+      "...........IIHHII...........",
+      "......IIIIIIIIIIIIIIII......",
       "....IIIMMMMMMMMMMMMMMIII....",
-      "...IIMMMMMJJJJJJMMMMMMII....",
-      "..IIMMMMJJJJJJJJJJMMMMMII...",
-      "..IIMMMMJJJIIIIJJJMMMMMII...",
-      "..IIMMMMJJJJJJJJJJMMMMMII...",
-      "...IIMMMMMJJJJJJMMMMMMII....",
+      "...IIMMMHHHHHHHHHHHHMMMII...",
+      "..IIMMMMMMMMMMMMMMMMMMMMII..",
+      ".IIMMMMJJJJJJJJJJJJJJMMMMII.",
+      "..IIMMMMMMMJJJJJJMMMMMMMII..",
       "....IIIMMMMMMMMMMMMMMIII....",
-      "......IIIMMMMMMMMMMIII......",
-      "........IIIIIIIIIIII........",
-      "............HH.............."
+      "......IIIIIIIIIIIIIIII......",
+      ".........PPPP..PPPP.........",
+      "........PP........PP........"
     ],
     bgTugLarge:[
       "........JJJJJJJJJJJJ........",
@@ -1182,7 +1182,7 @@
 
       if (actor.type === "balloon") {
         this.drawSprite(SPRITES.bgBalloonLarge, sx, sy, actor.scale || 1);
-      } else if (actor.type === "blimp") {
+      } else if (actor.type === "blimp" || actor.type === "zeppelin") {
         this.drawSprite(SPRITES.bgBlimpLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "ruinsSilhouette") {
         this.drawSprite(SPRITES.bgRuinsLarge, sx, sy, actor.scale || 1);
@@ -1206,7 +1206,7 @@
         this.drawSprite(SPRITES.bgRockChunkLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "moonBalloon") {
         this.drawSprite(SPRITES.bgMoonBalloonLarge, sx, sy, actor.scale || 1);
-      } else if (actor.type === "shootingGlider" || actor.type === "stationShuttle") {
+      } else if (actor.type === "shootingGlider" || actor.type === "stationShuttle" || actor.type === "airplane") {
         this.drawSprite(SPRITES.bgShuttleLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "debrisTug") {
         this.drawSprite(SPRITES.bgTugLarge, sx, sy, actor.scale || 1);
