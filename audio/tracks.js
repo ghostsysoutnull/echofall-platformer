@@ -9,6 +9,7 @@
     VOLCANO: "VOLCANO",
     SKYRUINS: "SKYRUINS",
     JAPAN: "JAPAN",
+    HORROR: "HORROR",
     NITE: "NITE",
     SPACE: "SPACE_01"
   };
@@ -49,6 +50,7 @@
       if (key === "VOLCANO") return this.VOLCANO(ctx, bus, aux, helpers);
       if (key === "SKYRUINS") return this.SKYRUINS(ctx, bus, aux, helpers);
       if (key === "JAPAN") return this.JAPAN(ctx, bus, aux, helpers);
+      if (key === "HORROR") return this.HORROR(ctx, bus, aux, helpers);
       if (key === "NITE") return this.NITE(ctx, bus, aux, helpers);
       return this.SPACE_01(ctx, bus, aux, helpers);
     },
@@ -522,6 +524,65 @@
           nodes.push(...ping({ freq: f, type: "triangle", peak: 0.09, dur: 0.19, lpHz: 2800, toDelay: Math.random() < 0.28, bus, aux }));
         }
       }, 620);
+      timers.push(id);
+
+      return { nodes, timers };
+    },
+
+    HORROR: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      const droneGain = ctx.createGain();
+      droneGain.gain.value = 0.26;
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 420;
+      bp.Q.value = 1.1;
+      droneGain.connect(bp);
+      bp.connect(bus);
+
+      const low = ctx.createOscillator();
+      low.type = "triangle";
+      low.frequency.value = 65.41;
+      const high = ctx.createOscillator();
+      high.type = "sine";
+      high.frequency.value = 98.00;
+      low.connect(droneGain);
+      high.connect(droneGain);
+      low.start();
+      high.start();
+
+      const wobble = ctx.createOscillator();
+      wobble.type = "sine";
+      wobble.frequency.value = 0.07;
+      const wobbleAmt = ctx.createGain();
+      wobbleAmt.gain.value = 0.12;
+      wobble.connect(wobbleAmt);
+      wobbleAmt.connect(droneGain.gain);
+      wobble.start();
+
+      const air = makeNoiseSource(ctx, 1.0, 0.26);
+      const airHp = ctx.createBiquadFilter();
+      airHp.type = "highpass";
+      airHp.frequency.value = 1200;
+      const airGain = ctx.createGain();
+      airGain.gain.value = 0.08;
+      air.connect(airHp);
+      airHp.connect(airGain);
+      airGain.connect(bus);
+      air.start();
+
+      nodes.push(droneGain, bp, low, high, wobble, wobbleAmt, air, airHp, airGain);
+
+      const id = setInterval(() => {
+        if (Math.random() < 0.74) {
+          const tones = [196.00, 220.00, 246.94, 293.66, 329.63, 392.00];
+          const f = tones[(Math.random() * tones.length) | 0] * (Math.random() < 0.42 ? 0.5 : 1);
+          nodes.push(...ping({ freq: f, type: "sine", peak: 0.085, dur: 0.20, lpHz: 2200, toDelay: Math.random() < 0.35, bus, aux }));
+        }
+      }, 710);
       timers.push(id);
 
       return { nodes, timers };

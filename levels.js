@@ -13,11 +13,17 @@
 const GROUND_ROW = "###########..#######.....####....#####....######....####....#####....######....####....#########";
 const DOUBLE_GROUND_ROW = GROUND_ROW + GROUND_ROW;
 const TRIPLE_GROUND_ROW = GROUND_ROW + GROUND_ROW + GROUND_ROW;
+const QUAD_GROUND_ROW = GROUND_ROW + GROUND_ROW + GROUND_ROW + GROUND_ROW;
 const EMPTY_ROW = ".".repeat(96);
 const buildTripleRow = (left = "", middle = "", right = "") =>
   left.padEnd(96, ".").slice(0, 96) +
   middle.padEnd(96, ".").slice(0, 96) +
   right.padEnd(96, ".").slice(0, 96);
+const buildQuadRow = (a = "", b = "", c = "", d = "") =>
+  a.padEnd(96, ".").slice(0, 96) +
+  b.padEnd(96, ".").slice(0, 96) +
+  c.padEnd(96, ".").slice(0, 96) +
+  d.padEnd(96, ".").slice(0, 96);
 
 const GAME_LEVELS = [
   {
@@ -393,6 +399,43 @@ const GAME_LEVELS = [
       buildTripleRow(),
       buildTripleRow(),
       TRIPLE_GROUND_ROW
+    ]
+  },
+
+  {
+    name: "PHANTOM PROCESSION",
+    sequence: 9,
+    theme: "HORROR",
+    backgroundActors: [
+      { type: "hauntedMansion", theme: "HORROR", x: 72, y: 56, vx: 0.04, parallax: 0.09, bobAmp: 0.4, bobSpeed: 0.008, w: 24, h: 14, scale: 1 },
+      { type: "graveGate", theme: "HORROR", x: 194, y: 62, vx: -0.05, parallax: 0.12, bobAmp: 0.5, bobSpeed: 0.010, w: 24, h: 14, scale: 1 },
+      { type: "ghostLantern", theme: "HORROR", x: 316, y: 34, vx: 0.10, parallax: 0.22, bobAmp: 1.4, bobSpeed: 0.030, w: 10, h: 10, scale: 1 },
+      { type: "batSwarm", theme: "HORROR", x: 252, y: 28, vx: -0.16, parallax: 0.24, bobAmp: 1.0, bobSpeed: 0.036, w: 12, h: 6, scale: 1 }
+    ],
+    checkpoints: [
+      { xTile: 96, label: "Act 2: Grave March" },
+      { xTile: 192, label: "Act 3: Lantern Hollow" },
+      { xTile: 288, label: "Act 4: Eclipse Keep" }
+    ],
+    grid: [
+      buildQuadRow(),
+      buildQuadRow(),
+      buildQuadRow(),
+      buildQuadRow("..............BBB...............BBB...............BBB", "...........BBB..............BBB................BBB", "...........BBB..............BBB..............BBB", "..........BBB.............BBB..............BBB"),
+      buildQuadRow(),
+      buildQuadRow("....o...........E........o...........U", "....o...........o...........E..........o", ".....o...........V.........o...........W", "....o...........E...........o............O"),
+      buildQuadRow(".......BBB...............BBB.............BBB", ".......BBB...............BBB.............BBB", ".......BBB...............BBB.............BBB", ".......BBB...............BBB.............BBB"),
+      buildQuadRow(),
+      buildQuadRow("..H..S...........BBB.........V.........BBB", "....BBB...........E.........W.........BBB", ".....BBB..........E.........Y.........BBB", "....BBB...........E.........V.........BBB"),
+      buildQuadRow("....o...........o.............o", ".....o...........O...........o", "....o...........o.............o", "....o...........O.............o"),
+      buildQuadRow("......BBB.......E.......BBB..........BBB", "......BBB.......E.......BBB..........BBB", "......BBB.......E.......BBB..........BBB", "......BBB.......E.......BBB..........BBB"),
+      buildQuadRow(),
+      buildQuadRow("...............BBB.......................BBB..............Y", "....V.........BBB.............Y.........BBB.............W", "....W.........BBB.............Y.........BBB.............V", "....Y.........BBB.............W.........BBB.............Y"),
+      buildQuadRow("...o......o.......o..........o", "....o.......o.......o...........o", "....o......o........o...........o", "....o......o.......o............o"),
+      buildQuadRow(".......BBB..............BBB.................BBB", "........BBB.............BBB.................BBB", "........BBB.............BBB.................BBB", "........BBB.............BBB.............F...BBB"),
+      buildQuadRow(),
+      buildQuadRow(),
+      QUAD_GROUND_ROW
     ]
   }
 ];

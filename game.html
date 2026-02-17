@@ -94,6 +94,7 @@
     VOLCANO: { gravity: 0.36, groundFriction: 0.80, airFriction: 0.94 },
     SKYRUINS:{ gravity: 0.33, groundFriction: 0.83, airFriction: 0.95 },
     JAPAN:   { gravity: 0.34, groundFriction: 0.82, airFriction: 0.95 },
+    HORROR:  { gravity: 0.34, groundFriction: 0.81, airFriction: 0.95 },
     NITE:    { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     SPACE:   { gravity: 0.28, groundFriction: 0.84, airFriction: 0.96 }
   };
@@ -663,6 +664,10 @@
         this.drawSprite(SPRITES.bgJapanPagodaLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "toriiGate") {
         this.drawSprite(SPRITES.bgJapanToriiLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "hauntedMansion") {
+        this.drawSprite(SPRITES.bgHauntedMansionLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "graveGate") {
+        this.drawSprite(SPRITES.bgGraveGateLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "moonBalloon") {
         this.drawSprite(SPRITES.bgMoonBalloonLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "shootingGlider" || actor.type === "stationShuttle" || actor.type === "airplane") {
@@ -673,6 +678,10 @@
         this.drawSprite(SPRITES.bgBirdSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "paperKite") {
         this.drawSprite(SPRITES.bgJapanKiteSmall, sx, sy, actor.scale || 1);
+      } else if (actor.type === "ghostLantern") {
+        this.drawSprite(SPRITES.bgGhostLanternSmall, sx, sy, actor.scale || 1);
+      } else if (actor.type === "batSwarm") {
+        this.drawSprite(SPRITES.bgBatSwarmSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "chainBird") {
         this.drawSprite(SPRITES.bgChainBirdSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "canopyBird" || actor.type === "raven" || actor.type === "snowOwl") {
@@ -1455,6 +1464,7 @@
       if (theme === "CASTLE") return tileId === 2 ? SPRITES.coinCastle : SPRITES.coinCastleBig;
       if (theme === "SKYRUINS") return tileId === 2 ? SPRITES.coinSkyRuins : SPRITES.coinSkyRuinsBig;
       if (theme === "JAPAN") return tileId === 2 ? SPRITES.coinJapan : SPRITES.coinJapanBig;
+      if (theme === "HORROR") return tileId === 2 ? SPRITES.coinHorror : SPRITES.coinHorrorBig;
       if (tileId === 2) return theme === "JUNGLE" ? SPRITES.coinJungle : theme === "FACTORY" ? SPRITES.coinFactory : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGem : SPRITES.coinDay;
       return theme === "JUNGLE" ? SPRITES.coinJungleBig : theme === "FACTORY" ? SPRITES.coinFactoryBig : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGemBig : SPRITES.coinDayBig;
     }
@@ -1468,6 +1478,7 @@
       if (theme === "VOLCANO") return SPRITES.oneUpVolcano;
       if (theme === "SKYRUINS") return SPRITES.oneUpSkyRuins;
       if (theme === "JAPAN") return SPRITES.oneUpJapan;
+      if (theme === "HORROR") return SPRITES.oneUpHorror;
       if (theme === "NITE") return SPRITES.oneUpNite;
       if (theme === "SPACE") return SPRITES.oneUpSpace;
       return SPRITES.oneUpDay;
@@ -1483,6 +1494,7 @@
            theme === "VOLCANO" ? SPRITES.tileVolcanoA :
            theme === "SKYRUINS" ? SPRITES.tileSkyRuinsA :
                theme === "JAPAN" ? SPRITES.tileJapanA :
+             theme === "HORROR" ? SPRITES.tileHorrorA :
            theme === "SPACE" ? SPRITES.tileSpaceA :
            theme === "NITE" ? SPRITES.tileNiteA : SPRITES.tileDayA;
       }
@@ -1494,6 +1506,7 @@
            theme === "VOLCANO" ? SPRITES.tileVolcanoB :
            theme === "SKYRUINS" ? SPRITES.tileSkyRuinsB :
                theme === "JAPAN" ? SPRITES.tileJapanB :
+             theme === "HORROR" ? SPRITES.tileHorrorB :
            theme === "SPACE" ? SPRITES.tileSpaceB :
            theme === "NITE" ? SPRITES.tileNiteB : SPRITES.tileDayB;
       }
@@ -1997,6 +2010,17 @@
         for (let i=0;i<13;i++){let x=((i*37-(camx*0.50))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,88,8,102);}
         gfx.fillStyle="#ff9bc940";
         for (let i=0;i<20;i++){let x=((i*23-(camx*0.70))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,18,2,2);}
+      } else if (theme === "HORROR") {
+        gfx.fillStyle="#100817"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        const p1=((camx*0.16)|0)%CANVAS_W, p2=((camx*0.34)|0)%CANVAS_W;
+        gfx.fillStyle="#2b1633";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x,120,250,70); gfx.fillRect(x+92,104,270,86);}
+        gfx.fillStyle="#180b22";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,132,300,58); gfx.fillRect(x+70,116,286,74);}
+        gfx.fillStyle="#d7a8ff28";
+        for (let i=0;i<16;i++){let x=((i*29-(camx*0.48))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,80,6,110);}
+        gfx.fillStyle="#bff8ff20";
+        for (let i=0;i<26;i++){let x=((i*17-(camx*0.78))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,12,2,2);}
       } else if (theme === "NITE") {
         gfx.fillStyle="#0b0f2a"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         gfx.fillStyle="#a8c7ff";
