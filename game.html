@@ -47,6 +47,18 @@
     drag: 0.965,
     jitter: 0.18
   };
+  const ONEUP_RADIAL_BURST = {
+    ringLife: 20,
+    ringRadiusStart: 2,
+    ringRadiusEnd: 18,
+    particleCount: 18,
+    particleLifeMin: 14,
+    particleLifeMax: 24,
+    particleSpeedMin: 0.9,
+    particleSpeedMax: 2.1,
+    particleDrag: 0.95,
+    particleGravity: 0.04
+  };
   const PHYSICS_BY_THEME = {
     DAY:     { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     JUNGLE:  { gravity: 0.34, groundFriction: 0.83, airFriction: 0.95 },
@@ -799,6 +811,7 @@
       this.enemies = [];
       this.coinDrops = [];
       this.blockDebris = [];
+      this.oneupBursts = [];
       this.playerShatter = [];
       this.deathTimer = 0;
       this.deathReset = 0;
@@ -1487,6 +1500,34 @@
       }
     }
 
+    spawnOneUpRadialBurst(x, y) {
+      const cfg = ONEUP_RADIAL_BURST;
+      const burst = {
+        x,
+        y,
+        ringT: cfg.ringLife,
+        ringLife: cfg.ringLife,
+        particles: []
+      };
+
+      for (let i = 0; i < cfg.particleCount; i++) {
+        const angle = (i / cfg.particleCount) * 6.283 + (this.rand01() - 0.5) * 0.2;
+        const speed = cfg.particleSpeedMin + this.rand01() * (cfg.particleSpeedMax - cfg.particleSpeedMin);
+        const life = cfg.particleLifeMin + ((this.rand01() * (cfg.particleLifeMax - cfg.particleLifeMin + 1)) | 0);
+        burst.particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          t: life,
+          life,
+          col: this.rand01() > 0.4 ? PALETTE.F : PALETTE.H
+        });
+      }
+
+      this.oneupBursts.push(burst);
+    }
+
     collectTiles() {
       const p = this.player;
       const x0 = (p.x / TILE_SIZE) | 0;
@@ -1500,7 +1541,12 @@
           if (id === 7) return this.startLavaDeath(0);
           if (id === 2) { this.setTile(x,y,"."); this.addScore(1); this.audio.tone(740,0.03); }
           else if (id === 5) { this.setTile(x,y,"."); this.addScore(10); this.audio.tone(1040,0.05); }
-          else if (id === 6) { this.setTile(x,y,"."); this.lives++; this.audio.extraLifeJingle(); }
+          else if (id === 6) {
+            this.setTile(x,y,".");
+            this.lives++;
+            this.audio.extraLifeJingle();
+            this.spawnOneUpRadialBurst(x * TILE_SIZE + TILE_SIZE * 0.5, y * TILE_SIZE + TILE_SIZE * 0.5);
+          }
         }
       }
     }
@@ -1685,6 +1731,24 @@
         d.y += d.vy;
       }
       this.blockDebris = this.blockDebris.filter(d => !d.dead);
+
+      for (let i = 0; i < this.oneupBursts.length; i++) {
+        const burst = this.oneupBursts[i];
+        if (burst.ringT > 0) burst.ringT--;
+
+        const parts = burst.particles;
+        for (let j = 0; j < parts.length; j++) {
+          const part = parts[j];
+          if (part.t-- <= 0) { part.dead = 1; continue; }
+          part.vx *= ONEUP_RADIAL_BURST.particleDrag;
+          part.vy = part.vy * ONEUP_RADIAL_BURST.particleDrag + ONEUP_RADIAL_BURST.particleGravity;
+          part.x += part.vx;
+          part.y += part.vy;
+        }
+        burst.particles = parts.filter(p => !p.dead);
+        if (burst.ringT <= 0 && burst.particles.length === 0) burst.dead = 1;
+      }
+      this.oneupBursts = this.oneupBursts.filter(b => !b.dead);
 
       // Enemies
       const levelTheme = getThemeForLevel(this.levelIndex);
@@ -2013,6 +2077,28 @@
         gfx.fillStyle = d.col;
         gfx.fillRect((d.x - this.cameraX) | 0, (d.y - this.cameraY) | 0, d.s, d.s);
       }
+
+      for (let i = 0; i < this.oneupBursts.length; i++) {
+        const burst = this.oneupBursts[i];
+        if (burst.ringT > 0) {
+          const ringP = 1 - (burst.ringT / burst.ringLife);
+          const ringR = ONEUP_RADIAL_BURST.ringRadiusStart + (ONEUP_RADIAL_BURST.ringRadiusEnd - ONEUP_RADIAL_BURST.ringRadiusStart) * ringP;
+          gfx.globalAlpha = 1 - ringP;
+          gfx.strokeStyle = PALETTE.F;
+          gfx.beginPath();
+          gfx.arc((burst.x - this.cameraX) | 0, (burst.y - this.cameraY) | 0, ringR, 0, 6.283);
+          gfx.stroke();
+        }
+
+        const parts = burst.particles;
+        for (let j = 0; j < parts.length; j++) {
+          const part = parts[j];
+          gfx.globalAlpha = part.life ? (part.t / part.life) : 1;
+          gfx.fillStyle = part.col;
+          gfx.fillRect((part.x - this.cameraX) | 0, (part.y - this.cameraY) | 0, 2, 2);
+        }
+      }
+      gfx.globalAlpha = 1;
 
       for (let i = 0; i < this.enemies.length; i++) {
         const e = this.enemies[i];
