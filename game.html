@@ -75,6 +75,7 @@
   };
   const PHYSICS_BY_THEME = {
     DAY:     { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
+    AFTERNOON:{ gravity: 0.35, groundFriction: 0.81, airFriction: 0.94 },
     JUNGLE:  { gravity: 0.34, groundFriction: 0.83, airFriction: 0.95 },
     FACTORY: { gravity: 0.35, groundFriction: 0.82, airFriction: 0.95 },
     CASTLE:  { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
@@ -90,6 +91,7 @@
   };
   const EXTRA_FLYERS_BY_LEVEL = [
     [{ type: 1, x: 26, y: 7 }, { type: 2, x: 58, y: 6 }, { type: 3, x: 80, y: 8 }],
+    [{ type: 1, x: 22, y: 6 }, { type: 2, x: 48, y: 7 }, { type: 3, x: 74, y: 6 }],
     [{ type: 1, x: 24, y: 6 }, { type: 2, x: 54, y: 7 }, { type: 3, x: 78, y: 5 }],
     [{ type: 1, x: 22, y: 6 }, { type: 2, x: 50, y: 7 }, { type: 3, x: 74, y: 6 }],
     [{ type: 1, x: 28, y: 7 }, { type: 2, x: 56, y: 6 }, { type: 3, x: 82, y: 8 }],
@@ -128,6 +130,47 @@
       }
     ],
     1: [
+      {
+        type: "balloon",
+        theme: "AFTERNOON",
+        x: 72,
+        y: 26,
+        vx: 0.12,
+        parallax: 0.24,
+        bobAmp: 2.6,
+        bobSpeed: 0.022,
+        w: 18,
+        h: 22,
+        scale: 1
+      },
+      {
+        type: "blimp",
+        theme: "AFTERNOON",
+        x: 222,
+        y: 52,
+        vx: -0.05,
+        parallax: 0.12,
+        bobAmp: 0.7,
+        bobSpeed: 0.009,
+        w: 24,
+        h: 12,
+        scale: 1
+      },
+      {
+        type: "bird",
+        theme: "AFTERNOON",
+        x: 38,
+        y: 42,
+        vx: 0.16,
+        parallax: 0.20,
+        bobAmp: 1.3,
+        bobSpeed: 0.032,
+        w: 12,
+        h: 6,
+        scale: 1
+      }
+    ],
+    2: [
       {
         type: "ruinsSilhouette",
         theme: "JUNGLE",
@@ -168,7 +211,7 @@
         scale: 1
       }
     ],
-    2: [
+    3: [
       {
         type: "railCrates",
         theme: "FACTORY",
@@ -209,7 +252,7 @@
         scale: 1
       }
     ],
-    3: [
+    4: [
       {
         type: "drawbridgeLift",
         theme: "CASTLE",
@@ -250,7 +293,7 @@
         scale: 1
       }
     ],
-    4: [
+    5: [
       {
         type: "frostyBalloon",
         theme: "ICE",
@@ -291,7 +334,7 @@
         scale: 1
       }
     ],
-    5: [
+    6: [
       {
         type: "ashBlimp",
         theme: "VOLCANO",
@@ -332,7 +375,7 @@
         scale: 1
       }
     ],
-    6: [
+    7: [
       {
         type: "moonBalloon",
         theme: "NITE",
@@ -373,7 +416,7 @@
         scale: 1
       }
     ],
-    7: [
+    8: [
       {
         type: "stationShuttle",
         theme: "SPACE",
@@ -1686,8 +1729,10 @@
           e.baseX = e.x;
           e.baseY = e.y;
         } else {
-          e.vx += (dx / dist) * pull;
-          e.vy += (dy / dist) * pull * 0.7;
+          // ground enemies: modify position directly because their AI resets `vx` each frame
+          // (enemy update does `e.vx = e.dir * ENEMY_SPEED`), so adding to vx had no effect.
+          e.x += (dx / dist) * pull;
+          e.y += (dy / dist) * pull * 0.7;
         }
 
         if (this.robotPulse.phase2Active && dist <= ROBOT_MAGNET_PULSE.enemyKillRadius) {
@@ -2198,6 +2243,28 @@
           const x = i*CANVAS_W - bx;
           gfx.fillRect(x+40,20,50,12); gfx.fillRect(x+65,14,30,10);
           gfx.fillRect(x+170,36,70,14); gfx.fillRect(x+200,30,40,10);
+        }
+      } else if (theme === "AFTERNOON") {
+        gfx.fillStyle = "#ffbf7f"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        const p1 = ((camx * 0.16) | 0) % CANVAS_W;
+        const p2 = ((camx * 0.30) | 0) % CANVAS_W;
+        gfx.fillStyle = "#ffd9a6";
+        for (let i = -1; i < 3; i++) {
+          const x = i*CANVAS_W - p1;
+          gfx.fillRect(x + 24, 24, 62, 12);
+          gfx.fillRect(x + 156, 38, 82, 16);
+        }
+        gfx.fillStyle = "#c47c4d";
+        for (let i = -1; i < 3; i++) {
+          const x = i*CANVAS_W - p2;
+          gfx.fillRect(x, 120, 260, 72);
+          gfx.fillRect(x + 70, 108, 280, 84);
+        }
+        gfx.fillStyle = "#8f5a3f";
+        for (let i = 0; i < 16; i++) {
+          let x = ((i*29 - (camx*0.44)) | 0) % CANVAS_W;
+          x = (x + CANVAS_W) % CANVAS_W;
+          gfx.fillRect(x, 92, 8, 98);
         }
       } else if (theme === "JUNGLE") {
         gfx.fillStyle = "#2f8f74"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);

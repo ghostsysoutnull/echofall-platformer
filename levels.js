@@ -11,6 +11,54 @@
 
 const GROUND_ROW = "###########..#######.....####....#####....######....####....#####....######....####....#########";
 
+function buildAfternoonGrid() {
+  const width = 96;
+  const height = 18;
+  const rows = Array.from({ length: height }, () => Array.from({ length: width }, () => "."));
+
+  const setCell = (x, y, ch) => {
+    if (x >= 0 && x < width && y >= 0 && y < height) rows[y][x] = ch;
+  };
+
+  const drawRun = (x, y, len, ch) => {
+    for (let i = 0; i < len; i++) setCell(x + i, y, ch);
+  };
+
+  rows[17] = GROUND_ROW.split("");
+
+  setCell(5, 13, "S");
+  setCell(91, 13, "F");
+
+  [
+    [14, 14],
+    [30, 13],
+    [48, 12],
+    [66, 13],
+    [82, 14]
+  ].forEach(([x, y]) => setCell(x, y, "H"));
+
+  [[10, 12, 6], [24, 11, 7], [40, 10, 8], [56, 11, 7], [72, 10, 8], [84, 12, 7], [18, 8, 5], [34, 7, 6], [52, 8, 5], [68, 7, 6]]
+    .forEach(([x, y, len]) => drawRun(x, y, len, "B"));
+
+  [8, 9, 10, 11, 12, 13, 16, 17, 18].forEach(x => setCell(x, 15, "o"));
+  [24, 25, 26, 27, 28, 29].forEach(x => setCell(x, 14, "o"));
+  [40, 41, 42, 43, 44, 45, 46, 47].forEach(x => setCell(x, 13, "o"));
+  [56, 57, 58, 59, 60, 61, 62].forEach(x => setCell(x, 14, "o"));
+  [72, 73, 74, 75, 76, 77, 78].forEach(x => setCell(x, 13, "o"));
+  [84, 85, 86, 87, 88, 89].forEach(x => setCell(x, 15, "o"));
+  [18, 20, 22, 34, 36, 38, 52, 54, 56, 68, 70, 72].forEach(x => setCell(x, 6, "o"));
+
+  [15, 30, 48, 66, 82, 44, 74].forEach((x, i) => setCell(x, i < 5 ? 9 : 5, "O"));
+
+  [
+    [33, 13, "E"],
+    [63, 13, "E"],
+    [76, 9, "V"]
+  ].forEach(([x, y, ch]) => setCell(x, y, ch));
+
+  return rows.map(r => r.join(""));
+}
+
 const GAME_LEVELS = [
   {
     name: "DAY",
@@ -36,6 +84,13 @@ const GAME_LEVELS = [
       "................................................................................................",
       GROUND_ROW
     ]
+  },
+
+  {
+    name: "AFTERNOON",
+    sequence: 1.5,
+    theme: "AFTERNOON",
+    grid: buildAfternoonGrid()
   },
 
   {

@@ -1,6 +1,7 @@
 (() => {
   const THEME_KEY = {
     DAY: "DAY",
+    AFTERNOON: "AFTERNOON",
     JUNGLE: "JUNGLE",
     FACTORY: "FACTORY",
     CASTLE: "FACTORY",
@@ -38,6 +39,7 @@
     build(ctx, theme, bus, aux, helpers) {
       const key = THEME_KEY[theme] || "DAY";
       if (key === "DAY") return this.DAY(ctx, bus, aux, helpers);
+      if (key === "AFTERNOON") return this.AFTERNOON(ctx, bus, aux, helpers);
       if (key === "JUNGLE") return this.JUNGLE(ctx, bus, aux, helpers);
       if (key === "FACTORY") return this.FACTORY(ctx, bus, aux, helpers);
       if (key === "ICE") return this.ICE(ctx, bus, aux, helpers);
@@ -90,6 +92,54 @@
           nodes.push(...ping({ freq: f, type: "sine", peak: 0.08, dur: 0.18, lpHz: 6000, toDelay: false, bus, aux }));
         }
       }, 1200);
+      timers.push(id);
+
+      return { nodes, timers };
+    },
+
+    AFTERNOON: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      const padGain = ctx.createGain();
+      padGain.gain.value = 0.28;
+
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 1600;
+      lp.Q.value = 0.65;
+      padGain.connect(lp);
+      lp.connect(bus);
+
+      const freqs = [110.00, 146.83, 196.00];
+      for (let i = 0; i < freqs.length; i++) {
+        const o = ctx.createOscillator();
+        o.type = i === 0 ? "triangle" : "sine";
+        o.frequency.value = freqs[i] * (i === 2 ? 0.5 : 1);
+        o.connect(padGain);
+        o.start();
+        nodes.push(o);
+      }
+
+      const sway = ctx.createOscillator();
+      sway.type = "sine";
+      sway.frequency.value = 0.11;
+      const swayAmt = ctx.createGain();
+      swayAmt.gain.value = 0.09;
+      sway.connect(swayAmt);
+      swayAmt.connect(padGain.gain);
+      sway.start();
+
+      nodes.push(padGain, lp, sway, swayAmt);
+
+      const id = setInterval(() => {
+        if (Math.random() < 0.80) {
+          const choices = [392, 440, 523.25, 587.33, 659.25, 783.99];
+          const f = choices[(Math.random() * choices.length) | 0] * (Math.random() < 0.3 ? 0.5 : 1);
+          nodes.push(...ping({ freq: f, type: "triangle", peak: 0.085, dur: 0.15, lpHz: 3200, toDelay: Math.random() < 0.25, bus, aux }));
+        }
+      }, 650);
       timers.push(id);
 
       return { nodes, timers };
