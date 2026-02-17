@@ -17,6 +17,21 @@
   const CANVAS_W = 320, CANVAS_H = 180, TILE_SIZE = 10, FIXED_DT = 1 / 60;
   const PLAYER_AX = 0.22, PLAYER_MAX_VX = 2.2, COYOTE_FRAMES = 7, JUMP_BUFFER_FRAMES = 7;
   const ENEMY_SPEED = 1.0, JUMP_VY = -5.4;
+  const ENEMY_DEATH_SHATTER = {
+    chunkSizeMin: 2,
+    chunkSizeMax: 3,
+    burstSpeedMin: 1.2,
+    burstSpeedMax: 3.4,
+    upwardLiftMin: 0.8,
+    upwardLiftMax: 2.0,
+    lateralJitter: 0.6,
+    pieceLifeMin: 24,
+    pieceLifeMax: 42,
+    deathFramesMin: 30,
+    deathFramesMax: 42,
+    gravityMul: 0.45,
+    drag: 0.992
+  };
   const PHYSICS_BY_THEME = {
     DAY:     { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     JUNGLE:  { gravity: 0.34, groundFriction: 0.83, airFriction: 0.95 },
@@ -214,6 +229,9 @@
       this.enemies = [];
       this.coinDrops = [];
       this.blockDebris = [];
+      this.playerShatter = [];
+      this.deathTimer = 0;
+      this.deathReset = 0;
 
       this.cameraX = 0;
       this.cameraY = 0;
@@ -329,6 +347,9 @@
       this.enemies = [];
       this.coinDrops = [];
       this.blockDebris = [];
+      this.playerShatter = [];
+      this.deathTimer = 0;
+      this.deathReset = 0;
 
       this.winPending = 0;
       this.helpTimer = 0;
@@ -589,6 +610,7 @@
     }
 
     die(reset) {
+      if (this.deathTimer > 0) return;
       if (!reset) this.lives--;
       this.audio.tone(120, 0.10);
 
@@ -602,6 +624,123 @@
       } else {
         this.loadLevel(this.levelIndex);
       }
+    }
+
+    currentPlayerSpriteRows() {
+      const p = this.player;
+      if (!p) return null;
+
+      const name = CHARACTERS[this.characterIndex].name;
+      const running = Math.abs(p.vx) > 0.2 && p.onGround;
+      const alt = ((p.anim >> 4) & 1);
+
+      if (name === "SKELETON") {
+        const top = running ? (alt ? SPRITES.st1 : SPRITES.st0) : SPRITES.st0;
+        const bot = running ? (alt ? SPRITES.sb1 : SPRITES.sb0) : SPRITES.sb0;
+        return top.concat(bot);
+      }
+
+      if (name === "DUCK") {
+        const spr = p.quackFrame ? SPRITES.duq : (running ? (alt ? SPRITES.du1 : SPRITES.du0) : SPRITES.du0);
+        return spr;
+      }
+
+      const anim = CHARACTERS[this.characterIndex].anim;
+      const spr = running ? (alt ? SPRITES[anim[1]] : SPRITES[anim[0]]) : SPRITES[anim[0]];
+      return spr;
+    }
+
+    startEnemyDeath(reset) {
+      if (this.deathTimer > 0) return;
+
+      const p = this.player;
+      const rows = this.currentPlayerSpriteRows();
+      this.playerShatter = [];
+
+      const cfg = ENEMY_DEATH_SHATTER;
+      const chunk = cfg.chunkSizeMin + ((this.rand01() * (cfg.chunkSizeMax - cfg.chunkSizeMin + 1)) | 0);
+      const deathFrames = cfg.deathFramesMin + ((this.rand01() * (cfg.deathFramesMax - cfg.deathFramesMin + 1)) | 0);
+      const burstScale = 0.9 + this.rand01() * 0.35;
+      const liftScale = 0.85 + this.rand01() * 0.45;
+
+      if (p && rows && rows.length) {
+        const centerX = p.x + p.w * 0.5;
+        const centerY = p.y + p.h * 0.5;
+
+        for (let sy = 0; sy < rows.length; sy += chunk) {
+          for (let sx = 0; sx < rows[0].length; sx += chunk) {
+            const pixels = [];
+            for (let yy = 0; yy < chunk; yy++) {
+              const row = rows[sy + yy];
+              if (!row) continue;
+              for (let xx = 0; xx < chunk; xx++) {
+                const ch = row[sx + xx];
+                if (!ch || ch === ".") continue;
+                pixels.push({ dx: xx, dy: yy, col: PALETTE[ch] || "#fff" });
+              }
+            }
+
+            if (!pixels.length) continue;
+
+            const pieceX = p.x + sx;
+            const pieceY = p.y + sy;
+            const localCx = pieceX + chunk * 0.5;
+            const localCy = pieceY + chunk * 0.5;
+            let dx = localCx - centerX;
+            let dy = localCy - centerY;
+            const len = Math.hypot(dx, dy) || 1;
+            dx /= len;
+            dy /= len;
+
+            const speed = (cfg.burstSpeedMin + this.rand01() * (cfg.burstSpeedMax - cfg.burstSpeedMin)) * burstScale;
+            const lift = (cfg.upwardLiftMin + this.rand01() * (cfg.upwardLiftMax - cfg.upwardLiftMin)) * liftScale;
+            const life = cfg.pieceLifeMin + ((this.rand01() * (cfg.pieceLifeMax - cfg.pieceLifeMin + 1)) | 0);
+            this.playerShatter.push({
+              x: pieceX,
+              y: pieceY,
+              vx: dx * speed + (this.rand01() - 0.5) * cfg.lateralJitter,
+              vy: dy * speed - lift,
+              t: life,
+              life,
+              pixels
+            });
+          }
+        }
+      }
+
+      this.deathReset = reset;
+      this.deathTimer = deathFrames;
+      this.audio.tone(120, 0.10);
+    }
+
+    updatePlayerShatter() {
+      const physics = PHYSICS_BY_THEME[getThemeForLevel(this.levelIndex)] || PHYSICS_BY_THEME[DEFAULT_THEME];
+      const gr = physics.gravity;
+      const cfg = ENEMY_DEATH_SHATTER;
+
+      for (let i = 0; i < this.playerShatter.length; i++) {
+        const part = this.playerShatter[i];
+        if (part.t-- <= 0) { part.dead = 1; continue; }
+        part.vy += gr * cfg.gravityMul;
+        part.vx *= cfg.drag;
+        part.x += part.vx;
+        part.y += part.vy;
+      }
+
+      this.playerShatter = this.playerShatter.filter(p => !p.dead);
+    }
+
+    drawPlayerShatter() {
+      for (let i = 0; i < this.playerShatter.length; i++) {
+        const part = this.playerShatter[i];
+        gfx.globalAlpha = part.life ? part.t / part.life : 1;
+        for (let j = 0; j < part.pixels.length; j++) {
+          const px = part.pixels[j];
+          gfx.fillStyle = px.col;
+          gfx.fillRect(((part.x + px.dx) - this.cameraX) | 0, ((part.y + px.dy) - this.cameraY) | 0, 1, 1);
+        }
+      }
+      gfx.globalAlpha = 1;
     }
 
     win() {
@@ -685,6 +824,17 @@
     step() {
       if (this.levelNameBanner) this.levelNameBanner--;
       if (this.helpTimer > 0) this.helpTimer--;
+
+      if (this.deathTimer > 0) {
+        this.updatePlayerShatter();
+        this.deathTimer--;
+        if (this.deathTimer <= 0) {
+          this.deathTimer = 0;
+          this.playerShatter = [];
+          this.die(this.deathReset);
+        }
+        return;
+      }
 
       const p = this.player;
       p.anim++;
@@ -894,7 +1044,7 @@
             this.spawnCoinDrops(e.x + 2, e.y + 2);
             this.audio.tone(e.type ? 260 : 220, 0.08);
           } else {
-            this.die(0);
+            this.startEnemyDeath(0);
           }
         }
 
@@ -1166,18 +1316,22 @@
         if (theme === "SPACE" && e.type) this.drawSpaceThruster(e);
       }
 
+      this.drawPlayerShatter();
+
       const p = this.player;
       const px = p.x - this.cameraX;
       const py = p.y - this.cameraY;
 
-      if (p.face < 0) {
-        gfx.save();
-        gfx.translate(((px + p.w) | 0), (py | 0));
-        gfx.scale(-1, 1);
-        this.drawPlayer(0, 0);
-        gfx.restore();
-      } else {
-        this.drawPlayer(px, py);
+      if (this.deathTimer <= 0) {
+        if (p.face < 0) {
+          gfx.save();
+          gfx.translate(((px + p.w) | 0), (py | 0));
+          gfx.scale(-1, 1);
+          this.drawPlayer(0, 0);
+          gfx.restore();
+        } else {
+          this.drawPlayer(px, py);
+        }
       }
 
       if (this.levelNameBanner) {
