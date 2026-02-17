@@ -91,6 +91,11 @@
     afterglowFrames: 16,
     wardHitCooldown: 72
   };
+  const SKELETON_BONE_GUARD = {
+    activeFrames: 42,
+    cooldownFrames: 132,
+    afterglowFrames: 24
+  };
   const PHYSICS_BY_THEME = {
     DAY:     { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     AFTERNOON:{ gravity: 0.35, groundFriction: 0.81, airFriction: 0.94 },
@@ -102,6 +107,7 @@
     SKYRUINS:{ gravity: 0.33, groundFriction: 0.83, airFriction: 0.95 },
     JAPAN:   { gravity: 0.34, groundFriction: 0.82, airFriction: 0.95 },
     HORROR:  { gravity: 0.34, groundFriction: 0.81, airFriction: 0.95 },
+    BONECRYPT:{ gravity: 0.34, groundFriction: 0.82, airFriction: 0.95 },
     GOTHIC:  { gravity: 0.33, groundFriction: 0.83, airFriction: 0.95 },
     GEOMETRYDREAM:{ gravity: 0.32, groundFriction: 0.84, airFriction: 0.96 },
     NITE:    { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
@@ -202,9 +208,12 @@
       this.oneupBursts = [];
       this.checkpointRain = [];
       this.enemyShatter = [];
+      this.vampireBlood = [];
+      this.vampireSpawnPoints = [];
       this.robotPulse = { timer: 0, cooldown: 0, ringT: 0, x: 0, y: 0, phase2Active: 0, phase2Notice: 0, phase2ReadyLatch: 0, killNotice: 0, killCount: 0 };
       this.rangerGrapple = { active: 0, cooldown: 0, timer: 0, anchorX: 0, anchorY: 0, anchorTx: 0, anchorTy: 0, ringT: 0 };
       this.paladinDash = { active: 0, cooldown: 0, timer: 0, afterglow: 0 };
+      this.skeletonGuard = { active: 0, cooldown: 0, timer: 0, afterglow: 0 };
       this.holyWard = 0;
       this.holyWardCooldown = 0;
       this.levelLightZones = [];
@@ -289,9 +298,10 @@
           if (e.code === "KeyR") this.loadLevel(this.levelIndex);
           if (e.code === "KeyM") {
             if (this.levelIndex === LEVELS.length - 1) {
-              this.skeletonUnlocked = 1;
               this.loadLevel(0);
             } else {
+              const nextTheme = LEVEL_THEMES[this.levelIndex + 1];
+              if (nextTheme === "BONECRYPT") this.skeletonUnlocked = 1;
               this.loadLevel(this.levelIndex + 1);
             }
           }
@@ -344,6 +354,8 @@
       this.rangerGrapple.active = 0;
       this.paladinDash.active = 0;
       this.paladinDash.timer = 0;
+      this.skeletonGuard.active = 0;
+      this.skeletonGuard.timer = 0;
     }
 
     isCharacterUnlocked(index) {
@@ -376,11 +388,18 @@
       this.audio.playTheme(levelTheme);
 
       let paladinUnlockTriggered = 0;
+      let skeletonUnlockTriggered = 0;
       if (levelTheme === "GOTHIC" && !this.paladinUnlocked) {
         this.paladinUnlocked = 1;
         const paladinIndex = CHARACTERS.findIndex(c => c.name === "PALADIN");
         if (paladinIndex >= 0) this.characterIndex = paladinIndex;
         paladinUnlockTriggered = 1;
+      }
+      if (levelTheme === "BONECRYPT" && !this.skeletonUnlocked) {
+        this.skeletonUnlocked = 1;
+        const skeletonIndex = CHARACTERS.findIndex(c => c.name === "SKELETON");
+        if (skeletonIndex >= 0) this.characterIndex = skeletonIndex;
+        skeletonUnlockTriggered = 1;
       }
 
       this.tileGrid = LEVELS[this.levelIndex].map(r => r.split(""));
@@ -394,6 +413,8 @@
       this.oneupBursts = [];
       this.checkpointRain = [];
       this.enemyShatter = [];
+      this.vampireBlood = [];
+      this.vampireSpawnPoints = [];
       this.robotPulse.timer = 0;
       this.robotPulse.cooldown = 0;
       this.robotPulse.ringT = 0;
@@ -410,6 +431,10 @@
       this.paladinDash.cooldown = 0;
       this.paladinDash.timer = 0;
       this.paladinDash.afterglow = 0;
+      this.skeletonGuard.active = 0;
+      this.skeletonGuard.cooldown = 0;
+      this.skeletonGuard.timer = 0;
+      this.skeletonGuard.afterglow = 0;
       this.holyWard = 0;
       this.holyWardCooldown = 0;
       this.levelLightZones = (typeof LEVEL_LIGHT_ZONES !== "undefined" && LEVEL_LIGHT_ZONES[this.levelIndex]) ? LEVEL_LIGHT_ZONES[this.levelIndex] : [];
@@ -439,7 +464,7 @@
       const spawnFlyer = (type, tileX, tileY) => {
         const px = tileX * TILE_SIZE;
         const py = tileY * TILE_SIZE;
-        const size = type === 4 ? 14 : 10;
+        const size = type === 5 ? 35 : (type === 4 ? 14 : 10);
         this.enemies.push({
           type,
           x: px,
@@ -480,6 +505,11 @@
             this.tileGrid[y][x] = ".";
           } else if (ch === "Z") {
             spawnFlyer(4, x, y);
+            this.vampireSpawnPoints.push({ type: 4, tx: x, ty: y });
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "R") {
+            spawnFlyer(5, x, y);
+            this.vampireSpawnPoints.push({ type: 5, tx: x, ty: y });
             this.tileGrid[y][x] = ".";
           } else if (ch === "F") {
             goalMarker = { x: x, y: y };
@@ -565,6 +595,10 @@
 
       if (paladinUnlockTriggered) {
         this.teleportNotice = "PALADIN UNLOCKED: AEGIS DASH";
+        this.teleportNoticeTimer = 150;
+      }
+      if (skeletonUnlockTriggered) {
+        this.teleportNotice = "SKELETON UNLOCKED: BONE GUARD";
         this.teleportNoticeTimer = 150;
       }
 
@@ -825,6 +859,9 @@
       this.paladinDash.active = 0;
       this.paladinDash.timer = 0;
       this.paladinDash.afterglow = 0;
+      this.skeletonGuard.active = 0;
+      this.skeletonGuard.timer = 0;
+      this.skeletonGuard.afterglow = 0;
       this.holyWard = 0;
       this.robotPulse.timer = 0;
       this.robotPulse.ringT = 0;
@@ -832,6 +869,7 @@
       this.deathTimer = 0;
       this.respawnGrace = 70;
       this.checkpointNotice = cp ? 75 : this.checkpointNotice;
+      this.respawnVampires();
       this.audio.tone(420, 0.05, 0.00, "square", 0.03);
     }
 
@@ -1324,11 +1362,16 @@
 
     win() {
       this.audio.tone(980, 0.10);
-      if (this.levelIndex === LEVELS.length - 1) {
+      const nextIndex = this.levelIndex + 1;
+      if (nextIndex < LEVELS.length && LEVEL_THEMES[nextIndex] === "BONECRYPT" && !this.skeletonUnlocked) {
         this.skeletonUnlocked = 1;
+        this.teleportNotice = "SKELETON UNLOCKED: BONE GUARD";
+        this.teleportNoticeTimer = 150;
+      }
+      if (this.levelIndex === LEVELS.length - 1) {
         this.loadLevel(0);
       } else {
-        this.loadLevel(this.levelIndex + 1);
+        this.loadLevel(nextIndex);
       }
     }
 
@@ -1414,12 +1457,89 @@
       this.oneupBursts.push(burst);
     }
 
+    spawnOneUpNear(x, y) {
+      this.magnetItems.push({
+        tileId: 6,
+        x: x - 5 + (this.rand01() - 0.5) * 8,
+        y: y - 9 + (this.rand01() - 0.5) * 6,
+        w: 10,
+        h: 10,
+        vx: (this.rand01() - 0.5) * 0.5,
+        vy: -0.4 - this.rand01() * 0.35,
+        t: 220
+      });
+      this.spawnOneUpRadialBurst(x, y);
+      this.audio.tone(980, 0.05, 0.00, "triangle", 0.03);
+    }
+
+    handleSpecialEnemyDefeat(enemy) {
+      if (!enemy || enemy.type !== 5) return;
+      const x = enemy.x + enemy.w * 0.5;
+      const y = enemy.y + enemy.h * 0.5;
+      this.spawnOneUpNear(x, y);
+    }
+
+    respawnVampires() {
+      if (!this.vampireSpawnPoints || !this.vampireSpawnPoints.length) return;
+      this.enemies = this.enemies.filter(e => e.type !== 4 && e.type !== 5);
+      for (let i = 0; i < this.vampireSpawnPoints.length; i++) {
+        const s = this.vampireSpawnPoints[i];
+        const size = s.type === 5 ? 35 : 14;
+        const px = s.tx * TILE_SIZE;
+        const py = s.ty * TILE_SIZE;
+        this.enemies.push({
+          type: s.type,
+          x: px,
+          y: py,
+          baseX: px,
+          baseY: py,
+          vx: 0,
+          vy: 0,
+          w: size,
+          h: size,
+          dir: (s.tx & 1) ? 1 : -1,
+          onGround: 0,
+          dead: 0,
+          anim: 0,
+          phase: ((s.tx * 17 + s.ty * 11) % 628) * 0.01,
+          variant: ((s.tx * 7 + s.ty * 11 + s.type * 5) & 1)
+        });
+      }
+    }
+
     tryActivateCharacterSkill() {
       if (!this.player || this.deathTimer > 0) return;
       const name = CHARACTERS[this.characterIndex].name;
       if (name === "ROBOT") this.tryActivateRobotPulse();
       else if (name === "RANGER") this.tryActivateRangerGrapple();
       else if (name === "PALADIN") this.tryActivatePaladinAegisDash();
+      else if (name === "SKELETON") this.tryActivateSkeletonBoneGuard();
+    }
+
+    tryActivateSkeletonBoneGuard() {
+      if (this.deathTimer > 0 || !this.player) return;
+      if (CHARACTERS[this.characterIndex].name !== "SKELETON") return;
+      if (this.skeletonGuard.active || this.skeletonGuard.cooldown > 0) return;
+
+      this.skeletonGuard.active = 1;
+      this.skeletonGuard.timer = SKELETON_BONE_GUARD.activeFrames;
+      this.skeletonGuard.cooldown = SKELETON_BONE_GUARD.cooldownFrames;
+      this.skeletonGuard.afterglow = SKELETON_BONE_GUARD.afterglowFrames;
+      this.audio.tone(420, 0.05, 0.00, "triangle", 0.05);
+      this.audio.tone(620, 0.06, 0.03, "sine", 0.04);
+    }
+
+    updateSkeletonBoneGuard(name) {
+      if (this.skeletonGuard.cooldown > 0) this.skeletonGuard.cooldown--;
+      if (this.skeletonGuard.afterglow > 0) this.skeletonGuard.afterglow--;
+      if (name !== "SKELETON" || !this.player) {
+        this.skeletonGuard.active = 0;
+        this.skeletonGuard.timer = 0;
+        return;
+      }
+      if (!this.skeletonGuard.active) return;
+      if (this.skeletonGuard.timer > 0) this.skeletonGuard.timer--;
+      if (this.skeletonGuard.timer <= 0) this.skeletonGuard.active = 0;
     }
 
     tryActivatePaladinAegisDash() {
@@ -1730,6 +1850,10 @@
         if (theme === "CASTLE" || theme === "GOTHIC") return f ? SPRITES.enemyVampireBigB : SPRITES.enemyVampireBigA;
         return f ? SPRITES.enemyVampireBigB : SPRITES.enemyVampireBigA;
       }
+      if (enemy.type === 5) {
+        if (theme === "CASTLE" || theme === "GOTHIC") return f ? SPRITES.enemyVampireBigB : SPRITES.enemyVampireBigA;
+        return f ? SPRITES.enemyVampireBigB : SPRITES.enemyVampireBigA;
+      }
       if (theme === "CASTLE" || theme === "GOTHIC") return (variant & 1) ? (f ? SPRITES.enemyCastleGhostOrbB : SPRITES.enemyCastleGhostOrbA) : (f ? SPRITES.enemyCastleGhostFlapB : SPRITES.enemyCastleGhostFlapA);
       return (variant & 1) ? (f ? SPRITES.enemyGhostOrbB : SPRITES.enemyGhostOrbA) : (f ? SPRITES.enemyGhostFlapB : SPRITES.enemyGhostFlapA);
     }
@@ -1838,6 +1962,7 @@
       if (theme === "SKYRUINS") return tileId === 2 ? SPRITES.coinSkyRuins : SPRITES.coinSkyRuinsBig;
       if (theme === "JAPAN") return tileId === 2 ? SPRITES.coinJapan : SPRITES.coinJapanBig;
       if (theme === "HORROR") return tileId === 2 ? SPRITES.coinHorror : SPRITES.coinHorrorBig;
+      if (theme === "BONECRYPT") return tileId === 2 ? SPRITES.coinHorror : SPRITES.coinHorrorBig;
       if (theme === "GEOMETRYDREAM") return tileId === 2 ? SPRITES.coinGeometryDream : SPRITES.coinGeometryDreamBig;
       if (tileId === 2) return theme === "JUNGLE" ? SPRITES.coinJungle : theme === "FACTORY" ? SPRITES.coinFactory : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGem : SPRITES.coinDay;
       return theme === "JUNGLE" ? SPRITES.coinJungleBig : theme === "FACTORY" ? SPRITES.coinFactoryBig : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGemBig : SPRITES.coinDayBig;
@@ -1854,6 +1979,7 @@
       if (theme === "SKYRUINS") return SPRITES.oneUpSkyRuins;
       if (theme === "JAPAN") return SPRITES.oneUpJapan;
       if (theme === "HORROR") return SPRITES.oneUpHorror;
+      if (theme === "BONECRYPT") return SPRITES.oneUpHorror;
       if (theme === "GEOMETRYDREAM") return SPRITES.oneUpGeometryDream;
       if (theme === "NITE") return SPRITES.oneUpNite;
       if (theme === "SPACE") return SPRITES.oneUpSpace;
@@ -1872,6 +1998,7 @@
            theme === "SKYRUINS" ? SPRITES.tileSkyRuinsA :
                theme === "JAPAN" ? SPRITES.tileJapanA :
              theme === "HORROR" ? SPRITES.tileHorrorA :
+               theme === "BONECRYPT" ? SPRITES.tileHorrorA :
            theme === "SPACE" ? SPRITES.tileSpaceA :
            theme === "NITE" ? SPRITES.tileNiteA : SPRITES.tileDayA;
       }
@@ -1885,11 +2012,30 @@
            theme === "SKYRUINS" ? SPRITES.tileSkyRuinsB :
                theme === "JAPAN" ? SPRITES.tileJapanB :
              theme === "HORROR" ? SPRITES.tileHorrorB :
+               theme === "BONECRYPT" ? SPRITES.tileHorrorB :
            theme === "SPACE" ? SPRITES.tileSpaceB :
            theme === "NITE" ? SPRITES.tileNiteB : SPRITES.tileDayB;
       }
       if (tileId === 12) return SPRITES.tileCursedBarrier;
       return null;
+    }
+
+    spawnVampireBlood(enemy, streamCount) {
+      if (!enemy || streamCount <= 0) return;
+      for (let i = 0; i < streamCount; i++) {
+        const side = streamCount > 1 ? (i === 0 ? -1 : 1) : 0;
+        const life = 20 + ((this.rand01() * 18) | 0);
+        this.vampireBlood.push({
+          x: enemy.x + enemy.w * 0.5 + side * (enemy.w * 0.16) + (this.rand01() - 0.5) * 2,
+          y: enemy.y + enemy.h * 0.72 + (this.rand01() - 0.5) * 1.5,
+          vx: -enemy.dir * (0.35 + this.rand01() * 0.45) + side * 0.14 + (this.rand01() - 0.5) * 0.25,
+          vy: 0.18 + this.rand01() * 0.35,
+          t: life,
+          life,
+          size: this.rand01() > 0.55 ? 2 : 1
+        });
+      }
+      if (this.vampireBlood.length > 420) this.vampireBlood.splice(0, this.vampireBlood.length - 420);
     }
 
     step() {
@@ -2005,6 +2151,7 @@
 
       this.updateRangerGrapple(name);
       this.updatePaladinAegisDash(name);
+      this.updateSkeletonBoneGuard(name);
 
       // Gravity + jump cut
       p.vy += gr * (paladinDashing ? 0.15 : (p.duckFlying ? 0.25 : 1));
@@ -2102,6 +2249,15 @@
       this.oneupBursts = this.oneupBursts.filter(b => !b.dead);
       this.updateCheckpointRain();
       this.updateEnemyShatter(gr);
+      for (let i = 0; i < this.vampireBlood.length; i++) {
+        const drop = this.vampireBlood[i];
+        if (drop.t-- <= 0) { drop.dead = 1; continue; }
+        drop.vy += gr * 0.18;
+        drop.vx *= 0.98;
+        drop.x += drop.vx;
+        drop.y += drop.vy;
+      }
+      this.vampireBlood = this.vampireBlood.filter(d => !d.dead);
 
       // Enemies
       const levelTheme = getThemeForLevel(this.levelIndex);
@@ -2136,6 +2292,16 @@
               e.x += e.vx;
               this.collideX(e);
               e.y = e.baseY + Math.sin(e.anim * 0.10 + e.phase) * 10;
+              if ((e.anim & 2) === 0) this.spawnVampireBlood(e, 1);
+            } else if (e.type === 5) {
+              const track = Math.sin(e.anim * 0.022 + e.phase) > 0 ? 26 : -26;
+              const targetX = p.x + track;
+              const desired = targetX >= e.x ? 0.92 : -0.92;
+              e.vx += (desired - e.vx) * 0.05;
+              e.x += e.vx;
+              this.collideX(e);
+              e.y = e.baseY + Math.sin(e.anim * 0.08 + e.phase) * 13;
+              if ((e.anim & 2) === 0) this.spawnVampireBlood(e, 2);
             } else {
               const loopT = e.anim * 0.12 + e.phase;
               const drift = Math.sin(e.anim * 0.03 + e.phase) * 10;
@@ -2161,6 +2327,15 @@
             const swoop = Math.sin(e.anim * 0.09 + e.phase) * 9;
             const hunt = Math.sign((p.x + p.w * 0.5) - (e.x + e.w * 0.5)) * 2;
             e.y = e.baseY + swoop + hunt;
+            if ((e.anim & 2) === 0) this.spawnVampireBlood(e, 1);
+          } else if (e.type === 5) {
+            e.vx = e.dir * 0.88;
+            e.x += e.vx;
+            this.collideX(e);
+            const swoop = Math.sin(e.anim * 0.07 + e.phase) * 12;
+            const hunt = Math.sign((p.x + p.w * 0.5) - (e.x + e.w * 0.5)) * 2.2;
+            e.y = e.baseY + swoop + hunt;
+            if ((e.anim & 2) === 0) this.spawnVampireBlood(e, 2);
           } else {
             const loopT = e.anim * 0.09 + e.phase;
             e.x = e.baseX + Math.cos(loopT) * 12;
@@ -2202,6 +2377,8 @@
             }
 
             if (this.robotPulse.phase2Active && dist <= ROBOT_MAGNET_PULSE.enemyKillRadius + 4) {
+              if (e.type === 5) continue;
+              this.handleSpecialEnemyDefeat(e);
               e.dead = 1;
               latePulseKills++;
               this.spawnEnemyShatter(e, levelTheme);
@@ -2212,7 +2389,22 @@
         }
 
         if (this.respawnGrace <= 0 && rectsOverlap(p, e)) {
-          if (name === "PALADIN" && this.paladinDash.active) {
+          const giantVampire = e.type === 5;
+          if (name === "SKELETON" && this.skeletonGuard.active) {
+            if (e.type && !giantVampire) {
+              this.handleSpecialEnemyDefeat(e);
+              this.spawnEnemyShatter(e, levelTheme);
+              e.dead = 1;
+              p.vy = Math.min(p.vy, -0.7);
+              this.spawnCoinDrops(e.x + 2, e.y + 2);
+              this.audio.tone(240, 0.05, 0.00, "triangle", 0.03);
+            } else {
+              p.vx = (p.x < e.x ? -1 : 1) * 1.6;
+              p.vy = -1.8;
+              this.audio.tone(300, 0.04, 0.00, "square", 0.02);
+            }
+          } else if (name === "PALADIN" && this.paladinDash.active) {
+            this.handleSpecialEnemyDefeat(e);
             this.spawnEnemyShatter(e, levelTheme);
             e.dead = 1;
             p.vy = Math.min(p.vy, -0.7);
@@ -2223,12 +2415,14 @@
             p.vx = (p.x < e.x ? -1 : 1) * 1.8;
             p.vy = -2.2;
             this.audio.tone(520, 0.05, 0.00, "triangle", 0.03);
-          } else if (e.type && name === "SKELETON") {
+          } else if (e.type && name === "SKELETON" && !giantVampire) {
+            this.handleSpecialEnemyDefeat(e);
             this.spawnEnemyShatter(e, levelTheme);
             e.dead = 1;
             this.spawnCoinDrops(e.x + 2, e.y + 2);
             this.audio.tone(180, 0.08);
           } else if (p.vy > 0 && p.y + p.h - 2 < e.y + e.h * 0.55) {
+            this.handleSpecialEnemyDefeat(e);
             this.spawnEnemyShatter(e, levelTheme);
             e.dead = 1;
             p.vy = JUMP_VY * 0.6;
@@ -2439,6 +2633,20 @@
         for (let i=0;i<16;i++){let x=((i*29-(camx*0.48))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,80,6,110);}
         gfx.fillStyle="#bff8ff20";
         for (let i=0;i<26;i++){let x=((i*17-(camx*0.78))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,12,2,2);}
+      } else if (theme === "BONECRYPT") {
+        gfx.fillStyle="#0b0a12"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        const p1=((camx*0.18)|0)%CANVAS_W, p2=((camx*0.36)|0)%CANVAS_W;
+        gfx.fillStyle="#d7d2cf";
+        gfx.beginPath(); gfx.arc(CANVAS_W-52,30,13,0,6.283); gfx.fill();
+        gfx.fillStyle="#0b0a12"; gfx.beginPath(); gfx.arc(CANVAS_W-46,28,11,0,6.283); gfx.fill();
+        gfx.fillStyle="#2a2433";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x,122,250,68); gfx.fillRect(x+88,104,270,86);}        
+        gfx.fillStyle="#17131f";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,132,300,58); gfx.fillRect(x+68,116,286,74);}        
+        gfx.fillStyle="#d8c8a228";
+        for (let i=0;i<18;i++){let x=((i*27-(camx*0.58))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,82,7,108);}        
+        gfx.fillStyle="#e8e4dd1e";
+        for (let i=0;i<24;i++){let x=((i*19-(camx*0.76))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,16,2,2);}        
       } else if (theme === "GOTHIC") {
         gfx.fillStyle="#0e0b18"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const p1=((camx*0.16)|0)%CANVAS_W, p2=((camx*0.31)|0)%CANVAS_W;
@@ -2517,6 +2725,12 @@
         const bot = running ? (alt ? SPRITES.playerSkeletonBottomRun : SPRITES.playerSkeletonBottomIdle) : SPRITES.playerSkeletonBottomIdle;
         this.drawSprite(top, px, py, 1);
         this.drawSprite(bot, px, py + 10, 1);
+        if (this.skeletonGuard.active || this.skeletonGuard.afterglow > 0) {
+          gfx.globalAlpha = this.skeletonGuard.active ? 0.65 : Math.max(0.2, this.skeletonGuard.afterglow / SKELETON_BONE_GUARD.afterglowFrames);
+          gfx.strokeStyle = "#d7d2cf";
+          gfx.strokeRect((px - 2) | 0, (py - 2) | 0, p.w + 4, p.h + 4);
+          gfx.globalAlpha = 1;
+        }
         return;
       }
 
@@ -2644,9 +2858,17 @@
         const e = this.enemies[i];
         if (e.dead) continue;
         const spr = this.enemySpriteFor(e, theme);
-        this.drawSprite(spr, e.x - this.cameraX, e.y - this.cameraY, 1);
+        this.drawSprite(spr, e.x - this.cameraX, e.y - this.cameraY, e.type === 5 ? 2.5 : 1);
         if (theme === "SPACE" && e.type) this.drawSpaceThruster(e);
       }
+
+      for (let i = 0; i < this.vampireBlood.length; i++) {
+        const drop = this.vampireBlood[i];
+        gfx.globalAlpha = Math.max(0.15, drop.t / drop.life);
+        gfx.fillStyle = drop.size > 1 ? "#b3122d" : "#7d0a1b";
+        gfx.fillRect((drop.x - this.cameraX) | 0, (drop.y - this.cameraY) | 0, drop.size, drop.size + 1);
+      }
+      gfx.globalAlpha = 1;
 
       this.drawEnemyShatter();
       this.drawPlayerShatter();
@@ -2759,6 +2981,13 @@
             ? ("Q " + ((this.paladinDash.cooldown / 60) | 0) + "s")
             : "Q READY";
         gfx.fillText(dashText, 258, 11);
+      } else if (charName === "SKELETON") {
+        const guardText = this.skeletonGuard.active
+          ? "Q BONE"
+          : this.skeletonGuard.cooldown > 0
+            ? ("Q " + ((this.skeletonGuard.cooldown / 60) | 0) + "s")
+            : "Q READY";
+        gfx.fillText(guardText, 258, 11);
       }
       if (this.audio.muted) gfx.fillText("MUTE", CANVAS_W - 34, 11);
 
