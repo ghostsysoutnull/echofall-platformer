@@ -585,6 +585,37 @@
       }, 710);
       timers.push(id);
 
+      const howlTimer = setInterval(() => {
+        if (Math.random() < 0.38) {
+          const now = ctx.currentTime;
+          const howl = ctx.createOscillator();
+          howl.type = "triangle";
+          howl.frequency.setValueAtTime(330 + Math.random() * 60, now);
+          howl.frequency.exponentialRampToValueAtTime(140 + Math.random() * 40, now + 0.95);
+
+          const howlGain = ctx.createGain();
+          howlGain.gain.setValueAtTime(0.0001, now);
+          howlGain.gain.exponentialRampToValueAtTime(0.050, now + 0.22);
+          howlGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.30);
+
+          const howlLp = ctx.createBiquadFilter();
+          howlLp.type = "lowpass";
+          howlLp.frequency.value = 1250;
+          howlLp.Q.value = 0.8;
+
+          howl.connect(howlLp);
+          howlLp.connect(howlGain);
+          howlGain.connect(bus);
+          if (aux) howlGain.connect(aux);
+
+          howl.start(now);
+          howl.stop(now + 1.35);
+
+          nodes.push(howl, howlGain, howlLp);
+        }
+      }, 2900);
+      timers.push(howlTimer);
+
       return { nodes, timers };
     },
 

@@ -2013,6 +2013,10 @@
       } else if (theme === "HORROR") {
         gfx.fillStyle="#100817"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const p1=((camx*0.16)|0)%CANVAS_W, p2=((camx*0.34)|0)%CANVAS_W;
+        const moonX = CANVAS_W - 56 - ((camx * 0.05) | 0) % 14;
+        gfx.fillStyle="#d9d2ff"; gfx.beginPath(); gfx.arc(moonX,34,15,0,6.283); gfx.fill();
+        gfx.fillStyle="#100817"; gfx.beginPath(); gfx.arc(moonX + 6,30,13,0,6.283); gfx.fill();
+        gfx.fillStyle="#ffffff1a"; gfx.fillRect(moonX - 6,22,2,2); gfx.fillRect(moonX - 1,26,2,2);
         gfx.fillStyle="#2b1633";
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x,120,250,70); gfx.fillRect(x+92,104,270,86);}
         gfx.fillStyle="#180b22";
