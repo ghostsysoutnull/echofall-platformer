@@ -10,9 +10,125 @@
     SKYRUINS: "SKYRUINS",
     JAPAN: "JAPAN",
     HORROR: "HORROR",
+    GEOMETRYDREAM: "GEOMETRYDREAM",
+    GEOMETRYDREAM_S1: "GEOMETRYDREAM_S1",
+    GEOMETRYDREAM_S2: "GEOMETRYDREAM_S2",
+    GEOMETRYDREAM_S3: "GEOMETRYDREAM_S3",
+    GEOMETRYDREAM_S4: "GEOMETRYDREAM_S4",
+    GEOMETRYDREAM_S5: "GEOMETRYDREAM_S5",
+    GEOMETRYDREAM_S6: "GEOMETRYDREAM_S6",
     NITE: "NITE",
     SPACE: "SPACE_01"
   };
+
+  function buildGeometryDreamTrack(ctx, bus, aux, helpers, variant) {
+    const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+    const nodes = [];
+    const timers = [];
+
+    const pulseGain = ctx.createGain();
+    pulseGain.gain.value = 0.18 + variant * 0.01;
+    const pulseLp = ctx.createBiquadFilter();
+    pulseLp.type = "lowpass";
+    pulseLp.frequency.value = 1500 + variant * 180;
+    pulseLp.Q.value = 0.8;
+    pulseGain.connect(pulseLp);
+    pulseLp.connect(bus);
+
+    const baseByVariant = [
+      [98.00, 146.83, 196.00, 293.66],
+      [110.00, 164.81, 220.00, 329.63],
+      [123.47, 174.61, 246.94, 349.23],
+      [130.81, 196.00, 261.63, 392.00],
+      [146.83, 220.00, 293.66, 440.00],
+      [164.81, 246.94, 329.63, 493.88]
+    ];
+    const base = baseByVariant[clampVariant(variant)];
+    for (let i = 0; i < base.length; i++) {
+      const osc = ctx.createOscillator();
+      osc.type = i % 2 === 0 ? "triangle" : "sine";
+      osc.frequency.value = base[i] * (i === 3 ? 0.5 : 1);
+      osc.connect(pulseGain);
+      osc.start();
+      nodes.push(osc);
+    }
+
+    const gate = ctx.createOscillator();
+    gate.type = variant >= 4 ? "sine" : "square";
+    gate.frequency.value = 2.6 + variant * 0.28;
+    const gateAmt = ctx.createGain();
+    gateAmt.gain.value = 0.04 + variant * 0.006;
+    gate.connect(gateAmt);
+    gateAmt.connect(pulseGain.gain);
+    gate.start();
+    nodes.push(pulseGain, pulseLp, gate, gateAmt);
+
+    const shimmer = makeNoiseSource(ctx, 1.0, 0.16 + variant * 0.006);
+    const shimmerBp = ctx.createBiquadFilter();
+    shimmerBp.type = "bandpass";
+    shimmerBp.frequency.value = 2000 + variant * 190;
+    shimmerBp.Q.value = 1.8;
+    const shimmerGain = ctx.createGain();
+    shimmerGain.gain.value = 0.04 + variant * 0.005;
+    shimmer.connect(shimmerBp);
+    shimmerBp.connect(shimmerGain);
+    shimmerGain.connect(bus);
+    shimmer.start();
+    nodes.push(shimmer, shimmerBp, shimmerGain);
+
+    const tonePool = [
+      [261.63, 293.66, 329.63, 392.00, 440.00, 523.25],
+      [293.66, 329.63, 392.00, 440.00, 493.88, 587.33],
+      [329.63, 392.00, 440.00, 493.88, 587.33, 659.25],
+      [349.23, 415.30, 466.16, 523.25, 622.25, 698.46],
+      [392.00, 440.00, 523.25, 587.33, 698.46, 783.99],
+      [440.00, 493.88, 587.33, 659.25, 783.99, 880.00]
+    ];
+    const tones = tonePool[clampVariant(variant)];
+    const arpTimer = setInterval(() => {
+      const f = tones[(Math.random() * tones.length) | 0] * (Math.random() < (0.48 - variant * 0.03) ? 0.5 : 1);
+      nodes.push(...ping({ freq: f, type: variant >= 3 ? "sine" : "triangle", peak: 0.075 + variant * 0.003, dur: 0.14 + variant * 0.012, lpHz: 3200 + variant * 120, toDelay: Math.random() < 0.33 + variant * 0.05, bus, aux }));
+    }, Math.max(260, 460 - variant * 30));
+    timers.push(arpTimer);
+
+    const portalSweepTimer = setInterval(() => {
+      if (Math.random() < 0.30 + variant * 0.03) {
+        const now = ctx.currentTime;
+        const sweep = ctx.createOscillator();
+        sweep.type = variant >= 4 ? "triangle" : "sine";
+        sweep.frequency.setValueAtTime(760 + variant * 60 + Math.random() * 160, now);
+        sweep.frequency.exponentialRampToValueAtTime(130 + variant * 20 + Math.random() * 80, now + 0.50 + variant * 0.04);
+
+        const sweepGain = ctx.createGain();
+        sweepGain.gain.setValueAtTime(0.0001, now);
+        sweepGain.gain.exponentialRampToValueAtTime(0.032 + variant * 0.004, now + 0.09);
+        sweepGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.64 + variant * 0.06);
+
+        const sweepHp = ctx.createBiquadFilter();
+        sweepHp.type = "highpass";
+        sweepHp.frequency.value = 240 + variant * 18;
+
+        sweep.connect(sweepHp);
+        sweepHp.connect(sweepGain);
+        sweepGain.connect(bus);
+        if (aux) sweepGain.connect(aux);
+
+        sweep.start(now);
+        sweep.stop(now + 0.70 + variant * 0.06);
+        nodes.push(sweep, sweepGain, sweepHp);
+      }
+    }, Math.max(1200, 2200 - variant * 110));
+    timers.push(portalSweepTimer);
+
+    return { nodes, timers };
+  }
+
+  function clampVariant(variant) {
+    if (!Number.isFinite(variant)) return 0;
+    if (variant < 0) return 0;
+    if (variant > 5) return 5;
+    return variant | 0;
+  }
 
   function makeNoiseSource(ctx, seconds = 1.0, amp = 0.35) {
     const sr = ctx.sampleRate;
@@ -51,6 +167,13 @@
       if (key === "SKYRUINS") return this.SKYRUINS(ctx, bus, aux, helpers);
       if (key === "JAPAN") return this.JAPAN(ctx, bus, aux, helpers);
       if (key === "HORROR") return this.HORROR(ctx, bus, aux, helpers);
+      if (key === "GEOMETRYDREAM") return this.GEOMETRYDREAM(ctx, bus, aux, helpers);
+      if (key === "GEOMETRYDREAM_S1") return this.GEOMETRYDREAM_S1(ctx, bus, aux, helpers);
+      if (key === "GEOMETRYDREAM_S2") return this.GEOMETRYDREAM_S2(ctx, bus, aux, helpers);
+      if (key === "GEOMETRYDREAM_S3") return this.GEOMETRYDREAM_S3(ctx, bus, aux, helpers);
+      if (key === "GEOMETRYDREAM_S4") return this.GEOMETRYDREAM_S4(ctx, bus, aux, helpers);
+      if (key === "GEOMETRYDREAM_S5") return this.GEOMETRYDREAM_S5(ctx, bus, aux, helpers);
+      if (key === "GEOMETRYDREAM_S6") return this.GEOMETRYDREAM_S6(ctx, bus, aux, helpers);
       if (key === "NITE") return this.NITE(ctx, bus, aux, helpers);
       return this.SPACE_01(ctx, bus, aux, helpers);
     },
@@ -618,6 +741,14 @@
 
       return { nodes, timers };
     },
+
+    GEOMETRYDREAM: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 0),
+    GEOMETRYDREAM_S1: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 0),
+    GEOMETRYDREAM_S2: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 1),
+    GEOMETRYDREAM_S3: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 2),
+    GEOMETRYDREAM_S4: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 3),
+    GEOMETRYDREAM_S5: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 4),
+    GEOMETRYDREAM_S6: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 5),
 
     NITE: (ctx, bus, aux, helpers) => {
       const ping = helpers && helpers.ping ? helpers.ping : (() => []);

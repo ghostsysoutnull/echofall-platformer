@@ -95,6 +95,7 @@
     SKYRUINS:{ gravity: 0.33, groundFriction: 0.83, airFriction: 0.95 },
     JAPAN:   { gravity: 0.34, groundFriction: 0.82, airFriction: 0.95 },
     HORROR:  { gravity: 0.34, groundFriction: 0.81, airFriction: 0.95 },
+    GEOMETRYDREAM:{ gravity: 0.32, groundFriction: 0.84, airFriction: 0.96 },
     NITE:    { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     SPACE:   { gravity: 0.28, groundFriction: 0.84, airFriction: 0.96 }
   };
@@ -214,6 +215,14 @@
       this.activeCheckpointIndex = -1;
       this.checkpointNotice = 0;
       this.respawnGrace = 0;
+      this.portals = [];
+      this.portalCooldown = 0;
+      this.geometryMusicSection = -1;
+      this.geometryMusicNotice = 0;
+      this.geometryMusicLabel = "";
+      this.teleportNotice = "";
+      this.teleportNoticeTimer = 0;
+      this.pendingTeleportNotice = "";
 
       this.bindInput();
       this.fitCanvas();
@@ -244,17 +253,17 @@
     }
 
     bindInput() {
-      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyZ","KeyQ","KeyR","KeyN","KeyP","Digit9","Digit0"]);
+      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","Digit9","Digit0"]);
 
       addEventListener("keydown", (e) => {
         if (preventKeys.has(e.code)) e.preventDefault();
 
         if (!this.keyDown[e.code]) {
           if (e.code === "Space" || e.code === "ArrowUp") this.jumpBuffer = JUMP_BUFFER_FRAMES;
-          if (e.code === "KeyM") this.audio.muted ^= 1;
+          if (e.code === "KeyX") this.audio.muted ^= 1;
           if (e.code === "Digit9") this.audio.adjustMusicVolume(-0.05);
           if (e.code === "Digit0") this.audio.adjustMusicVolume(0.05);
-          if (e.code === "KeyZ") {
+          if (e.code === "KeyW") {
             const max = this.skeletonUnlocked ? CHARACTERS.length : CHARACTERS.length - 1;
             this.setCharacter((this.characterIndex + 1) % max);
             this.audio.tone(660, 0.04);
@@ -265,12 +274,19 @@
             this.audio.tone(this.isPaused ? 360 : 620, 0.05);
           }
           if (e.code === "KeyR") this.loadLevel(this.levelIndex);
-          if (e.code === "KeyN") {
+          if (e.code === "KeyM") {
             if (this.levelIndex === LEVELS.length - 1) {
               this.skeletonUnlocked = 1;
               this.loadLevel(0);
             } else {
               this.loadLevel(this.levelIndex + 1);
+            }
+          }
+          if (e.code === "KeyN") {
+            if (this.levelIndex === 0) {
+              this.loadLevel(LEVELS.length - 1);
+            } else {
+              this.loadLevel(this.levelIndex - 1);
             }
           }
 
@@ -355,6 +371,13 @@
       this.activeCheckpointIndex = -1;
       this.checkpointNotice = 0;
       this.respawnGrace = 0;
+      this.portals = [];
+      this.portalCooldown = 0;
+      this.geometryMusicSection = -1;
+      this.geometryMusicNotice = 0;
+      this.geometryMusicLabel = "";
+      this.teleportNotice = "";
+      this.teleportNoticeTimer = 0;
 
       let spawnX = 10, spawnY = 10;
       let goalMarker = null;
@@ -376,7 +399,8 @@
           onGround: 0,
           dead: 0,
           anim: 0,
-          phase: ((tileX * 17 + tileY * 11) % 628) * 0.01
+          phase: ((tileX * 17 + tileY * 11) % 628) * 0.01,
+          variant: ((tileX * 7 + tileY * 11 + type * 5) & 1)
         });
       };
 
@@ -388,7 +412,7 @@
             spawnY = y * TILE_SIZE;
             this.tileGrid[y][x] = ".";
           } else if (ch === "E") {
-            this.enemies.push({ type: 0, x: x*TILE_SIZE, y: y*TILE_SIZE, vx: 0, vy: 0, w: 10, h: 10, dir: -1, onGround: 0, dead: 0, anim: 0 });
+            this.enemies.push({ type: 0, x: x*TILE_SIZE, y: y*TILE_SIZE, vx: 0, vy: 0, w: 10, h: 10, dir: -1, onGround: 0, dead: 0, anim: 0, variant: ((x * 13 + y * 5) & 1) });
             this.tileGrid[y][x] = ".";
           } else if (ch === "V") {
             spawnFlyer(1, x, y);
@@ -401,6 +425,12 @@
             this.tileGrid[y][x] = ".";
           } else if (ch === "F") {
             goalMarker = { x: x, y: y };
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "P") {
+            this.portals.push({ type: "section", x: x * TILE_SIZE, y: y * TILE_SIZE, w: 12, h: 18, tx: x, ty: y });
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "D") {
+            this.portals.push({ type: "dimensional", x: x * TILE_SIZE, y: y * TILE_SIZE, w: 12, h: 18, tx: x, ty: y });
             this.tileGrid[y][x] = ".";
           }
         }
@@ -473,6 +503,13 @@
       this.levelSpawnX = spawnX;
       this.levelSpawnY = spawnY;
       this.levelCheckpoints = this.buildLevelCheckpoints(this.levelIndex);
+      this.configureGeometryDreamPortals();
+
+      if (this.pendingTeleportNotice) {
+        this.teleportNotice = this.pendingTeleportNotice;
+        this.teleportNoticeTimer = 120;
+        this.pendingTeleportNotice = "";
+      }
 
       this.cameraX = 0;
       this.cameraY = 0;
@@ -517,6 +554,134 @@
       }
       checkpoints.sort((a, b) => a.xTile - b.xTile);
       return checkpoints;
+    }
+
+    configureGeometryDreamPortals() {
+      if (getThemeForLevel(this.levelIndex) !== "GEOMETRYDREAM") return;
+
+      if (!this.portals.length) {
+        const sectionWidth = 96;
+        const sectionPortals = [90, 186, 282, 378, 474];
+        for (let i = 0; i < sectionPortals.length; i++) {
+          const tx = clamp(sectionPortals[i], 8, Math.max(8, this.tileCols - 14));
+          const py = this.findCheckpointSpawnY(tx);
+          const section = Math.floor(tx / sectionWidth);
+          const targetTx = clamp((section + 1) * sectionWidth + 8, 8, Math.max(8, this.tileCols - 12));
+          const targetY = this.findCheckpointSpawnY(targetTx);
+          this.portals.push({
+            type: "section",
+            x: tx * TILE_SIZE,
+            y: py,
+            w: 12,
+            h: 18,
+            targetX: targetTx * TILE_SIZE + 1,
+            targetY: targetY
+          });
+        }
+
+        const dimTx = clamp(this.tileCols - 40, 12, Math.max(12, this.tileCols - 12));
+        const dimY = this.findCheckpointSpawnY(dimTx);
+        this.portals.push({
+          type: "dimensional",
+          x: dimTx * TILE_SIZE,
+          y: dimY,
+          w: 12,
+          h: 18
+        });
+      }
+    }
+
+    pickDimensionalDestination() {
+      const options = [];
+      for (let i = 0; i < LEVEL_THEMES.length; i++) {
+        if (i === this.levelIndex) continue;
+        if (LEVEL_THEMES[i] === "GEOMETRYDREAM") continue;
+        options.push(i);
+      }
+      if (!options.length) return -1;
+      return options[(this.rand01() * options.length) | 0];
+    }
+
+    pickRandomSectionPortalIndex(currentIndex) {
+      const sectionIndices = [];
+      for (let i = 0; i < this.portals.length; i++) {
+        if (this.portals[i] && this.portals[i].type === "section" && i !== currentIndex) sectionIndices.push(i);
+      }
+      if (!sectionIndices.length) return currentIndex;
+      return sectionIndices[(this.rand01() * sectionIndices.length) | 0];
+    }
+
+    maybePortalCharacterShift() {
+      if (this.rand01() >= 0.5) return 0;
+      const max = this.skeletonUnlocked ? CHARACTERS.length : CHARACTERS.length - 1;
+      if (max <= 1) return 0;
+
+      let next = this.characterIndex;
+      for (let tries = 0; tries < 5 && next === this.characterIndex; tries++) {
+        next = (this.rand01() * max) | 0;
+      }
+      if (next === this.characterIndex) next = (this.characterIndex + 1) % max;
+
+      this.setCharacter(next);
+      this.audio.tone(700, 0.04, 0.00, "triangle", 0.04);
+      return 1;
+    }
+
+    updateGeometryDreamMusic() {
+      const theme = getThemeForLevel(this.levelIndex);
+      if (theme !== "GEOMETRYDREAM") return;
+      const sectionWidth = 96 * TILE_SIZE;
+      const px = this.player.x + this.player.w * 0.5;
+      const section = clamp((px / sectionWidth) | 0, 0, 5);
+      if (section === this.geometryMusicSection) return;
+
+      this.geometryMusicSection = section;
+      const phase = section + 1;
+      this.geometryMusicLabel = "Phase " + phase;
+      this.geometryMusicNotice = 85;
+      this.audio.playTheme("GEOMETRYDREAM_S" + phase);
+      this.audio.tone(460 + phase * 44, 0.04, 0, "triangle", 0.05);
+    }
+
+    updatePortals() {
+      if (this.portalCooldown > 0) this.portalCooldown--;
+      if (!this.portals.length || this.portalCooldown > 0 || !this.player) return;
+
+      const p = this.player;
+      for (let i = 0; i < this.portals.length; i++) {
+        const portal = this.portals[i];
+        if (!rectsOverlap(p, portal)) continue;
+
+        if (portal.type === "section") {
+          const destinationIndex = this.pickRandomSectionPortalIndex(i);
+          const destination = this.portals[destinationIndex] || portal;
+          const tx = Number.isFinite(destination.x) ? (destination.x + 1) : (portal.x + 1);
+          const ty = Number.isFinite(destination.y) ? destination.y : p.y;
+          const sectionIndex = clamp((((tx / TILE_SIZE) / 96) | 0) + 1, 1, 6);
+          p.x = clamp(tx, 0, this.tileCols * TILE_SIZE - p.w - 0.001);
+          p.y = clamp(ty, 0, this.tileRows * TILE_SIZE - p.h - 0.001);
+          p.vx = 0;
+          p.vy = -1.2;
+          p.wrapGrace = 20;
+          this.portalCooldown = 32;
+          const shifted = this.maybePortalCharacterShift();
+          this.teleportNotice = "PORTAL -> SECTION " + sectionIndex + (shifted ? " | FORM SHIFT" : "");
+          this.teleportNoticeTimer = 90;
+          this.spawnCheckpointRain(p.x + p.w * 0.5, p.y + p.h * 0.5);
+          this.audio.tone(880, 0.05, 0.00, "sine", 0.05);
+          this.audio.tone(620, 0.06, 0.04, "triangle", 0.04);
+          return;
+        }
+
+        const nextLevel = this.pickDimensionalDestination();
+        if (nextLevel >= 0) {
+          this.pendingTeleportNotice = "DIMENSION -> " + LEVEL_NAMES[nextLevel];
+          this.audio.tone(520, 0.05, 0.00, "triangle", 0.05);
+          this.audio.tone(980, 0.07, 0.05, "sine", 0.04);
+          this.loadLevel(nextLevel);
+          return;
+        }
+      }
     }
 
     updateCheckpointProgress() {
@@ -631,6 +796,7 @@
       let sx = actor.x - this.cameraX * (actor.parallax || 0);
       sx = ((sx % span) + span) % span - actor.w;
       const sy = actor.y + Math.sin(actor.phase || 0) * (actor.bobAmp || 0);
+      const glowRamp = ((Math.sin((actor.phase || 0) * 0.22 + this.player.anim * 0.012) + 1) * 0.5);
 
       if (actor.type === "balloon") {
         this.drawSprite(SPRITES.bgBalloonLarge, sx, sy, actor.scale || 1);
@@ -668,6 +834,14 @@
         this.drawSprite(SPRITES.bgHauntedMansionLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "graveGate") {
         this.drawSprite(SPRITES.bgGraveGateLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "geoWireCube") {
+        this.drawSprite(SPRITES.bgGeoWireCubeLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "geoPolyShard") {
+        this.drawSprite(SPRITES.bgGeoPolyShardLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "geoGridPlane") {
+        this.drawSprite(SPRITES.bgGeoGridPlaneLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "geoMirrorDoor") {
+        this.drawSprite(SPRITES.bgGeoMirrorDoorLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "moonBalloon") {
         this.drawSprite(SPRITES.bgMoonBalloonLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "shootingGlider" || actor.type === "stationShuttle" || actor.type === "airplane") {
@@ -682,6 +856,31 @@
         this.drawSprite(SPRITES.bgGhostLanternSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "batSwarm") {
         this.drawSprite(SPRITES.bgBatSwarmSmall, sx, sy, actor.scale || 1);
+      } else if (actor.type === "geoOrbitRune") {
+        this.drawSprite(SPRITES.bgGeoOrbitRuneSmall, sx, sy, actor.scale || 1);
+      } else if (actor.type === "geoChromaprism") {
+        const cx = sx + 7;
+        const cy = sy + 7;
+        gfx.strokeStyle = glowRamp > 0.5 ? "#9a7cff" : "#57e8ff";
+        gfx.beginPath();
+        gfx.moveTo(cx, cy - 8);
+        gfx.lineTo(cx + 7, cy - 1);
+        gfx.lineTo(cx, cy + 8);
+        gfx.lineTo(cx - 7, cy - 1);
+        gfx.closePath();
+        gfx.stroke();
+        gfx.fillStyle = glowRamp > 0.5 ? "#281a52" : "#10233c";
+        gfx.fillRect((cx - 2) | 0, (cy - 2) | 0, 4, 4);
+      } else if (actor.type === "geoFluxLens") {
+        const cx = sx + 9;
+        const cy = sy + 5;
+        const ring = 4 + ((Math.sin((actor.phase || 0) * 0.35) + 1) * 0.5) * 2;
+        gfx.strokeStyle = glowRamp > 0.5 ? "#4ef3ff" : "#f18cff";
+        gfx.beginPath();
+        gfx.arc(cx, cy, ring, 0, 6.283);
+        gfx.stroke();
+        gfx.fillStyle = glowRamp > 0.5 ? "#3f2f77" : "#1f3f67";
+        gfx.fillRect((cx - 1) | 0, (cy - 1) | 0, 2, 2);
       } else if (actor.type === "chainBird") {
         this.drawSprite(SPRITES.bgChainBirdSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "canopyBird" || actor.type === "raven" || actor.type === "snowOwl") {
@@ -1353,14 +1552,26 @@
 
     enemySpriteFor(enemy, theme) {
       const f = ((enemy.anim >> 3) & 1);
+      const variant = enemy.variant | 0;
       if (enemy.type === 0) {
-        return theme === "CASTLE"
-          ? (((enemy.anim >> 4) & 1) ? SPRITES.enemyCastleWalkerRun : SPRITES.enemyCastleWalkerIdle)
-          : (((enemy.anim >> 4) & 1) ? SPRITES.enemyWalkerRun : SPRITES.enemyWalkerIdle);
+        const runFrame = ((enemy.anim >> 4) & 1);
+        if (theme === "CASTLE") {
+          if (variant & 1) return runFrame ? SPRITES.enemyCastleWalkerAltRun : SPRITES.enemyCastleWalkerAltIdle;
+          return runFrame ? SPRITES.enemyCastleWalkerRun : SPRITES.enemyCastleWalkerIdle;
+        }
+        if (variant & 1) return runFrame ? SPRITES.enemyWalkerAltRun : SPRITES.enemyWalkerAltIdle;
+        return runFrame ? SPRITES.enemyWalkerRun : SPRITES.enemyWalkerIdle;
       }
-      if (enemy.type === 1) return theme === "CASTLE" ? (f ? SPRITES.enemyCastleBatFlapB : SPRITES.enemyCastleBatFlapA) : (f ? SPRITES.enemyBatFlapB : SPRITES.enemyBatFlapA);
-      if (enemy.type === 2) return theme === "CASTLE" ? (f ? SPRITES.enemyCastleFalconFlapB : SPRITES.enemyCastleFalconFlapA) : (f ? SPRITES.enemyFalconFlapB : SPRITES.enemyFalconFlapA);
-      return theme === "CASTLE" ? (f ? SPRITES.enemyCastleGhostFlapB : SPRITES.enemyCastleGhostFlapA) : (f ? SPRITES.enemyGhostFlapB : SPRITES.enemyGhostFlapA);
+      if (enemy.type === 1) {
+        if (theme === "CASTLE") return (variant & 1) ? (f ? SPRITES.enemyCastleBatSpineB : SPRITES.enemyCastleBatSpineA) : (f ? SPRITES.enemyCastleBatFlapB : SPRITES.enemyCastleBatFlapA);
+        return (variant & 1) ? (f ? SPRITES.enemyBatSpineB : SPRITES.enemyBatSpineA) : (f ? SPRITES.enemyBatFlapB : SPRITES.enemyBatFlapA);
+      }
+      if (enemy.type === 2) {
+        if (theme === "CASTLE") return (variant & 1) ? (f ? SPRITES.enemyCastleFalconDeltaB : SPRITES.enemyCastleFalconDeltaA) : (f ? SPRITES.enemyCastleFalconFlapB : SPRITES.enemyCastleFalconFlapA);
+        return (variant & 1) ? (f ? SPRITES.enemyFalconDeltaB : SPRITES.enemyFalconDeltaA) : (f ? SPRITES.enemyFalconFlapB : SPRITES.enemyFalconFlapA);
+      }
+      if (theme === "CASTLE") return (variant & 1) ? (f ? SPRITES.enemyCastleGhostOrbB : SPRITES.enemyCastleGhostOrbA) : (f ? SPRITES.enemyCastleGhostFlapB : SPRITES.enemyCastleGhostFlapA);
+      return (variant & 1) ? (f ? SPRITES.enemyGhostOrbB : SPRITES.enemyGhostOrbA) : (f ? SPRITES.enemyGhostFlapB : SPRITES.enemyGhostFlapA);
     }
 
     spawnEnemyShatter(enemy, theme) {
@@ -1465,6 +1676,7 @@
       if (theme === "SKYRUINS") return tileId === 2 ? SPRITES.coinSkyRuins : SPRITES.coinSkyRuinsBig;
       if (theme === "JAPAN") return tileId === 2 ? SPRITES.coinJapan : SPRITES.coinJapanBig;
       if (theme === "HORROR") return tileId === 2 ? SPRITES.coinHorror : SPRITES.coinHorrorBig;
+      if (theme === "GEOMETRYDREAM") return tileId === 2 ? SPRITES.coinGeometryDream : SPRITES.coinGeometryDreamBig;
       if (tileId === 2) return theme === "JUNGLE" ? SPRITES.coinJungle : theme === "FACTORY" ? SPRITES.coinFactory : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGem : SPRITES.coinDay;
       return theme === "JUNGLE" ? SPRITES.coinJungleBig : theme === "FACTORY" ? SPRITES.coinFactoryBig : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGemBig : SPRITES.coinDayBig;
     }
@@ -1479,6 +1691,7 @@
       if (theme === "SKYRUINS") return SPRITES.oneUpSkyRuins;
       if (theme === "JAPAN") return SPRITES.oneUpJapan;
       if (theme === "HORROR") return SPRITES.oneUpHorror;
+      if (theme === "GEOMETRYDREAM") return SPRITES.oneUpGeometryDream;
       if (theme === "NITE") return SPRITES.oneUpNite;
       if (theme === "SPACE") return SPRITES.oneUpSpace;
       return SPRITES.oneUpDay;
@@ -1518,6 +1731,8 @@
       if (this.helpTimer > 0) this.helpTimer--;
       if (this.checkpointNotice > 0) this.checkpointNotice--;
       if (this.respawnGrace > 0) this.respawnGrace--;
+      if (this.geometryMusicNotice > 0) this.geometryMusicNotice--;
+      if (this.teleportNoticeTimer > 0) this.teleportNoticeTimer--;
 
       if (this.deathTimer > 0) {
         this.updatePlayerShatter();
@@ -1532,6 +1747,7 @@
 
       const p = this.player;
       p.anim++;
+      this.updateGeometryDreamMusic();
 
       const L = this.keyDown.ArrowLeft || this.keyDown.KeyA;
       const R = this.keyDown.ArrowRight || this.keyDown.KeyD;
@@ -1626,6 +1842,7 @@
 
       this.moveAndCollide(p);
       this.updateCheckpointProgress();
+      this.updatePortals();
 
       if (p.duckFlying && p.vy === 0 && !p.onGround) p.duckFlying = 0;
 
@@ -2025,6 +2242,15 @@
         for (let i=0;i<16;i++){let x=((i*29-(camx*0.48))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,80,6,110);}
         gfx.fillStyle="#bff8ff20";
         for (let i=0;i<26;i++){let x=((i*17-(camx*0.78))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,12,2,2);}
+      } else if (theme === "GEOMETRYDREAM") {
+        gfx.fillStyle="#0b1120"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        const p1=((camx*0.18)|0)%CANVAS_W, p2=((camx*0.36)|0)%CANVAS_W;
+        gfx.strokeStyle="#58d9ff30";
+        for (let y=12;y<96;y+=12){ gfx.beginPath(); gfx.moveTo(0,y); gfx.lineTo(CANVAS_W,y); gfx.stroke(); }
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillStyle="#101a35"; gfx.fillRect(x,120,240,70); gfx.fillRect(x+90,102,260,88);}
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillStyle="#0f1730"; gfx.fillRect(x,132,300,58); gfx.fillRect(x+70,116,286,74);}
+        gfx.fillStyle="#9f7bff40";
+        for (let i=0;i<18;i++){let x=((i*21-(camx*0.64))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,10,2,2); gfx.fillRect((x+8)%CANVAS_W,24,2,2);}
       } else if (theme === "NITE") {
         gfx.fillStyle="#0b0f2a"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         gfx.fillStyle="#a8c7ff";
@@ -2135,6 +2361,22 @@
         this.drawSprite(t === 0 ? SPRITES.goalFlagA : t === 1 ? SPRITES.goalFlagB : SPRITES.goalFlagC, (this.goal.flagX - this.cameraX) | 0, (this.goal.flagY - this.cameraY) | 0, 1);
       }
 
+      for (let i = 0; i < this.portals.length; i++) {
+        const portal = this.portals[i];
+        const px = (portal.x - this.cameraX) | 0;
+        const py = (portal.y - this.cameraY - 8) | 0;
+        const huePulse = (Math.sin(this.player.anim * 0.02 + i * 1.2) + 1) * 0.5;
+        gfx.strokeStyle = portal.type === "dimensional"
+          ? (huePulse > 0.5 ? "#ff86d8" : "#76e6ff")
+          : (huePulse > 0.5 ? "#9f7bff" : "#4ef3ff");
+        gfx.strokeRect(px - 1, py - 1, 14, 20);
+        gfx.strokeRect(px + 2, py + 2, 8, 14);
+        if (portal.type === "dimensional") {
+          gfx.fillStyle = "#ff86d840";
+          gfx.fillRect(px + 1, py + 1, 10, 16);
+        }
+      }
+
       for (let i = 0; i < this.coinDrops.length; i++) this.drawSprite(this.collectibleSprite(2), this.coinDrops[i].x - this.cameraX, this.coinDrops[i].y - this.cameraY, 1);
       for (let i = 0; i < this.magnetItems.length; i++) {
         const item = this.magnetItems[i];
@@ -2216,18 +2458,28 @@
         gfx.fillText(LEVEL_NAMES[this.levelIndex], 94, 82);
       }
 
+      if (this.geometryMusicNotice > 0 && getThemeForLevel(this.levelIndex) === "GEOMETRYDREAM") {
+        gfx.globalAlpha = Math.min(1, this.geometryMusicNotice / 25);
+        gfx.fillStyle = "#00000080";
+        gfx.fillRect(100, 94, 120, 16);
+        gfx.fillStyle = "#9fe7ff";
+        gfx.font = "8px monospace";
+        gfx.fillText(this.geometryMusicLabel, 135, 105);
+        gfx.globalAlpha = 1;
+      }
+
       if (this.helpTimer > 0) {
         gfx.fillStyle = "#000c";
-        gfx.fillRect(16, 22, 288, 70);
+        gfx.fillRect(16, 22, 288, 82);
         gfx.fillStyle = "#fff";
         gfx.font = "10px monospace";
         gfx.fillText("SPECIAL KEYS", 112, 36);
         gfx.fillText("MOVE: Arrows / A,D", 24, 50);
         gfx.fillText("JUMP: Space / Up", 168, 50);
-        gfx.fillText("Z: Switch Character", 24, 62);
+        gfx.fillText("W: Switch Character", 24, 62);
         gfx.fillText("Q: Character Skill", 168, 62);
-        gfx.fillText("R: Restart   N: Next   P: Pause", 110, 74);
-        gfx.fillText("M: Mute   9/0: BGM -/+", 24, 74);
+        gfx.fillText("R: Restart   N: Prev   M: Next", 96, 74);
+        gfx.fillText("X: Mute   9/0: BGM -/+", 24, 86);
       }
 
       if (this.checkpointNotice > 0 && this.activeCheckpointIndex >= 0 && this.levelCheckpoints[this.activeCheckpointIndex]) {
@@ -2236,6 +2488,15 @@
         gfx.fillRect(82, 40, 156, 20);
         gfx.fillStyle = "#fff";
         gfx.fillText("CHECKPOINT: " + cp.label, 90, 53);
+      }
+
+      if (this.teleportNoticeTimer > 0 && this.teleportNotice) {
+        gfx.globalAlpha = Math.min(1, this.teleportNoticeTimer / 24);
+        gfx.fillStyle = "#000b";
+        gfx.fillRect(70, 56, 180, 16);
+        gfx.fillStyle = "#9fe7ff";
+        gfx.fillText(this.teleportNotice, 80, 67);
+        gfx.globalAlpha = 1;
       }
 
       gfx.fillStyle = "#0008";
