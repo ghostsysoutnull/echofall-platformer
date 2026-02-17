@@ -8,6 +8,7 @@
 <canvas id="c"></canvas>
 
 <script src="levels.js"></script>
+<script src="sprites.js"></script>
 <script src="audio/sfx.js"></script>
 <script src="audio/tracks.js"></script>
 <script src="audio/audio-engine.js"></script>
@@ -472,6 +473,10 @@
   // =========================
   // Art
   // =========================
+  const PALETTE = window.GamePalette;
+  const SPRITES = window.GameSprites;
+  if (!PALETTE || !SPRITES) throw new Error("sprites.js failed to load");
+  /* Legacy inline sprite block retained for reference:
   const PALETTE = {A:"#000000",B:"#ffffff",C:"#e23b3b",D:"#3bd16f",E:"#2f6cff",F:"#f3d44a",G:"#ff55d6",H:"#4ef3ff",I:"#b5b5b5",J:"#4a4a4a",K:"#ff8a2a",L:"#7dff3b",M:"#63b5ff",N:"#ff7fb5",O:"#2cffb0",P:"#7a4b2a"};
   const SPRITES = {
     p0:["...CCCCC..","..CCCCCCC.","..BBCCBB..","..BBCCBB..","...CCCC...","..PAPAP...","..PAPAP...","..PAPAP...","..AA.AA...","..AA.AA..."],
@@ -812,7 +817,7 @@
       "...F..",
       "......"
     ]
-  };
+  }; */
 
   // =========================
   // Levels (loaded from levels.js)
