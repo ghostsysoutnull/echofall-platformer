@@ -35,6 +35,18 @@
     gravityMul: 0.45,
     drag: 0.992
   };
+  const LAVA_DEATH_FIRE = {
+    particleCount: 64,
+    deathFrames: 46,
+    riseSpeedMin: 1.2,
+    riseSpeedMax: 2.8,
+    lateralBurst: 1.5,
+    lifeMin: 16,
+    lifeMax: 30,
+    gravity: 0.10,
+    drag: 0.965,
+    jitter: 0.18
+  };
   const PHYSICS_BY_THEME = {
     DAY:     { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     JUNGLE:  { gravity: 0.34, groundFriction: 0.83, airFriction: 0.95 },
@@ -108,12 +120,12 @@
     ct4:["IIIIIIIIII","IBBBBBBBBI","IBIIIIIIBI","IBIBBBIBBI","IBIBIIBIBI","IBIBBBIBBI","IBIIIIIIBI","IBBBBBBBBI","IIIIIIIIII","IIIIIIIIII"],
     it1:["HHHHHHHHHH","HMMMMMMMMH","HMHHMMHHMH","HMHMMMMHMH","HMHHMMHHMH","HMHMMMMHMH","HMHHMMHHMH","HMMMMMMMMH","HHHHHHHHHH","HHHHHHHHHH"],
     it4:["MMMMMMMMMM","MHHHHHHHHM","MHMMMMMMHM","MHMHHHHMHM","MHMHMMHMHM","MHMHHHHMHM","MHMMMMMMHM","MHHHHHHHHM","MMMMMMMMMM","MMMMMMMMMM"],
-    vt1:["KKKKKKKKKK","KCCFFCCFFK","KCFFFFFCFK","KCFFCCFFCK","KCCFFFFCCK","KCFFCCFFCK","KCFFFFFCFK","KCCFFCCFFK","KKKKKKKKKK","KKKKKKKKKK"],
-    vt4:["CCCCCCCCCC","CKKKKKKKKC","CKCCCCCCKC","CKCKKKCKKC","CKCKCCKCKC","CKCKKKCKKC","CKCCCCCCKC","CKKKKKKKKC","CCCCCCCCCC","CCCCCCCCCC"],
+    vt1:["JJJJJJJJJJ","JPPPPPPPPJ","JPPJPPJPPJ","JPJJPPJJPJ","JPPJJJJPPJ","JPJJPPJJPJ","JPPJPPJPPJ","JPPPPPPPPJ","JJJJJJJJJJ","JJJJJJJJJJ"],
+    vt4:["PPPPPPPPPP","PJJJJJJJJP","PJPPCCPPJP","PJPPJJPPJP","PJPPCCPPJP","PJPPJJPPJP","PJPPCCPPJP","PJJJJJJJJP","PPPPPPPPPP","PPPPPPPPPP"],
     nt1:["AAAAAAAAAA","AJJJIIJJJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJIAJJAIJA","AJIAAAAIJA","AJJJIIJJJA","AAAAAAAAAA","AAAAAAAAAA"],
     nt4:["JJJJJJJJJJ","JAAAAAAAAJ","JAJJJJJJAJ","JAJAAAAJAJ","JAJAJJJAJJ","JAJAAAAJAJ","JAJJJJJJAJ","JAAAAAAAAJ","JJJJJJJJJJ","JJJJJJJJJJ"],
-    spt1:["MMMMMMMMMM","MHHHHHHHHM","MHMHHMHHHM","MHHMMMHHHM","MHMHHMHHHM","MHHMMMHHHM","MHMHHMHHHM","MHHHHHHHHM","MMMMMMMMMM","MMMMMMMMMM"],
-    spt4:["HHHHHHHHHH","HMMMMMMMMH","HMHHHHHHMH","HMHMMMMHMH","HMHMHHMHMH","HMHMMMMHMH","HMHHHHHHMH","HMMMMMMMMH","HHHHHHHHHH","HHHHHHHHHH"],
+    spt1:["JJJJJJJJJJ","JIIIIIIIIJ","JIHIIJIIIJ","JIIJJJIHIJ","JIJIIJIIIJ","JIIHJJIIIJ","JIJIIJIIHJ","JIIIIIIIIJ","JJJJJJJJJJ","JJJJJJJJJJ"],
+    spt4:["IIIIIIIIII","IJJJJJJJJI","IJIJJJIJJI","IJHIIIIIJI","IJIJJIJJHI","IJJIIHIIJI","IJIJJJIJJI","IJJJJJJJJI","IIIIIIIIII","IIIIIIIIII"],
     hbt0:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLBBLLBBLF","FLLLBBLLLF","FLLBBLLLLF","FLLBBLLLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLLLLLLF"],
     hbt1:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLLBBLLBBF","FLLLBBLLLF","FLLBBLLLLF","FLLBBLLLLF","FLLLLBLLLF","FLLLLLLLLF","FLLLLLLLLF"],
     hbb0:["FLLLLLLLLF","FLLLLLLLLF","FLLLLLLLLF","FLLLLLLLLF","FLLLBBLLLF","FLLLBBLLLF","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FFFFFF.."],
@@ -124,6 +136,9 @@
     bcoin:["....FF....","...FLLF...","..FLLLLF..",".FLLLLLLF.","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FLLLLF..","...FLLF...","....FF...."],
     fruit:["..........","....DD....","...DLD....","..DLCLD...","..LCCCL...","..LCCCL...","...LCL....","....L.....","..........",".........."],
     bfruit:["....DD....","...DLD....","..DLCLD...","..LCCCL...","..LCCCL...","..LCCCL...","..DLCLD...","...DLD....","....DD....",".....L...."],
+    berry:["..........","...CCCCC..","..CCCCCCC.","..CCBBBCC.","..CCBBBCC.","..CCCCCCC.","...CCCCC..","....L.L...","..........",".........."],
+    bberry:["...CCCCC..","..CCCCCCC.",".CCCCCCCCC",".CCBBBBBCC",".CCBBBBBCC",".CCCCCCCCC","..CCCCCCC.","...CCCCC..","....L.L...",".........."],
+    banana:["..........","....FFFF..","...FFFF...","..FFAF....","..FFFF....","...FAFF...","....FFFF..","......LL..","..........",".........."],
     gear:["..........","...JJJJ...","..JIIIIJ..",".JIJJJJIJ.","JIIJIIJIIJ","JIIJIIJIIJ",".JIJJJJIJ.","..JIIIIJ..","...JJJJ...",".........."],
     bgear:["...JJJJ...","..JIIIIJ..",".JIJJJJIJ.","JIIJIIJIIJ","JIJJJJJJIJ","JIJJJJJJIJ","JIIJIIJIIJ",".JIJJJJIJ.","..JIIIIJ..","...JJJJ..."],
     gem:["..........","....HH....","...HMMH...","..HMMMMH..","..HMMMMH..","...HMMH...","....HH....",".....H....","..........",".........."],
@@ -159,7 +174,7 @@
   // Characters
   // =========================
   const CHARACTERS = [
-    { name: "MARIO",    anim: ["p0","p1"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
+    { name: "RANGER",   anim: ["p0","p1"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
     { name: "BUNNY",    anim: ["b0","b1"], jumpMul: 1.22, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
     { name: "NINJA",    anim: ["n0","n1"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 1, duckFlight: 0  },
     { name: "ROBOT",    anim: ["r0","r1"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
@@ -691,16 +706,57 @@
       this.audio.tone(120, 0.10);
     }
 
+    startLavaDeath(reset) {
+      if (this.deathTimer > 0) return;
+
+      const p = this.player;
+      if (!p) return this.die(reset);
+
+      this.playerShatter = [];
+      const cfg = LAVA_DEATH_FIRE;
+
+      for (let i = 0; i < cfg.particleCount; i++) {
+        const life = cfg.lifeMin + ((this.rand01() * (cfg.lifeMax - cfg.lifeMin + 1)) | 0);
+        const rise = cfg.riseSpeedMin + this.rand01() * (cfg.riseSpeedMax - cfg.riseSpeedMin);
+        const roll = this.rand01();
+        const size = this.rand01() > 0.7 ? 2 : 1;
+
+        this.playerShatter.push({
+          kind: "fire",
+          x: p.x + this.rand01() * p.w,
+          y: p.y + p.h * (0.45 + this.rand01() * 0.55),
+          vx: (this.rand01() - 0.5) * cfg.lateralBurst,
+          vy: -rise,
+          t: life,
+          life,
+          size,
+          heat: roll > 0.6 ? 2 : roll > 0.25 ? 1 : 0
+        });
+      }
+
+      this.deathReset = reset;
+      this.deathTimer = cfg.deathFrames;
+      this.audio.tone(170, 0.05, 0.00, "sawtooth");
+      this.audio.tone(140, 0.08, 0.05, "triangle");
+      this.audio.tone(110, 0.09, 0.12, "square", 0.05);
+    }
+
     updatePlayerShatter() {
       const physics = PHYSICS_BY_THEME[getThemeForLevel(this.levelIndex)] || PHYSICS_BY_THEME[DEFAULT_THEME];
       const gr = physics.gravity;
       const cfg = ENEMY_DEATH_SHATTER;
+      const lava = LAVA_DEATH_FIRE;
 
       for (let i = 0; i < this.playerShatter.length; i++) {
         const part = this.playerShatter[i];
         if (part.t-- <= 0) { part.dead = 1; continue; }
-        part.vy += gr * cfg.gravityMul;
-        part.vx *= cfg.drag;
+        if (part.kind === "fire") {
+          part.vy += lava.gravity;
+          part.vx = part.vx * lava.drag + (this.rand01() - 0.5) * lava.jitter;
+        } else {
+          part.vy += gr * cfg.gravityMul;
+          part.vx *= cfg.drag;
+        }
         part.x += part.vx;
         part.y += part.vy;
       }
@@ -712,10 +768,17 @@
       for (let i = 0; i < this.playerShatter.length; i++) {
         const part = this.playerShatter[i];
         gfx.globalAlpha = part.life ? part.t / part.life : 1;
-        for (let j = 0; j < part.pixels.length; j++) {
-          const px = part.pixels[j];
-          gfx.fillStyle = px.col;
-          gfx.fillRect(((part.x + px.dx) - this.cameraX) | 0, ((part.y + px.dy) - this.cameraY) | 0, 1, 1);
+        if (part.kind === "fire") {
+          const heat = part.life ? (part.t / part.life) : 0;
+          gfx.fillStyle = heat > 0.66 ? PALETTE.F : heat > 0.33 ? PALETTE.K : (part.heat ? PALETTE.C : PALETTE.J);
+          const s = part.size || 1;
+          gfx.fillRect((part.x - this.cameraX) | 0, (part.y - this.cameraY) | 0, s, s);
+        } else {
+          for (let j = 0; j < part.pixels.length; j++) {
+            const px = part.pixels[j];
+            gfx.fillStyle = px.col;
+            gfx.fillRect(((part.x + px.dx) - this.cameraX) | 0, ((part.y + px.dy) - this.cameraY) | 0, 1, 1);
+          }
         }
       }
       gfx.globalAlpha = 1;
@@ -761,7 +824,7 @@
       for (let y = y0; y <= y1; y++) {
         for (let x = x0; x <= x1; x++) {
           const id = this.tileIdAt(x, y);
-          if (id === 7) return this.die(0);
+          if (id === 7) return this.startLavaDeath(0);
           if (id === 2) { this.setTile(x,y,"."); this.addScore(1); this.audio.tone(740,0.03); }
           else if (id === 5) { this.setTile(x,y,"."); this.addScore(10); this.audio.tone(1040,0.05); }
           else if (id === 6) { this.setTile(x,y,"."); this.lives++; this.audio.extraLifeJingle(); }
@@ -772,8 +835,8 @@
     collectibleSprite(tileId) {
       const theme = getThemeForLevel(this.levelIndex);
       if (theme === "CASTLE") return tileId === 2 ? SPRITES.ccoin : SPRITES.bccoin;
-      if (tileId === 2) return theme === "JUNGLE" ? SPRITES.fruit : theme === "FACTORY" ? SPRITES.gear : (theme === "ICE" || theme === "SPACE") ? SPRITES.gem : SPRITES.coin;
-      return theme === "JUNGLE" ? SPRITES.bfruit : theme === "FACTORY" ? SPRITES.bgear : (theme === "ICE" || theme === "SPACE") ? SPRITES.bgem : SPRITES.bcoin;
+      if (tileId === 2) return theme === "JUNGLE" ? SPRITES.berry : theme === "FACTORY" ? SPRITES.gear : (theme === "ICE" || theme === "SPACE") ? SPRITES.gem : SPRITES.coin;
+      return theme === "JUNGLE" ? SPRITES.bberry : theme === "FACTORY" ? SPRITES.bgear : (theme === "ICE" || theme === "SPACE") ? SPRITES.bgem : SPRITES.bcoin;
     }
 
     tileSprite(tileId) {
@@ -1248,7 +1311,7 @@
           }
         }
         else if (id === 2 || id === 5) this.drawSprite(this.collectibleSprite(id), px, py, 1);
-        else if (id === 6) this.drawSprite(theme === "CASTLE" ? SPRITES.coneup : SPRITES.oneup, px, py, 1);
+        else if (id === 6) this.drawSprite(theme === "CASTLE" ? SPRITES.coneup : theme === "JUNGLE" ? SPRITES.banana : SPRITES.oneup, px, py, 1);
         else if (id === 7) this.drawSprite((t & 1) ? SPRITES.lav0 : SPRITES.lav1, px, py, 1);
         else if (id === 10) this.drawSprite(((this.player.anim >> 3) & 1) ? SPRITES.hbt1 : SPRITES.hbt0, px, py, 1);
         else if (id === 8) this.drawSprite(((this.player.anim >> 3) & 1) ? SPRITES.hbb1 : SPRITES.hbb0, px, py, 1);
