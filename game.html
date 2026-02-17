@@ -162,7 +162,31 @@
     flag1:["AAAAAA....","ACCCCCA...","ACBCCCA...","ACCCCCCA..","ACCCCCCA..","ACBCCCA...","ACCCCCA...","ACCCCCCA..","AAAAAA....",".........."],
     flag2:["AAAAAA....","ACCCCCCA..","ACBCCCA...","ACCCCCA...","ACCCCCA...","ACBCCCA...","ACCCCCCA..","ACCCCCA...","AAAAAA....",".........."],
     oneup:["...DDD....","..DLDLD...","..DLDDDD..","..DDDDDD..","..DDBBBD..","..DDDDDD..","...DDDD...","....DD....","..........",".........."],
-    coneup:["...JJJJ...","..JIIIIJ..","..JIJJIJ..","..JIIIIJ..","..JIBBIJ..","..JIIIIJ..","...JIIJ...","....JJ....","..........",".........."]
+    coneup:["...JJJJ...","..JIIIIJ..","..JIJJIJ..","..JIIIIJ..","..JIBBIJ..","..JIIIIJ..","...JIIJ...","....JJ....","..........",".........."],
+    bgBalloonLarge:[
+      "......CCCCCC......",
+      "....CCCCCCCCCC....",
+      "...CCBBBBBBBBCC...",
+      "..CCBBBBBBBBBBCC..",
+      "..CBBBBBHHBBBBBC..",
+      ".CBBBBBHHHHBBBBBC.",
+      ".CBBBBBBBBBBBBBBC.",
+      ".CBBBBBBBBBBBBBBC.",
+      ".CBBBBBBBBBBBBBBC.",
+      ".CBBBBBBBBBBBBBBC.",
+      ".CBBBBBBBBBBBBBBC.",
+      ".CBBBBBBBBBBBBBBC.",
+      ".CBBBBBBBBBBBBBBC.",
+      "..CBBBBBBBBBBBBC..",
+      "..CCBBBBBBBBBBCC..",
+      "...CCBBBBBBBBCC...",
+      "....CCCCCCCCCC....",
+      "......C....C......",
+      "......P....P......",
+      ".....PPPPPPPP.....",
+      ".....PJJJJJJP.....",
+      "......PPPPPP......"
+    ]
   };
 
   // =========================
@@ -214,6 +238,7 @@
       this.tileCols = 0;
 
       this.goal = null;
+      this.backgroundActors = [];
 
       this.player = null;
       this.enemies = [];
@@ -347,6 +372,7 @@
       this.winPending = 0;
       this.helpTimer = 0;
       this.helpShownBlocks.clear();
+      this.backgroundActors = this.buildLevelBackgroundActors(this.levelIndex);
 
       let spawnX = 10, spawnY = 10;
       let goalMarker = null;
@@ -466,6 +492,66 @@
       this.cameraX = 0;
       this.cameraY = 0;
       this.levelNameBanner = 90;
+    }
+
+    buildLevelBackgroundActors(levelIndex) {
+      const theme = getThemeForLevel(levelIndex);
+      const actors = [];
+
+      if (levelIndex === 0 && theme === "DAY") {
+        actors.push({
+          type: "balloon",
+          theme: "DAY",
+          x: 28,
+          y: 28,
+          vx: 0.22,
+          parallax: 0.28,
+          bobAmp: 3.5,
+          bobSpeed: 0.035,
+          phase: this.rand01() * 6.283,
+          w: 18,
+          h: 22,
+          scale: 1
+        });
+      }
+
+      return actors;
+    }
+
+    updateBackgroundActors() {
+      if (!this.backgroundActors.length) return;
+
+      const worldW = Math.max(CANVAS_W, this.tileCols * TILE_SIZE);
+      for (let i = 0; i < this.backgroundActors.length; i++) {
+        const actor = this.backgroundActors[i];
+        actor.x += actor.vx || 0;
+        actor.phase = (actor.phase || 0) + (actor.bobSpeed || 0);
+
+        const wrapPad = 120;
+        if (actor.x > worldW + wrapPad) actor.x = -wrapPad;
+        else if (actor.x < -wrapPad) actor.x = worldW + wrapPad;
+      }
+    }
+
+    drawBackgroundActors(theme) {
+      if (!this.backgroundActors.length) return;
+      for (let i = 0; i < this.backgroundActors.length; i++) {
+        const actor = this.backgroundActors[i];
+        if (actor.theme && actor.theme !== theme) continue;
+        this.drawBackgroundActor(actor);
+      }
+    }
+
+    drawBackgroundActor(actor) {
+      if (!actor) return;
+      if (actor.type === "balloon") {
+        const worldW = Math.max(CANVAS_W, this.tileCols * TILE_SIZE);
+        const span = worldW + actor.w + 80;
+        let sx = actor.x - this.cameraX * (actor.parallax || 0);
+        sx = ((sx % span) + span) % span - actor.w;
+        const sy = actor.y + Math.sin(actor.phase || 0) * (actor.bobAmp || 0);
+        this.drawSprite(SPRITES.bgBalloonLarge, sx, sy, actor.scale || 1);
+      }
     }
 
     tileIdAt(tx, ty) {
@@ -1114,6 +1200,8 @@
       if (p.wrapGrace) p.wrapGrace--;
       else if (p.y > this.tileRows * TILE_SIZE + 40) this.wrapToTop();
 
+      this.updateBackgroundActors();
+
       // Camera
       const tx = p.x + p.w * 0.5 - CANVAS_W * 0.5;
       const ty = p.y + p.h * 0.5 - CANVAS_H * 0.55;
@@ -1260,6 +1348,8 @@
         gfx.fillStyle = "#6bb7ff";
         gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
       }
+
+      this.drawBackgroundActors(theme);
     }
 
     drawPlayer(px, py) {
