@@ -40,7 +40,7 @@
     [{ type: 1, x: 26, y: 6 }, { type: 2, x: 52, y: 7 }, { type: 3, x: 76, y: 5 }],
     [{ type: 1, x: 24, y: 7 }, { type: 2, x: 48, y: 6 }, { type: 3, x: 72, y: 8 }],
     [{ type: 1, x: 22, y: 6 }, { type: 2, x: 46, y: 7 }, { type: 3, x: 70, y: 5 }],
-    [{ type: 1, x: 24, y: 6 }, { type: 2, x: 52, y: 5 }, { type: 3, x: 78, y: 7 }]
+    [{ type: 1, x: 24, y: 6 }, { type: 2, x: 58, y: 7 }, { type: 3, x: 84, y: 6 }, { type: 2, x: 72, y: 5 }]
   ];
 
   // =========================
@@ -96,12 +96,12 @@
     nt4:["JJJJJJJJJJ","JAAAAAAAAJ","JAJJJJJJAJ","JAJAAAAJAJ","JAJAJJJAJJ","JAJAAAAJAJ","JAJJJJJJAJ","JAAAAAAAAJ","JJJJJJJJJJ","JJJJJJJJJJ"],
     spt1:["MMMMMMMMMM","MHHHHHHHHM","MHMHHMHHHM","MHHMMMHHHM","MHMHHMHHHM","MHHMMMHHHM","MHMHHMHHHM","MHHHHHHHHM","MMMMMMMMMM","MMMMMMMMMM"],
     spt4:["HHHHHHHHHH","HMMMMMMMMH","HMHHHHHHMH","HMHMMMMHMH","HMHMHHMHMH","HMHMMMMHMH","HMHHHHHHMH","HMMMMMMMMH","HHHHHHHHHH","HHHHHHHHHH"],
-    hbt0:["..FFFFFF..",".FLLLLLLF.","FLLLBBLLLF","FLLBBBBLLF","FLLBBLBLLF","FLLLBBLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
-    hbt1:["..FFFFFF..",".FLLLLLLF.","FLLLBBLLLF","FLLBBBBLLF","FLLBBLBLLF","FLLLBBLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
-    hbb0:["..FFFFFF..",".FLLLLLLF.","FLLLLBBLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLBBLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
-    hbb1:["..FFFFFF..",".FLLLLLLF.","FLLLLBBLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLBBLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
-    hut:["..JJJJJJ..",".JIIIIIIJ.","JIIIIIIIIJ","JIIJJJJIIJ","JIIJIIJIIJ","JIIIIIIIIJ",".JIIIIIIJ.","..JJJJJJ..","..........",".........."],
-    hub:["..JJJJJJ..",".JIIIIIIJ.","JIIIIJJIIJ","JIIIIJJIIJ","JIIIIIIIIJ","JIIJJJJIIJ",".JIIIIIIJ.","..JJJJJJ..","..........",".........."],
+hbt0:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLBBLLBBLF","FLLLBBLLLF","FLLBBLLLLF",".FLLBBLLF.","..FFFFFF..","..........",".........."],
+hbt1:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLLBBLLBBF","FLLLBBLLLF","FLLBBLLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
+hbb0:["..FFFFFF..",".FLLLLLLF.","FLLLLBBLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLBBLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
+hbb1:["..FFFFFF..",".FLLLLLLF.","FLLLLBBLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLLBBLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
+hut:["..FFFFFF..",".FBBBBBBF.","FBBLLBBBBF","FBBBBLLBBF","FBBLLBBBBF","FBBBBBBLBF",".FBBBBBBF.","..FFFFFF..","..........",".........."],
+hub:["..FFFFFF..",".FBBBBBBF.","FBBBBLLBBF","FBBLLBBBBF","FBBBBBBLBF","FBBLLBBBBF",".FBBBBBBF.","..FFFFFF..","..........",".........."],
     coin:["..........","....FF....","...FLLF...","..FLLLFF..","..FLLLFF..","..FFLLF...","...FFLF...","....FF....","..........",".........."],
     bcoin:["....FF....","...FLLF...","..FLLLLF..",".FLLLLLLF.","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FLLLLF..","...FLLF...","....FF...."],
     fruit:["..........","....DD....","...DLD....","..DLCLD...","..LCCCL...","..LCCCL...","...LCL....","....L.....","..........",".........."],
@@ -823,13 +823,35 @@
       this.blockDebris = this.blockDebris.filter(d => !d.dead);
 
       // Enemies
+      const levelTheme = getThemeForLevel(this.levelIndex);
+      const spaceMode = levelTheme === "SPACE";
       for (let i = 0; i < this.enemies.length; i++) {
         const e = this.enemies[i];
         if (e.dead) continue;
         e.anim++;
 
         if (e.type) {
-          if (e.type === 1) {
+          if (spaceMode) {
+            if (e.type === 1) {
+              e.vx = e.dir * 1.5;
+              e.x += e.vx;
+              this.collideX(e);
+              e.y = e.baseY + Math.sin(e.anim * 0.22 + e.phase) * 5;
+            } else if (e.type === 2) {
+              const targetX = p.x + Math.sin(e.anim * 0.05 + e.phase) * 18;
+              const desired = targetX >= e.x ? 1.15 : -1.15;
+              e.vx += (desired - e.vx) * 0.08;
+              e.x += e.vx;
+              this.collideX(e);
+              const swoop = Math.max(0, Math.sin(e.anim * 0.11 + e.phase)) * 10;
+              e.y = e.baseY + Math.sin(e.anim * 0.08 + e.phase) * 2 + swoop;
+            } else {
+              const loopT = e.anim * 0.12 + e.phase;
+              const drift = Math.sin(e.anim * 0.03 + e.phase) * 10;
+              e.x = e.baseX + drift + Math.cos(loopT) * 14;
+              e.y = e.baseY + Math.sin(loopT * 2.3) * 6;
+            }
+          } else if (e.type === 1) {
             e.vx = e.dir * 1.25;
             e.x += e.vx;
             this.collideX(e);
@@ -902,6 +924,30 @@
           gfx.fillRect(px + i*scale, py + r*scale, scale, scale);
         }
       }
+    }
+
+    drawSpaceThruster(enemy) {
+      const px = ((enemy.x - this.cameraX) | 0);
+      const py = ((enemy.y - this.cameraY) | 0);
+      const flicker = ((enemy.anim + ((enemy.phase * 100) | 0)) & 3);
+      const flameH = 2 + (flicker >> 1);
+
+      if (enemy.type === 2) {
+        gfx.fillStyle = PALETTE.M;
+        gfx.fillRect(px + 2, py + 10, 2, flameH + 1);
+        gfx.fillRect(px + 6, py + 10, 2, flameH + 1);
+        gfx.fillStyle = PALETTE.H;
+        gfx.fillRect(px + 2, py + 10, 1, flameH);
+        gfx.fillRect(px + 7, py + 10, 1, flameH);
+      } else {
+        gfx.fillStyle = PALETTE.M;
+        gfx.fillRect(px + 4, py + 10, 2, flameH + 1);
+        gfx.fillStyle = PALETTE.H;
+        gfx.fillRect(px + 4, py + 10, 1, flameH);
+      }
+
+      gfx.fillStyle = flicker < 2 ? PALETTE.F : PALETTE.K;
+      gfx.fillRect(px + 4, py + 9, 2, 1);
     }
 
     drawBackground() {
@@ -1047,7 +1093,13 @@
         const px = x*TILE_SIZE - this.cameraX;
         const py = y*TILE_SIZE - this.cameraY;
 
-        if (id === 1 || id === 4) this.drawSprite(this.tileSprite(id), px, py, 1);
+        if (id === 1 || id === 4) {
+          this.drawSprite(this.tileSprite(id), px, py, 1);
+          if (theme === "SPACE" && (((x * 5 + y * 3 + t) & 7) === 0)) {
+            gfx.fillStyle = PALETTE.H;
+            gfx.fillRect(px + 1, py + 1, 1, 1);
+          }
+        }
         else if (id === 2 || id === 5) this.drawSprite(this.collectibleSprite(id), px, py, 1);
         else if (id === 6) this.drawSprite(theme === "CASTLE" ? SPRITES.coneup : SPRITES.oneup, px, py, 1);
         else if (id === 7) this.drawSprite((t & 1) ? SPRITES.lav0 : SPRITES.lav1, px, py, 1);
@@ -1092,6 +1144,7 @@
           spr = theme === "CASTLE" ? (f ? SPRITES.cg1 : SPRITES.cg0) : (f ? SPRITES.ga1 : SPRITES.ga0);
         }
         this.drawSprite(spr, e.x - this.cameraX, e.y - this.cameraY, 1);
+        if (theme === "SPACE" && e.type) this.drawSpaceThruster(e);
       }
 
       const p = this.player;
