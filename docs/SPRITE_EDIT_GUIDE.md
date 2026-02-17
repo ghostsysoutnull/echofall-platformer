@@ -99,3 +99,28 @@ After updating sprite arrays:
 - Active block: higher contrast, brighter outlines.
 - Used block: lower contrast and flatter shading.
 - Keep the `?` shape centered across top+bottom pieces.
+
+## 7) Player enemy-death shatter effect
+
+When the player is killed by an enemy, the game now uses a sprite-shatter explosion before respawn.
+
+- Source sprite: current rendered player frame (including `DUCK` and `SKELETON` variants).
+- Behavior: the sprite is split into chunks, pieces burst outward, then fade.
+- Scope: enemy-kill deaths only. Tile/lava deaths keep original immediate behavior.
+
+### Tunables in `game.html`
+
+The effect is controlled by `ENEMY_DEATH_SHATTER` near the top constants block:
+
+- `chunkSizeMin`, `chunkSizeMax` — piece size range.
+- `burstSpeedMin`, `burstSpeedMax` — outward velocity range.
+- `upwardLiftMin`, `upwardLiftMax` — how much pieces launch upward.
+- `pieceLifeMin`, `pieceLifeMax` — per-piece lifetime in frames.
+- `deathFramesMin`, `deathFramesMax` — delay before respawn.
+- `gravityMul`, `drag` — shatter motion feel.
+- `lateralJitter` — sideways randomness.
+
+### Random variation policy
+
+Each death randomizes a bounded profile (chunk size, burst strength, lift, and respawn delay), then adds per-piece variance.
+This keeps explosions fresh without making gameplay timing unpredictable.

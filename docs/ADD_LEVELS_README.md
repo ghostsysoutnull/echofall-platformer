@@ -166,3 +166,10 @@ validateLevel("MY_LEVEL", gridArray);
 - **No performance penalty**: All 6 default levels load instantly (<10KB total)
 - **AI agents have LEVEL_DESIGN_GUIDE.md**: Share it directly; they know constraints
 - **Version control**: Each level addition is one commit; easy to revert if needed
+
+---
+
+## Related Updates
+
+- Enemy-kill player death now has a sprite-shatter explosion effect.
+- Tuning + behavior details are documented in `docs/SPRITE_EDIT_GUIDE.md` under **"Player enemy-death shatter effect"**.
