@@ -2091,6 +2091,7 @@
       // Enemies
       const levelTheme = getThemeForLevel(this.levelIndex);
       const spaceMode = levelTheme === "SPACE";
+      let latePulseKills = 0;
       for (let i = 0; i < this.enemies.length; i++) {
         const e = this.enemies[i];
         if (e.dead) continue;
@@ -2149,6 +2150,37 @@
           }
         }
 
+        if (name === "ROBOT" && this.robotPulse.timer > 0) {
+          const cx = this.robotPulse.x;
+          const cy = this.robotPulse.y;
+          const radius = ROBOT_MAGNET_PULSE.radius;
+          const ex = e.x + e.w * 0.5;
+          const ey = e.y + e.h * 0.5;
+          const dx = cx - ex;
+          const dy = cy - ey;
+          const dist = Math.hypot(dx, dy) || 1;
+
+          if (dist <= radius) {
+            let pull = (1 - (dist / radius)) * ROBOT_MAGNET_PULSE.enemyPullStrength;
+            pull *= this.robotPulse.phase2Active ? 1.65 : 1.25;
+
+            e.x += (dx / dist) * pull;
+            e.y += (dy / dist) * pull * 0.9;
+            if (e.type) {
+              e.baseX = e.x;
+              e.baseY = e.y;
+            }
+
+            if (this.robotPulse.phase2Active && dist <= ROBOT_MAGNET_PULSE.enemyKillRadius + 4) {
+              e.dead = 1;
+              latePulseKills++;
+              this.spawnEnemyShatter(e, levelTheme);
+              this.spawnCoinDrops(e.x + 2, e.y + 2);
+              continue;
+            }
+          }
+        }
+
         if (rectsOverlap(p, e)) {
           if (e.type && name === "SKELETON") {
             this.spawnEnemyShatter(e, levelTheme);
@@ -2185,6 +2217,15 @@
             }
           }
         }
+      }
+
+      if (latePulseKills > 0) {
+        this.robotPulse.cooldown = Math.max(this.robotPulse.cooldown, ROBOT_MAGNET_PULSE.cooldownFrames + ROBOT_MAGNET_PULSE.enemyKillCooldownFrames);
+        this.robotPulse.phase2Notice = ROBOT_MAGNET_PULSE.phaseTwoAnnounceFrames;
+        this.robotPulse.killNotice = ROBOT_MAGNET_PULSE.killNoticeFrames;
+        this.robotPulse.killCount = Math.max(this.robotPulse.killCount, latePulseKills);
+        this.audio.tone(230, 0.05, 0.00, "sawtooth", 0.05);
+        this.audio.tone(170, 0.06, 0.04, "triangle", 0.05);
       }
 
       // Wrap / fall
