@@ -188,6 +188,7 @@
       this.magnetItems = [];
       this.blockDebris = [];
       this.oneupBursts = [];
+      this.checkpointRain = [];
       this.enemyShatter = [];
       this.robotPulse = { timer: 0, cooldown: 0, ringT: 0, x: 0, y: 0, phase2Active: 0, phase2Notice: 0, phase2ReadyLatch: 0, killNotice: 0, killCount: 0 };
       this.rangerGrapple = { active: 0, cooldown: 0, timer: 0, anchorX: 0, anchorY: 0, anchorTx: 0, anchorTy: 0, ringT: 0 };
@@ -206,6 +207,12 @@
       this.helpTimer = 0;
       this.helpShownBlocks = new Set();
       this.isPaused = 0;
+      this.levelSpawnX = 0;
+      this.levelSpawnY = 0;
+      this.levelCheckpoints = [];
+      this.activeCheckpointIndex = -1;
+      this.checkpointNotice = 0;
+      this.respawnGrace = 0;
 
       this.bindInput();
       this.fitCanvas();
@@ -321,6 +328,7 @@
       this.magnetItems = [];
       this.blockDebris = [];
       this.oneupBursts = [];
+      this.checkpointRain = [];
       this.enemyShatter = [];
       this.robotPulse.timer = 0;
       this.robotPulse.cooldown = 0;
@@ -342,6 +350,10 @@
       this.helpTimer = 0;
       this.helpShownBlocks.clear();
       this.backgroundActors = this.buildLevelBackgroundActors(this.levelIndex);
+      this.levelCheckpoints = [];
+      this.activeCheckpointIndex = -1;
+      this.checkpointNotice = 0;
+      this.respawnGrace = 0;
 
       let spawnX = 10, spawnY = 10;
       let goalMarker = null;
@@ -457,6 +469,9 @@
       };
 
       this.setCharacter(this.characterIndex);
+      this.levelSpawnX = spawnX;
+      this.levelSpawnY = spawnY;
+      this.levelCheckpoints = this.buildLevelCheckpoints(this.levelIndex);
 
       this.cameraX = 0;
       this.cameraY = 0;
@@ -474,6 +489,114 @@
         });
       }
       return actors;
+    }
+
+    findCheckpointSpawnY(tileX) {
+      const tx = clamp(tileX | 0, 0, this.tileCols - 1);
+      for (let ty = 0; ty < this.tileRows - 1; ty++) {
+        const here = this.tileIdAt(tx, ty);
+        const below = this.tileIdAt(tx, ty + 1);
+        if (here === 0 && this.isSolid(below)) return ty * TILE_SIZE;
+      }
+      return Math.max(0, (this.tileRows - 3) * TILE_SIZE);
+    }
+
+    buildLevelCheckpoints(levelIndex) {
+      const defs = (typeof LEVEL_CHECKPOINTS !== "undefined" && LEVEL_CHECKPOINTS[levelIndex]) ? LEVEL_CHECKPOINTS[levelIndex] : [];
+      const checkpoints = [];
+      for (let i = 0; i < defs.length; i++) {
+        const d = defs[i] || {};
+        const tx = clamp((d.xTile | 0), 1, Math.max(1, this.tileCols - 2));
+        checkpoints.push({
+          xTile: tx,
+          x: tx * TILE_SIZE,
+          y: this.findCheckpointSpawnY(tx),
+          label: d.label || ("Checkpoint " + (i + 1))
+        });
+      }
+      checkpoints.sort((a, b) => a.xTile - b.xTile);
+      return checkpoints;
+    }
+
+    updateCheckpointProgress() {
+      if (!this.levelCheckpoints.length || !this.player) return;
+      const px = this.player.x + this.player.w * 0.5;
+      let reached = this.activeCheckpointIndex;
+      for (let i = 0; i < this.levelCheckpoints.length; i++) {
+        const cp = this.levelCheckpoints[i];
+        if (px >= cp.x) reached = i;
+      }
+      if (reached !== this.activeCheckpointIndex) {
+        this.activeCheckpointIndex = reached;
+        if (reached >= 0) {
+          this.checkpointNotice = 90;
+          this.spawnCheckpointRain(this.player.x + this.player.w * 0.5, this.player.y);
+          this.audio.tone(720, 0.04, 0.00, "triangle", 0.04);
+          this.audio.tone(980, 0.05, 0.04, "sine", 0.04);
+          this.audio.tone(1240, 0.06, 0.08, "triangle", 0.035);
+          this.audio.tone(920, 0.07, 0.13, "sine", 0.03);
+        }
+      }
+    }
+
+    spawnCheckpointRain(cx, py) {
+      const count = 54;
+      const topY = py - 20;
+      for (let i = 0; i < count; i++) {
+        this.checkpointRain.push({
+          x: cx + (this.rand01() - 0.5) * 26,
+          y: topY - this.rand01() * 18,
+          vx: (this.rand01() - 0.5) * 0.4,
+          vy: 0.8 + this.rand01() * 1.8,
+          t: 28 + ((this.rand01() * 26) | 0),
+          life: 28,
+          size: this.rand01() > 0.7 ? 2 : 1,
+          col: this.rand01() > 0.5 ? PALETTE.H : PALETTE.F
+        });
+      }
+    }
+
+    updateCheckpointRain() {
+      for (let i = 0; i < this.checkpointRain.length; i++) {
+        const p = this.checkpointRain[i];
+        if (p.t-- <= 0) { p.dead = 1; continue; }
+        p.vy += 0.05;
+        p.vx *= 0.99;
+        p.x += p.vx;
+        p.y += p.vy;
+      }
+      this.checkpointRain = this.checkpointRain.filter(p => !p.dead);
+    }
+
+    respawnAtCheckpoint() {
+      if (!this.player) return this.loadLevel(this.levelIndex);
+      const p = this.player;
+      const ch = CHARACTERS[this.characterIndex];
+      const cp = this.activeCheckpointIndex >= 0 ? this.levelCheckpoints[this.activeCheckpointIndex] : null;
+      const rx = cp ? (cp.x + TILE_SIZE * 0.5 - p.w * 0.5) : this.levelSpawnX;
+      const ry = cp ? cp.y : this.levelSpawnY;
+
+      p.x = clamp(rx, 0, this.tileCols * TILE_SIZE - p.w - 0.001);
+      p.y = ry;
+      p.vx = 0;
+      p.vy = 0;
+      p.onGround = 0;
+      p.coyote = 0;
+      p.jumpBuf = 0;
+      p.wrapGrace = 24;
+      p.quackFrame = 0;
+      p.ninjaAirJumps = ch.doubleJumps;
+      p.duckFuel = ch.duckFlight;
+      p.duckFlying = 0;
+
+      this.rangerGrapple.active = 0;
+      this.robotPulse.timer = 0;
+      this.robotPulse.ringT = 0;
+      this.playerShatter = [];
+      this.deathTimer = 0;
+      this.respawnGrace = 70;
+      this.checkpointNotice = cp ? 75 : this.checkpointNotice;
+      this.audio.tone(420, 0.05, 0.00, "square", 0.03);
     }
 
     updateBackgroundActors() {
@@ -714,7 +837,8 @@
         this.characterIndex = 0;
         this.loadLevel(0);
       } else {
-        this.loadLevel(this.levelIndex);
+        if (!reset && this.levelCheckpoints.length) this.respawnAtCheckpoint();
+        else this.loadLevel(this.levelIndex);
       }
     }
 
@@ -1379,6 +1503,8 @@
     step() {
       if (this.levelNameBanner) this.levelNameBanner--;
       if (this.helpTimer > 0) this.helpTimer--;
+      if (this.checkpointNotice > 0) this.checkpointNotice--;
+      if (this.respawnGrace > 0) this.respawnGrace--;
 
       if (this.deathTimer > 0) {
         this.updatePlayerShatter();
@@ -1486,6 +1612,7 @@
       if (!JH && p.vy < 0) p.vy *= 0.55;
 
       this.moveAndCollide(p);
+      this.updateCheckpointProgress();
 
       if (p.duckFlying && p.vy === 0 && !p.onGround) p.duckFlying = 0;
 
@@ -1572,6 +1699,7 @@
         if (burst.ringT <= 0 && burst.particles.length === 0) burst.dead = 1;
       }
       this.oneupBursts = this.oneupBursts.filter(b => !b.dead);
+      this.updateCheckpointRain();
       this.updateEnemyShatter(gr);
 
       // Enemies
@@ -1667,7 +1795,7 @@
           }
         }
 
-        if (rectsOverlap(p, e)) {
+        if (this.respawnGrace <= 0 && rectsOverlap(p, e)) {
           if (e.type && name === "SKELETON") {
             this.spawnEnemyShatter(e, levelTheme);
             e.dead = 1;
@@ -2044,6 +2172,14 @@
         }
       }
 
+      for (let i = 0; i < this.checkpointRain.length; i++) {
+        const drop = this.checkpointRain[i];
+        gfx.globalAlpha = Math.max(0.2, drop.t / drop.life);
+        gfx.fillStyle = drop.col;
+        gfx.fillRect((drop.x - this.cameraX) | 0, (drop.y - this.cameraY) | 0, drop.size, drop.size + 1);
+      }
+      gfx.globalAlpha = 1;
+
       if (this.levelNameBanner) {
         gfx.fillStyle = "#000a";
         gfx.fillRect(78, 62, 164, 28);
@@ -2066,6 +2202,14 @@
         gfx.fillText("M: Mute   9/0: BGM -/+", 24, 74);
       }
 
+      if (this.checkpointNotice > 0 && this.activeCheckpointIndex >= 0 && this.levelCheckpoints[this.activeCheckpointIndex]) {
+        const cp = this.levelCheckpoints[this.activeCheckpointIndex];
+        gfx.fillStyle = "#000b";
+        gfx.fillRect(82, 40, 156, 20);
+        gfx.fillStyle = "#fff";
+        gfx.fillText("CHECKPOINT: " + cp.label, 90, 53);
+      }
+
       gfx.fillStyle = "#0008";
       gfx.fillRect(0, 0, CANVAS_W, 14);
       gfx.fillStyle = "#fff";
@@ -2074,6 +2218,10 @@
       gfx.fillText("LIVES " + this.lives, 92, 11);
       gfx.fillText(LEVEL_NAMES[this.levelIndex], 152, 11);
       gfx.fillText(CHARACTERS[this.characterIndex].name, 210, 11);
+      if (this.levelCheckpoints.length) {
+        const cpText = "CP " + Math.max(0, this.activeCheckpointIndex + 1) + "/" + this.levelCheckpoints.length;
+        gfx.fillText(cpText, 258, 11);
+      }
       const charName = CHARACTERS[this.characterIndex].name;
       if (charName === "ROBOT") {
         const phase2Ready = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
