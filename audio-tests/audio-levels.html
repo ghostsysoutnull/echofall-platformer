@@ -1,45 +1,65 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Level Tracks (Procedural WebAudio)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Theme Music (Procedural WebAudio) — Single File</title>
   <style>
     body { font-family: system-ui, sans-serif; padding: 16px; }
-    button, select { font-size: 16px; padding: 10px 14px; margin: 6px 10px 6px 0; }
-    label { margin-left: 10px; }
-    #status { margin-top: 10px; opacity: .8; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button, select { font-size: 16px; padding: 10px 14px; }
+    #status { margin-top: 10px; opacity: .8; white-space: pre-wrap; }
+    .hint { opacity: .75; margin-top: 10px; max-width: 820px; }
+    code { background: #f2f2f2; padding: 2px 6px; border-radius: 6px; }
   </style>
 </head>
 <body>
-  <div>
-    <button id="startBtn">Enable Audio</button>
+
+  <div class="row">
+    <button id="enableBtn">Enable Audio</button>
+    <button id="playBtn">Play Theme</button>
     <button id="stopBtn">Stop</button>
 
-    <select id="levelSel"></select>
-    <button id="playBtn">Play Level Track</button>
-    <button id="prevBtn">Prev</button>
-    <button id="nextBtn">Next</button>
+    <select id="themeSel"></select>
 
-    <label><input id="mute" type="checkbox" /> Mute</label>
+    <label style="display:flex;align-items:center;gap:8px;">
+      <input id="muteChk" type="checkbox" />
+      Mute
+    </label>
   </div>
-  <div id="status"></div>
+
+  <div id="status">Click “Enable Audio” (required by browsers), then Play.</div>
+
+  <div class="hint">
+    Game glue example:
+    <div style="margin-top:8px;">
+      <code>await audio.ensureStartedFromUserGesture();</code><br/>
+      <code>audio.playTheme(themeName);</code> (crossfades automatically)<br/>
+      <code>audio.stop();</code>
+    </div>
+  </div>
 
 <script>
-const LEVEL_ORDER = ["DAY", "JUNGLE", "FACTORY", "ICE", "VOLCANO", "NITE", "SPACE_01"];
+/**
+ * Themes found in:
+ *   oneUpSpriteForTheme(theme) { ... }
+ *
+ * JUNGLE, AFTERNOON, FACTORY, CASTLE, ICE, VOLCANO, SKYRUINS, JAPAN, HORROR, NITE, SPACE, default DAY
+ */
+const THEMES = ["DAY", "JUNGLE", "AFTERNOON", "FACTORY", "CASTLE", "ICE", "VOLCANO", "SKYRUINS", "JAPAN", "HORROR", "NITE", "SPACE"];
 
 /**
- * One procedural "track" per level name in LEVEL_ORDER.
- * Each track is a function: (ctx, bus, aux) => { nodes: [], timers: [] }
- * - bus: gain node already connected to master (your "track channel")
- * - aux: helper routing like delay (optional)
+ * ThemeAudio: one procedural "track" per theme (no external assets).
+ * - Starts only after a user gesture (browser autoplay rules)
+ * - Crossfades between themes
+ * - Mute toggle
  */
-
-class LevelAudio {
+class ThemeAudio {
   constructor() {
     this.ctx = null;
     this.master = null;
 
-    this.current = null; // { level, gain, track: {nodes,timers}, startedAt }
+    this.current = null; // { theme, gain, track:{nodes,timers}, startedAt }
     this.isMuted = false;
   }
 
@@ -74,34 +94,31 @@ class LevelAudio {
     this.current = null;
   }
 
-  playLevel(level, { fadeInMs = 900, crossFadeMs = 600 } = {}) {
+  playTheme(theme, { fadeInMs = 900, crossFadeMs = 650 } = {}) {
     if (!this.ctx) throw new Error("Call ensureStartedFromUserGesture() first.");
 
-    const now = this.ctx.currentTime;
+    const safeTheme = TRACKS[theme] ? theme : "DAY";
 
-    // Create next bus
+    // New theme bus
     const gain = this.ctx.createGain();
     gain.gain.value = 0.0001;
     gain.connect(this.master);
 
-    // Optional shared spatial delay per-track (very light)
-    const aux = this._makeDelay({
-      time: level === "FACTORY" ? 0.12 : 0.22,
-      feedback: level === "VOLCANO" ? 0.28 : 0.20,
-      mix: 0.22,
+    // Shared per-track "space" depth (delay). Track can route into aux.delay optionally.
+    const aux = this._createDelay({
+      time: safeTheme === "FACTORY" ? 0.12 : (safeTheme === "CASTLE" ? 0.28 : 0.22),
+      feedback: safeTheme === "HORROR" ? 0.26 : (safeTheme === "VOLCANO" ? 0.30 : 0.20),
+      mix: safeTheme === "DAY" ? 0.14 : 0.22,
       dest: gain
     });
 
-    // Build track
-    const maker = TRACKS[level] || TRACKS.SPACE_01;
-    const track = maker(this.ctx, gain, aux);
-
-    const next = { level, gain, track, startedAt: now };
+    const track = TRACKS[safeTheme](this, this.ctx, gain, aux);
+    const next = { theme: safeTheme, gain, track, startedAt: this.ctx.currentTime };
 
     // Fade in next
     this._fadeGain(gain, 1.0, fadeInMs);
 
-    // Crossfade out previous
+    // Fade out old
     const prev = this.current;
     if (prev) {
       this._fadeGain(prev.gain, 0.0, crossFadeMs);
@@ -120,32 +137,19 @@ class LevelAudio {
   }
 
   _cleanupTrackLater(wrapper, fadeMs) {
-    const stopAt = this.ctx.currentTime + fadeMs / 1000 + 0.05;
-    // stop timers
+    const stopAt = this.ctx.currentTime + fadeMs / 1000 + 0.06;
+
     for (const id of (wrapper.track?.timers || [])) clearInterval(id);
 
-    // stop nodes
     for (const n of (wrapper.track?.nodes || [])) {
       try { if (typeof n.stop === "function") n.stop(stopAt); } catch {}
       try { if (typeof n.disconnect === "function") n.disconnect(); } catch {}
     }
-    // disconnect bus later (best-effort)
+
     try { wrapper.gain.disconnect(); } catch {}
   }
 
-  _makeNoiseSource(seconds = 1.0, amp = 0.35) {
-    const sr = this.ctx.sampleRate;
-    const len = Math.max(1, Math.floor(sr * seconds));
-    const buffer = this.ctx.createBuffer(1, len, sr);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * amp;
-    const src = this.ctx.createBufferSource();
-    src.buffer = buffer;
-    src.loop = true;
-    return src;
-  }
-
-  _makeDelay({ time = 0.22, feedback = 0.20, mix = 0.22, dest }) {
+  _createDelay({ time = 0.22, feedback = 0.20, mix = 0.22, dest }) {
     const delay = this.ctx.createDelay(1.0);
     delay.delayTime.value = time;
 
@@ -164,8 +168,20 @@ class LevelAudio {
     return { delay, fb, mixGain };
   }
 
-  // quick ping helper (used by multiple tracks)
-  ping({ freq = 440, type = "sine", peak = 0.18, dur = 0.35, lpHz = 2200, toDelay = false, bus, aux }) {
+  makeNoiseSource(seconds = 1.0, amp = 0.35) {
+    const sr = this.ctx.sampleRate;
+    const len = Math.max(1, Math.floor(sr * seconds));
+    const buffer = this.ctx.createBuffer(1, len, sr);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * amp;
+
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    return src;
+  }
+
+  ping({ freq, type = "sine", peak = 0.18, dur = 0.35, lpHz = 2200, toDelay = false, bus, aux }) {
     const now = this.ctx.currentTime;
 
     const osc = this.ctx.createOscillator();
@@ -184,6 +200,7 @@ class LevelAudio {
 
     osc.connect(g);
     g.connect(lp);
+
     lp.connect(bus);
     if (toDelay && aux?.delay) lp.connect(aux.delay);
 
@@ -192,30 +209,69 @@ class LevelAudio {
 
     return [osc, g, lp];
   }
+
+  pluck({ freq, peak = 0.12, dur = 0.18, bpHz = 1400, bpQ = 2.2, toDelay = true, bus, aux }) {
+    const now = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(freq, now);
+
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(peak, now + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = bpHz;
+    bp.Q.value = bpQ;
+
+    osc.connect(g);
+    g.connect(bp);
+
+    bp.connect(bus);
+    if (toDelay && aux?.delay) bp.connect(aux.delay);
+
+    osc.start(now);
+    osc.stop(now + dur + 0.2);
+
+    return [osc, g, bp];
+  }
 }
 
-const audio = new LevelAudio();
+// ---------- distortion helper ----------
+function makeDistortionCurve(amount) {
+  const n = 44100;
+  const curve = new Float32Array(n);
+  const k = typeof amount === "number" ? amount : 50;
+  const deg = Math.PI / 180;
+  for (let i = 0; i < n; i++) {
+    const x = (i * 2) / n - 1;
+    curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
+  }
+  return curve;
+}
 
-// ---------- track builders ----------
+// ---------- theme tracks ----------
 const TRACKS = {
-  DAY: (ctx, bus, aux) => {
-    // bright pad + gentle birds
+  DAY: (engine, ctx, bus, aux) => {
+    // bright major pad + birds
     const nodes = [];
     const timers = [];
 
     const padGain = ctx.createGain();
     padGain.gain.value = 0.30;
-    padGain.connect(bus);
 
     const lp = ctx.createBiquadFilter();
     lp.type = "lowpass";
-    lp.frequency.value = 1800;
-    lp.Q.value = 0.6;
-    padGain.disconnect();
+    lp.frequency.value = 1900;
+    lp.Q.value = 0.55;
+
     padGain.connect(lp);
     lp.connect(bus);
 
-    // 3-voice major-ish chord (C-E-G) down low
+    // C major-ish (C-E-G) low
     const freqs = [130.81, 164.81, 196.00];
     for (let i = 0; i < freqs.length; i++) {
       const o = ctx.createOscillator();
@@ -226,23 +282,24 @@ const TRACKS = {
       nodes.push(o);
     }
 
-    // slow shimmer tremolo
+    // slow shimmer
     const trem = ctx.createOscillator();
     trem.type = "sine";
-    trem.frequency.value = 0.08;
+    trem.frequency.value = 0.09;
     const tremAmt = ctx.createGain();
     tremAmt.gain.value = 0.10;
     trem.connect(tremAmt);
     tremAmt.connect(padGain.gain);
     trem.start();
+
     nodes.push(padGain, lp, trem, tremAmt);
 
-    // bird chirps
+    // birds
     const id = setInterval(() => {
       if (Math.random() < 0.65) {
         const choices = [1760, 1976, 2093, 2349, 2637];
         const f = choices[(Math.random() * choices.length) | 0] * (Math.random() < 0.4 ? 0.5 : 1);
-        nodes.push(...audio.ping({ freq: f, type: "sine", peak: 0.08, dur: 0.18, lpHz: 6000, toDelay: false, bus, aux }));
+        nodes.push(...engine.ping({ freq: f, type: "sine", peak: 0.08, dur: 0.18, lpHz: 6500, toDelay: false, bus, aux }));
       }
     }, 1200);
     timers.push(id);
@@ -250,12 +307,61 @@ const TRACKS = {
     return { nodes, timers };
   },
 
-  JUNGLE: (ctx, bus, aux) => {
-    // humid drone + filtered noise + wood ticks
+  AFTERNOON: (engine, ctx, bus, aux) => {
+    // warmer day: gentle pulse pad + sun “glint” plucks
     const nodes = [];
     const timers = [];
 
-    // drone
+    const padGain = ctx.createGain();
+    padGain.gain.value = 0.26;
+
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 1600;
+    lp.Q.value = 0.65;
+
+    padGain.connect(lp);
+    lp.connect(bus);
+
+    // warm chord (A-C#-E) colored (use A + C + E to keep it mellow)
+    const freqs = [110.00, 130.81, 164.81];
+    for (const f of freqs) {
+      const o = ctx.createOscillator();
+      o.type = "triangle";
+      o.frequency.value = f;
+      o.connect(padGain);
+      o.start();
+      nodes.push(o);
+    }
+
+    // slow amplitude swell
+    const lfo = ctx.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.value = 0.07;
+    const lfoAmt = ctx.createGain();
+    lfoAmt.gain.value = 0.12;
+    lfo.connect(lfoAmt);
+    lfoAmt.connect(padGain.gain);
+    lfo.start();
+    nodes.push(padGain, lp, lfo, lfoAmt);
+
+    const id = setInterval(() => {
+      if (Math.random() < 0.55) {
+        const choices = [523.25, 659.25, 783.99, 987.77]; // bright but soft
+        const f = choices[(Math.random() * choices.length) | 0] * (Math.random() < 0.4 ? 0.5 : 1);
+        nodes.push(...engine.pluck({ freq: f, peak: 0.08, dur: 0.16, bpHz: 1600, bpQ: 2.0, toDelay: true, bus, aux }));
+      }
+    }, 900);
+    timers.push(id);
+
+    return { nodes, timers };
+  },
+
+  JUNGLE: (engine, ctx, bus, aux) => {
+    // humid drone + air noise + wood ticks
+    const nodes = [];
+    const timers = [];
+
     const droneGain = ctx.createGain();
     droneGain.gain.value = 0.34;
 
@@ -280,8 +386,7 @@ const TRACKS = {
     o1.start(); o2.start();
     nodes.push(droneGain, bp, o1, o2);
 
-    // noise "air"
-    const noise = audio._makeNoiseSource(1.0, 0.28);
+    const noise = engine.makeNoiseSource(1.0, 0.28);
     const nlp = ctx.createBiquadFilter();
     nlp.type = "lowpass";
     nlp.frequency.value = 1200;
@@ -297,11 +402,10 @@ const TRACKS = {
     noise.start();
     nodes.push(noise, nlp, nGain);
 
-    // wood ticks (short pings)
     const id = setInterval(() => {
       if (Math.random() < 0.75) {
         const f = 300 + Math.random() * 450;
-        nodes.push(...audio.ping({ freq: f, type: "triangle", peak: 0.07, dur: 0.12, lpHz: 1800, toDelay: Math.random() < 0.25, bus, aux }));
+        nodes.push(...engine.ping({ freq: f, type: "triangle", peak: 0.07, dur: 0.12, lpHz: 1800, toDelay: Math.random() < 0.25, bus, aux }));
       }
     }, 700);
     timers.push(id);
@@ -309,44 +413,41 @@ const TRACKS = {
     return { nodes, timers };
   },
 
-  FACTORY: (ctx, bus, aux) => {
-    // rhythmic pulses + metallic bandpass noise
+  FACTORY: (engine, ctx, bus, aux) => {
+    // rhythmic machine pulse + metallic noise
     const nodes = [];
     const timers = [];
 
     const pulseGain = ctx.createGain();
     pulseGain.gain.value = 0.0001;
-    pulseGain.connect(bus);
 
     const osc = ctx.createOscillator();
     osc.type = "sawtooth";
     osc.frequency.value = 110;
-    osc.connect(pulseGain);
-    osc.start();
-    nodes.push(osc, pulseGain);
 
-    // "machine" filter sweep
     const bp = ctx.createBiquadFilter();
     bp.type = "bandpass";
-    bp.frequency.value = 800;
-    bp.Q.value = 2.0;
-    pulseGain.disconnect();
+    bp.frequency.value = 900;
+    bp.Q.value = 2.3;
+
+    osc.connect(pulseGain);
     pulseGain.connect(bp);
     bp.connect(bus);
-    nodes.push(bp);
+
+    osc.start();
+    nodes.push(osc, pulseGain, bp);
 
     const lfo = ctx.createOscillator();
     lfo.type = "square";
     lfo.frequency.value = 0.5;
     const lfoAmt = ctx.createGain();
-    lfoAmt.gain.value = 350;
+    lfoAmt.gain.value = 380;
     lfo.connect(lfoAmt);
     lfoAmt.connect(bp.frequency);
     lfo.start();
     nodes.push(lfo, lfoAmt);
 
-    // metallic noise layer
-    const noise = audio._makeNoiseSource(1.0, 0.30);
+    const noise = engine.makeNoiseSource(1.0, 0.30);
     const nbp = ctx.createBiquadFilter();
     nbp.type = "bandpass";
     nbp.frequency.value = 2200;
@@ -361,19 +462,16 @@ const TRACKS = {
     noise.start();
     nodes.push(noise, nbp, nGain);
 
-    // rhythmic gate (simple)
     const id = setInterval(() => {
       const now = ctx.currentTime;
-      // 4-on-the-floor-ish
       pulseGain.gain.cancelScheduledValues(now);
       pulseGain.gain.setValueAtTime(0.0001, now);
       pulseGain.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
       pulseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.10);
 
       if (Math.random() < 0.35) {
-        // occasional clang ping
-        const f = 500 + Math.random() * 900;
-        nodes.push(...audio.ping({ freq: f, type: "triangle", peak: 0.10, dur: 0.20, lpHz: 2600, toDelay: true, bus, aux }));
+        const f = 520 + Math.random() * 1100;
+        nodes.push(...engine.ping({ freq: f, type: "triangle", peak: 0.10, dur: 0.20, lpHz: 2600, toDelay: true, bus, aux }));
       }
     }, 430);
     timers.push(id);
@@ -381,13 +479,65 @@ const TRACKS = {
     return { nodes, timers };
   },
 
-  ICE: (ctx, bus, aux) => {
-    // airy noise + bell pings + slow pad
+  CASTLE: (engine, ctx, bus, aux) => {
+    // organ-ish pad + stone “hall” vibe (delay)
     const nodes = [];
     const timers = [];
 
-    // airy hiss
-    const noise = audio._makeNoiseSource(1.0, 0.25);
+    const padGain = ctx.createGain();
+    padGain.gain.value = 0.30;
+
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 1400;
+    lp.Q.value = 0.75;
+
+    padGain.connect(lp);
+    lp.connect(bus);
+
+    // minor-ish chord (D-F-A) low
+    const freqs = [146.83, 174.61, 220.00];
+    for (let i = 0; i < freqs.length; i++) {
+      const o = ctx.createOscillator();
+      o.type = "sine";
+      o.frequency.value = freqs[i] * (i === 2 ? 0.5 : 1);
+      o.connect(padGain);
+      o.start();
+      nodes.push(o);
+    }
+
+    // gentle vibrato
+    const vib = ctx.createOscillator();
+    vib.type = "sine";
+    vib.frequency.value = 0.12;
+    const vibAmt = ctx.createGain();
+    vibAmt.gain.value = 7; // cents via detune
+    vib.connect(vibAmt);
+    for (const n of nodes) {
+      if (n instanceof OscillatorNode) vibAmt.connect(n.detune);
+    }
+    vib.start();
+    nodes.push(padGain, lp, vib, vibAmt);
+
+    // occasional “choir” glints
+    const id = setInterval(() => {
+      if (Math.random() < 0.45) {
+        const choices = [293.66, 349.23, 440.00, 587.33];
+        const f = choices[(Math.random() * choices.length) | 0] * (Math.random() < 0.35 ? 0.5 : 1);
+        nodes.push(...engine.ping({ freq: f, type: "sine", peak: 0.09, dur: 0.42, lpHz: 2400, toDelay: true, bus, aux }));
+      }
+    }, 1300);
+    timers.push(id);
+
+    return { nodes, timers };
+  },
+
+  ICE: (engine, ctx, bus, aux) => {
+    // airy hiss + bell pings + soft pad
+    const nodes = [];
+    const timers = [];
+
+    const noise = engine.makeNoiseSource(1.0, 0.25);
     const hp = ctx.createBiquadFilter();
     hp.type = "highpass";
     hp.frequency.value = 900;
@@ -399,39 +549,37 @@ const TRACKS = {
     noise.connect(hp);
     hp.connect(airGain);
     airGain.connect(bus);
+
     noise.start();
     nodes.push(noise, hp, airGain);
 
-    // pad
     const padGain = ctx.createGain();
     padGain.gain.value = 0.22;
-    padGain.connect(bus);
 
     const lp = ctx.createBiquadFilter();
     lp.type = "lowpass";
     lp.frequency.value = 1400;
     lp.Q.value = 0.6;
-    padGain.disconnect();
+
     padGain.connect(lp);
     lp.connect(bus);
 
-    const freqs = [246.94, 311.13, 369.99]; // Bm-ish color
-    for (let i = 0; i < freqs.length; i++) {
+    const freqs = [246.94, 311.13, 369.99]; // cool color
+    for (const f of freqs) {
       const o = ctx.createOscillator();
       o.type = "sine";
-      o.frequency.value = freqs[i] * 0.5;
+      o.frequency.value = f * 0.5;
       o.connect(padGain);
       o.start();
       nodes.push(o);
     }
     nodes.push(padGain, lp);
 
-    // bell pings
     const id = setInterval(() => {
       if (Math.random() < 0.55) {
         const choices = [523.25, 659.25, 783.99, 1046.5];
         const f = choices[(Math.random() * choices.length) | 0] * (Math.random() < 0.35 ? 0.5 : 1);
-        nodes.push(...audio.ping({ freq: f, type: "sine", peak: 0.10, dur: 0.45, lpHz: 5000, toDelay: true, bus, aux }));
+        nodes.push(...engine.ping({ freq: f, type: "sine", peak: 0.10, dur: 0.45, lpHz: 5200, toDelay: true, bus, aux }));
       }
     }, 1100);
     timers.push(id);
@@ -439,8 +587,8 @@ const TRACKS = {
     return { nodes, timers };
   },
 
-  VOLCANO: (ctx, bus, aux) => {
-    // sub rumble + distortion + crackle pings
+  VOLCANO: (engine, ctx, bus, aux) => {
+    // sub rumble + grit + embers
     const nodes = [];
     const timers = [];
 
@@ -451,7 +599,6 @@ const TRACKS = {
     sub.type = "sine";
     sub.frequency.value = 33;
 
-    // waveshaper for grit
     const shaper = ctx.createWaveShaper();
     shaper.curve = makeDistortionCurve(220);
     shaper.oversample = "2x";
@@ -469,8 +616,7 @@ const TRACKS = {
     sub.start();
     nodes.push(rumbleGain, sub, shaper, lp);
 
-    // crackle noise
-    const noise = audio._makeNoiseSource(1.0, 0.34);
+    const noise = engine.makeNoiseSource(1.0, 0.34);
     const nbp = ctx.createBiquadFilter();
     nbp.type = "bandpass";
     nbp.frequency.value = 1800;
@@ -482,14 +628,14 @@ const TRACKS = {
     noise.connect(nbp);
     nbp.connect(nGain);
     nGain.connect(bus);
+
     noise.start();
     nodes.push(noise, nbp, nGain);
 
-    // ember pings
     const id = setInterval(() => {
       if (Math.random() < 0.60) {
-        const f = 180 + Math.random() * 220;
-        nodes.push(...audio.ping({ freq: f, type: "triangle", peak: 0.10, dur: 0.20, lpHz: 1400, toDelay: Math.random() < 0.30, bus, aux }));
+        const f = 170 + Math.random() * 230;
+        nodes.push(...engine.ping({ freq: f, type: "triangle", peak: 0.10, dur: 0.20, lpHz: 1500, toDelay: Math.random() < 0.30, bus, aux }));
       }
     }, 800);
     timers.push(id);
@@ -497,39 +643,250 @@ const TRACKS = {
     return { nodes, timers };
   },
 
-  NITE: (ctx, bus, aux) => {
-    // soft minor pad + crickets
+  SKYRUINS: (engine, ctx, bus, aux) => {
+    // airy choir pad + wind + distant chimes
     const nodes = [];
     const timers = [];
 
+    // wind
+    const wind = engine.makeNoiseSource(1.0, 0.22);
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 600;
+    bp.Q.value = 0.6;
+
+    const windGain = ctx.createGain();
+    windGain.gain.value = 0.12;
+
+    wind.connect(bp);
+    bp.connect(windGain);
+    windGain.connect(bus);
+    wind.start();
+    nodes.push(wind, bp, windGain);
+
+    // choir-ish pad
     const padGain = ctx.createGain();
-    padGain.gain.value = 0.26;
-    padGain.connect(bus);
+    padGain.gain.value = 0.25;
+
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 1700;
+    lp.Q.value = 0.55;
+
+    padGain.connect(lp);
+    lp.connect(bus);
+
+    const freqs = [196.00, 246.94, 293.66]; // G-B-D vibe
+    for (let i = 0; i < freqs.length; i++) {
+      const o = ctx.createOscillator();
+      o.type = i === 0 ? "triangle" : "sine";
+      o.frequency.value = freqs[i] * 0.5;
+      o.connect(padGain);
+      o.start();
+      nodes.push(o);
+    }
+
+    // slow filter drift
+    const lfo = ctx.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.value = 0.02;
+    const lfoAmt = ctx.createGain();
+    lfoAmt.gain.value = 500;
+    lfo.connect(lfoAmt);
+    lfoAmt.connect(lp.frequency);
+    lfo.start();
+
+    nodes.push(padGain, lp, lfo, lfoAmt);
+
+    // chimes
+    const id = setInterval(() => {
+      if (Math.random() < 0.50) {
+        const choices = [659.25, 783.99, 987.77, 1318.51];
+        const f = choices[(Math.random() * choices.length) | 0] * (Math.random() < 0.3 ? 0.5 : 1);
+        nodes.push(...engine.ping({ freq: f, type: "sine", peak: 0.08, dur: 0.40, lpHz: 6500, toDelay: true, bus, aux }));
+      }
+    }, 1200);
+    timers.push(id);
+
+    return { nodes, timers };
+  },
+
+  JAPAN: (engine, ctx, bus, aux) => {
+    // pentatonic plucks + occasional taiko thump
+    const nodes = [];
+    const timers = [];
+
+    // soft drone base
+    const baseGain = ctx.createGain();
+    baseGain.gain.value = 0.18;
 
     const lp = ctx.createBiquadFilter();
     lp.type = "lowpass";
     lp.frequency.value = 1200;
     lp.Q.value = 0.7;
-    padGain.disconnect();
+
+    baseGain.connect(lp);
+    lp.connect(bus);
+
+    const drone = ctx.createOscillator();
+    drone.type = "sine";
+    drone.frequency.value = 110; // A2
+    drone.connect(baseGain);
+    drone.start();
+    nodes.push(baseGain, lp, drone);
+
+    // pentatonic (A, C, D, E, G) around mid/high
+    const scale = [440, 523.25, 587.33, 659.25, 783.99];
+    const id1 = setInterval(() => {
+      if (Math.random() < 0.78) {
+        const f = scale[(Math.random() * scale.length) | 0] * (Math.random() < 0.35 ? 0.5 : 1);
+        nodes.push(...engine.pluck({ freq: f, peak: 0.09, dur: 0.14, bpHz: 1800, bpQ: 3.0, toDelay: true, bus, aux }));
+      }
+    }, 520);
+    timers.push(id1);
+
+    // taiko thump: low sine burst
+    const id2 = setInterval(() => {
+      if (Math.random() < 0.40) {
+        const now = ctx.currentTime;
+        const o = ctx.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(80, now);
+        o.frequency.exponentialRampToValueAtTime(55, now + 0.10);
+
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+
+        const lp2 = ctx.createBiquadFilter();
+        lp2.type = "lowpass";
+        lp2.frequency.value = 400;
+        lp2.Q.value = 0.8;
+
+        o.connect(g);
+        g.connect(lp2);
+        lp2.connect(bus);
+        if (aux?.delay) lp2.connect(aux.delay);
+
+        o.start(now);
+        o.stop(now + 0.35);
+        nodes.push(o, g, lp2);
+      }
+    }, 1600);
+    timers.push(id2);
+
+    return { nodes, timers };
+  },
+
+  HORROR: (engine, ctx, bus, aux) => {
+    // dissonant drones + unsettling sweeps + occasional stabs
+    const nodes = [];
+    const timers = [];
+
+    const g = ctx.createGain();
+    g.gain.value = 0.34;
+
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 900;
+    lp.Q.value = 0.9;
+
+    g.connect(lp);
+    lp.connect(bus);
+
+    // tritone-ish / clustered tones
+    const freqs = [55, 58.27, 82.41]; // A1-ish + Bb-ish + E2-ish
+    for (let i = 0; i < freqs.length; i++) {
+      const o = ctx.createOscillator();
+      o.type = i === 0 ? "triangle" : "sine";
+      o.frequency.value = freqs[i];
+      o.connect(g);
+      o.start();
+      nodes.push(o);
+    }
+    nodes.push(g, lp);
+
+    // slow, uneven filter movement
+    const lfo = ctx.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.value = 0.018;
+    const lfoAmt = ctx.createGain();
+    lfoAmt.gain.value = 650;
+    lfo.connect(lfoAmt);
+    lfoAmt.connect(lp.frequency);
+    lfo.start();
+    nodes.push(lfo, lfoAmt);
+
+    // creepy noise swells
+    const noise = engine.makeNoiseSource(1.0, 0.30);
+    const nbp = ctx.createBiquadFilter();
+    nbp.type = "bandpass";
+    nbp.frequency.value = 1200;
+    nbp.Q.value = 1.4;
+
+    const ng = ctx.createGain();
+    ng.gain.value = 0.0001;
+
+    noise.connect(nbp);
+    nbp.connect(ng);
+    ng.connect(bus);
+    noise.start();
+    nodes.push(noise, nbp, ng);
+
+    const id1 = setInterval(() => {
+      const now = ctx.currentTime;
+      const up = 0.18 + Math.random() * 0.25;
+      ng.gain.cancelScheduledValues(now);
+      ng.gain.setValueAtTime(0.0001, now);
+      ng.gain.exponentialRampToValueAtTime(0.14, now + up);
+      ng.gain.exponentialRampToValueAtTime(0.0001, now + up + 0.25);
+    }, 1400);
+    timers.push(id1);
+
+    // stabs
+    const id2 = setInterval(() => {
+      if (Math.random() < 0.35) {
+        const f = 200 + Math.random() * 800;
+        nodes.push(...engine.ping({ freq: f, type: "sawtooth", peak: 0.10, dur: 0.12, lpHz: 1400, toDelay: true, bus, aux }));
+      }
+    }, 1100);
+    timers.push(id2);
+
+    return { nodes, timers };
+  },
+
+  NITE: (engine, ctx, bus, aux) => {
+    // soft pad + crickets
+    const nodes = [];
+    const timers = [];
+
+    const padGain = ctx.createGain();
+    padGain.gain.value = 0.26;
+
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 1200;
+    lp.Q.value = 0.7;
+
     padGain.connect(lp);
     lp.connect(bus);
 
-    const freqs = [110, 130.81, 164.81]; // A + C + E-ish
-    for (let i = 0; i < freqs.length; i++) {
+    const freqs = [110, 130.81, 164.81]; // A + C + E
+    for (const f of freqs) {
       const o = ctx.createOscillator();
       o.type = "sine";
-      o.frequency.value = freqs[i];
+      o.frequency.value = f;
       o.connect(padGain);
       o.start();
       nodes.push(o);
     }
     nodes.push(padGain, lp);
 
-    // crickets: tiny noise bursts filtered
     const id = setInterval(() => {
-      if (Math.random() < 0.8) {
+      if (Math.random() < 0.80) {
         const f = 2500 + Math.random() * 1500;
-        nodes.push(...audio.ping({ freq: f, type: "sine", peak: 0.05, dur: 0.08, lpHz: 6000, toDelay: false, bus, aux }));
+        nodes.push(...engine.ping({ freq: f, type: "sine", peak: 0.05, dur: 0.08, lpHz: 6500, toDelay: false, bus, aux }));
       }
     }, 500);
     timers.push(id);
@@ -537,12 +894,11 @@ const TRACKS = {
     return { nodes, timers };
   },
 
-  SPACE_01: (ctx, bus, aux) => {
-    // (your original vibe) drones + dust + occasional blips + delay
+  SPACE: (engine, ctx, bus, aux) => {
+    // drones + dust + blips
     const nodes = [];
     const timers = [];
 
-    // Drone filter
     const droneLP = ctx.createBiquadFilter();
     droneLP.type = "lowpass";
     droneLP.frequency.value = 800;
@@ -554,7 +910,6 @@ const TRACKS = {
     droneGain.connect(droneLP);
     droneLP.connect(bus);
 
-    // LFO sweep
     const lfo = ctx.createOscillator();
     lfo.type = "sine";
     lfo.frequency.value = 0.03;
@@ -564,7 +919,6 @@ const TRACKS = {
     lfoAmt.connect(droneLP.frequency);
     lfo.start();
 
-    // Two detuned oscillators
     const baseHz = 55;
     const o1 = ctx.createOscillator();
     o1.type = "triangle";
@@ -574,7 +928,6 @@ const TRACKS = {
     o2.type = "sine";
     o2.frequency.value = baseHz * 1.005;
 
-    // Drift
     const drift = ctx.createOscillator();
     drift.type = "sine";
     drift.frequency.value = 0.015;
@@ -590,8 +943,7 @@ const TRACKS = {
 
     nodes.push(droneLP, droneGain, lfo, lfoAmt, drift, driftAmt, o1, o2);
 
-    // Dust noise
-    const noise = audio._makeNoiseSource(1.0, 0.35);
+    const noise = engine.makeNoiseSource(1.0, 0.35);
     const bp = ctx.createBiquadFilter();
     bp.type = "bandpass";
     bp.frequency.value = 1200;
@@ -603,10 +955,8 @@ const TRACKS = {
     const dustLfo = ctx.createOscillator();
     dustLfo.type = "sine";
     dustLfo.frequency.value = 0.025;
-
     const dustAmt = ctx.createGain();
     dustAmt.gain.value = 700;
-
     dustLfo.connect(dustAmt);
     dustAmt.connect(bp.frequency);
     dustLfo.start();
@@ -618,12 +968,11 @@ const TRACKS = {
 
     nodes.push(noise, bp, dustGain, dustLfo, dustAmt);
 
-    // Random blips
     const id = setInterval(() => {
       if (Math.random() < 0.40) {
         const choices = [220, 247, 262, 294, 330, 392];
         const f = choices[(Math.random() * choices.length) | 0] * (Math.random() < 0.25 ? 2 : 1);
-        nodes.push(...audio.ping({ freq: f, type: Math.random() < 0.5 ? "sine" : "triangle", peak: 0.18, dur: 0.35, lpHz: 2200, toDelay: true, bus, aux }));
+        nodes.push(...engine.ping({ freq: f, type: Math.random() < 0.5 ? "sine" : "triangle", peak: 0.18, dur: 0.35, lpHz: 2200, toDelay: true, bus, aux }));
       }
     }, 1200);
     timers.push(id);
@@ -632,48 +981,29 @@ const TRACKS = {
   }
 };
 
-function makeDistortionCurve(amount) {
-  // classic waveshaper curve
-  const n = 44100;
-  const curve = new Float32Array(n);
-  const k = typeof amount === "number" ? amount : 50;
-  const deg = Math.PI / 180;
-  for (let i = 0; i < n; i++) {
-    const x = (i * 2) / n - 1;
-    curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
-  }
-  return curve;
-}
-
-// ---------- UI wiring ----------
+// ---------- demo wiring ----------
+const audio = new ThemeAudio();
 const status = document.getElementById("status");
-const levelSel = document.getElementById("levelSel");
+const themeSel = document.getElementById("themeSel");
 
-LEVEL_ORDER.forEach(l => {
+for (const t of THEMES) {
   const opt = document.createElement("option");
-  opt.value = l;
-  opt.textContent = l;
-  levelSel.appendChild(opt);
-});
-
-let levelIndex = 0;
-levelSel.value = LEVEL_ORDER[levelIndex];
-
-function setLevel(i) {
-  levelIndex = (i + LEVEL_ORDER.length) % LEVEL_ORDER.length;
-  levelSel.value = LEVEL_ORDER[levelIndex];
+  opt.value = t;
+  opt.textContent = t;
+  themeSel.appendChild(opt);
 }
+themeSel.value = "DAY";
 
-document.getElementById("startBtn").addEventListener("click", async () => {
+document.getElementById("enableBtn").addEventListener("click", async () => {
   await audio.ensureStartedFromUserGesture();
-  status.textContent = "Audio enabled. Pick a level and hit Play.";
+  status.textContent = "Audio enabled. Choose a theme and click Play.";
 });
 
 document.getElementById("playBtn").addEventListener("click", async () => {
   await audio.ensureStartedFromUserGesture();
-  const level = levelSel.value;
-  audio.playLevel(level);
-  status.textContent = `Playing track: ${level}`;
+  const theme = themeSel.value;
+  audio.playTheme(theme);
+  status.textContent = `Playing theme: ${theme}`;
 });
 
 document.getElementById("stopBtn").addEventListener("click", () => {
@@ -681,16 +1011,9 @@ document.getElementById("stopBtn").addEventListener("click", () => {
   status.textContent = "Stopped.";
 });
 
-document.getElementById("prevBtn").addEventListener("click", () => setLevel(levelIndex - 1));
-document.getElementById("nextBtn").addEventListener("click", () => setLevel(levelIndex + 1));
-
-levelSel.addEventListener("change", () => {
-  levelIndex = LEVEL_ORDER.indexOf(levelSel.value);
-});
-
-document.getElementById("mute").addEventListener("change", (e) => {
+document.getElementById("muteChk").addEventListener("change", (e) => {
   audio.setMute(e.target.checked);
-  status.textContent = e.target.checked ? "Muted." : `Unmuted.`;
+  status.textContent = e.target.checked ? "Muted." : "Unmuted.";
 });
 </script>
 </body>
