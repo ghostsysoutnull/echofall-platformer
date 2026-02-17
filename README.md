@@ -12,6 +12,9 @@ Quick index for this workspace.
 
 - `game.html` — main game loop, rendering, input, gameplay logic
 - `levels.js` — level data, order, themes, and level validation utilities
+- `audio/audio-engine.js` — audio coordinator (master/mute, SFX bus, theme track crossfades)
+- `audio/sfx.js` — gameplay SFX patterns (quack, flag raise, extra life)
+- `audio/tracks.js` — procedural per-theme background music builders
 
 ## Notes
 
