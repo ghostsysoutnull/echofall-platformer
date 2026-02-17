@@ -10,6 +10,7 @@
     SKYRUINS: "SKYRUINS",
     JAPAN: "JAPAN",
     HORROR: "HORROR",
+    GOTHIC: "GOTHIC",
     GEOMETRYDREAM: "GEOMETRYDREAM",
     GEOMETRYDREAM_S1: "GEOMETRYDREAM_S1",
     GEOMETRYDREAM_S2: "GEOMETRYDREAM_S2",
@@ -167,6 +168,7 @@
       if (key === "SKYRUINS") return this.SKYRUINS(ctx, bus, aux, helpers);
       if (key === "JAPAN") return this.JAPAN(ctx, bus, aux, helpers);
       if (key === "HORROR") return this.HORROR(ctx, bus, aux, helpers);
+      if (key === "GOTHIC") return this.GOTHIC(ctx, bus, aux, helpers);
       if (key === "GEOMETRYDREAM") return this.GEOMETRYDREAM(ctx, bus, aux, helpers);
       if (key === "GEOMETRYDREAM_S1") return this.GEOMETRYDREAM_S1(ctx, bus, aux, helpers);
       if (key === "GEOMETRYDREAM_S2") return this.GEOMETRYDREAM_S2(ctx, bus, aux, helpers);
@@ -738,6 +740,94 @@
         }
       }, 2900);
       timers.push(howlTimer);
+
+      return { nodes, timers };
+    },
+
+    GOTHIC: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      const organGain = ctx.createGain();
+      organGain.gain.value = 0.24;
+      const organLp = ctx.createBiquadFilter();
+      organLp.type = "lowpass";
+      organLp.frequency.value = 1200;
+      organLp.Q.value = 0.9;
+      organGain.connect(organLp);
+      organLp.connect(bus);
+
+      const bass = ctx.createOscillator();
+      bass.type = "triangle";
+      bass.frequency.value = 73.42;
+      const mid = ctx.createOscillator();
+      mid.type = "sine";
+      mid.frequency.value = 146.83;
+      const choir = ctx.createOscillator();
+      choir.type = "sine";
+      choir.frequency.value = 293.66;
+      bass.connect(organGain);
+      mid.connect(organGain);
+      choir.connect(organGain);
+      bass.start();
+      mid.start();
+      choir.start();
+
+      const trem = ctx.createOscillator();
+      trem.type = "sine";
+      trem.frequency.value = 0.06;
+      const tremAmt = ctx.createGain();
+      tremAmt.gain.value = 0.08;
+      trem.connect(tremAmt);
+      tremAmt.connect(organGain.gain);
+      trem.start();
+
+      const candle = makeNoiseSource(ctx, 1.0, 0.20);
+      const candleHp = ctx.createBiquadFilter();
+      candleHp.type = "highpass";
+      candleHp.frequency.value = 900;
+      const candleGain = ctx.createGain();
+      candleGain.gain.value = 0.06;
+      candle.connect(candleHp);
+      candleHp.connect(candleGain);
+      candleGain.connect(bus);
+      candle.start();
+
+      nodes.push(organGain, organLp, bass, mid, choir, trem, tremAmt, candle, candleHp, candleGain);
+
+      const bellTimer = setInterval(() => {
+        if (Math.random() < 0.66) {
+          const tones = [293.66, 329.63, 392.00, 440.00, 523.25, 587.33];
+          const f = tones[(Math.random() * tones.length) | 0] * (Math.random() < 0.30 ? 0.5 : 1);
+          nodes.push(...ping({ freq: f, type: "triangle", peak: 0.08, dur: 0.18, lpHz: 2600, toDelay: Math.random() < 0.32, bus, aux }));
+        }
+      }, 680);
+      timers.push(bellTimer);
+
+      const bellSweepTimer = setInterval(() => {
+        if (Math.random() < 0.34) {
+          const now = ctx.currentTime;
+          const bell = ctx.createOscillator();
+          bell.type = "sine";
+          bell.frequency.setValueAtTime(620 + Math.random() * 90, now);
+          bell.frequency.exponentialRampToValueAtTime(180 + Math.random() * 30, now + 0.80);
+
+          const bellGain = ctx.createGain();
+          bellGain.gain.setValueAtTime(0.0001, now);
+          bellGain.gain.exponentialRampToValueAtTime(0.048, now + 0.10);
+          bellGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.10);
+
+          bell.connect(bellGain);
+          bellGain.connect(bus);
+          if (aux) bellGain.connect(aux);
+
+          bell.start(now);
+          bell.stop(now + 1.14);
+          nodes.push(bell, bellGain);
+        }
+      }, 2600);
+      timers.push(bellSweepTimer);
 
       return { nodes, timers };
     },
