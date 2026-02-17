@@ -93,6 +93,7 @@
     ICE:     { gravity: 0.30, groundFriction: 0.95, airFriction: 0.97 },
     VOLCANO: { gravity: 0.36, groundFriction: 0.80, airFriction: 0.94 },
     SKYRUINS:{ gravity: 0.33, groundFriction: 0.83, airFriction: 0.95 },
+    JAPAN:   { gravity: 0.34, groundFriction: 0.82, airFriction: 0.95 },
     NITE:    { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     SPACE:   { gravity: 0.28, groundFriction: 0.84, airFriction: 0.96 }
   };
@@ -535,6 +536,10 @@
         this.drawSprite(SPRITES.bgSkyRuinsLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "grappleSpire") {
         this.drawSprite(SPRITES.bgGrappleSpireLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "japanPagoda") {
+        this.drawSprite(SPRITES.bgJapanPagodaLarge, sx, sy, actor.scale || 1);
+      } else if (actor.type === "toriiGate") {
+        this.drawSprite(SPRITES.bgJapanToriiLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "moonBalloon") {
         this.drawSprite(SPRITES.bgMoonBalloonLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "shootingGlider" || actor.type === "stationShuttle" || actor.type === "airplane") {
@@ -543,6 +548,8 @@
         this.drawSprite(SPRITES.bgTugLarge, sx, sy, actor.scale || 1);
       } else if (actor.type === "bird") {
         this.drawSprite(SPRITES.bgBirdSmall, sx, sy, actor.scale || 1);
+      } else if (actor.type === "paperKite") {
+        this.drawSprite(SPRITES.bgJapanKiteSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "chainBird") {
         this.drawSprite(SPRITES.bgChainBirdSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "canopyBird" || actor.type === "raven" || actor.type === "snowOwl") {
@@ -1323,6 +1330,7 @@
       const theme = getThemeForLevel(this.levelIndex);
       if (theme === "CASTLE") return tileId === 2 ? SPRITES.coinCastle : SPRITES.coinCastleBig;
       if (theme === "SKYRUINS") return tileId === 2 ? SPRITES.coinSkyRuins : SPRITES.coinSkyRuinsBig;
+      if (theme === "JAPAN") return tileId === 2 ? SPRITES.coinJapan : SPRITES.coinJapanBig;
       if (tileId === 2) return theme === "JUNGLE" ? SPRITES.coinJungle : theme === "FACTORY" ? SPRITES.coinFactory : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGem : SPRITES.coinDay;
       return theme === "JUNGLE" ? SPRITES.coinJungleBig : theme === "FACTORY" ? SPRITES.coinFactoryBig : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGemBig : SPRITES.coinDayBig;
     }
@@ -1335,6 +1343,7 @@
       if (theme === "ICE") return SPRITES.oneUpIce;
       if (theme === "VOLCANO") return SPRITES.oneUpVolcano;
       if (theme === "SKYRUINS") return SPRITES.oneUpSkyRuins;
+      if (theme === "JAPAN") return SPRITES.oneUpJapan;
       if (theme === "NITE") return SPRITES.oneUpNite;
       if (theme === "SPACE") return SPRITES.oneUpSpace;
       return SPRITES.oneUpDay;
@@ -1349,6 +1358,7 @@
            theme === "ICE" ? SPRITES.tileIceA :
            theme === "VOLCANO" ? SPRITES.tileVolcanoA :
            theme === "SKYRUINS" ? SPRITES.tileSkyRuinsA :
+               theme === "JAPAN" ? SPRITES.tileJapanA :
            theme === "SPACE" ? SPRITES.tileSpaceA :
            theme === "NITE" ? SPRITES.tileNiteA : SPRITES.tileDayA;
       }
@@ -1359,6 +1369,7 @@
            theme === "ICE" ? SPRITES.tileIceB :
            theme === "VOLCANO" ? SPRITES.tileVolcanoB :
            theme === "SKYRUINS" ? SPRITES.tileSkyRuinsB :
+               theme === "JAPAN" ? SPRITES.tileJapanB :
            theme === "SPACE" ? SPRITES.tileSpaceB :
            theme === "NITE" ? SPRITES.tileNiteB : SPRITES.tileDayB;
       }
@@ -1847,6 +1858,17 @@
         for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,120,240,70); gfx.fillRect(x+90,102,260,88); gfx.fillRect(x+200,114,180,76);}
         gfx.fillStyle="#2f4568";
         for (let i=0;i<14;i++){let x=((i*33-(camx*0.46))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,84,9,106);}
+      } else if (theme === "JAPAN") {
+        gfx.fillStyle="#1b1f44"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        const p1=((camx*0.15)|0)%CANVAS_W, p2=((camx*0.32)|0)%CANVAS_W;
+        gfx.fillStyle="#f5d0d0";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x+24,24,56,10); gfx.fillRect(x+152,34,74,12); gfx.fillRect(x+262,26,42,9);}
+        gfx.fillStyle="#44213f";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,122,250,68); gfx.fillRect(x+90,104,270,86);}
+        gfx.fillStyle="#6f2b56";
+        for (let i=0;i<13;i++){let x=((i*37-(camx*0.50))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,88,8,102);}
+        gfx.fillStyle="#ff9bc940";
+        for (let i=0;i<20;i++){let x=((i*23-(camx*0.70))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,18,2,2);}
       } else if (theme === "NITE") {
         gfx.fillStyle="#0b0f2a"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         gfx.fillStyle="#a8c7ff";
