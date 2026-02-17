@@ -5,6 +5,7 @@
 //   name     - Display label shown in-game HUD
 //   sequence - Play order (sorted ascending at load time)
 //   theme    - Visual theme key used by drawBackground() and collectibleSprite()
+//   backgroundActors - Moving background objects for that level
 //   grid     - 18 rows × 96 chars; tile codes: . # B o O E V W Y L U S F H
 //
 // GROUND_ROW is shared by all levels (row 17).
@@ -16,6 +17,10 @@ const GAME_LEVELS = [
     name: "DAY",
     sequence: 1,
     theme: "DAY",
+    backgroundActors: [
+      { type: "balloon", theme: "DAY", x: 28, y: 24, vx: 0.24, parallax: 0.30, bobAmp: 4.2, bobSpeed: 0.038, w: 18, h: 22, scale: 1 },
+      { type: "blimp", theme: "DAY", x: 190, y: 60, vx: -0.08, parallax: 0.14, bobAmp: 1.0, bobSpeed: 0.010, w: 24, h: 12, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
@@ -42,6 +47,11 @@ const GAME_LEVELS = [
     name: "AFTERNOON",
     sequence: 1.5,
     theme: "AFTERNOON",
+    backgroundActors: [
+      { type: "airplane", theme: "AFTERNOON", x: 72, y: 26, vx: 0.12, parallax: 0.24, bobAmp: 2.6, bobSpeed: 0.022, w: 18, h: 22, scale: 1 },
+      { type: "zeppelin", theme: "AFTERNOON", x: 222, y: 52, vx: -0.05, parallax: 0.12, bobAmp: 0.7, bobSpeed: 0.009, w: 24, h: 12, scale: 1 },
+      { type: "bird", theme: "AFTERNOON", x: 38, y: 42, vx: 0.16, parallax: 0.20, bobAmp: 1.3, bobSpeed: 0.032, w: 12, h: 6, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
@@ -68,6 +78,11 @@ const GAME_LEVELS = [
     name: "JUNGLE",
     sequence: 2,
     theme: "JUNGLE",
+    backgroundActors: [
+      { type: "ruinsSilhouette", theme: "JUNGLE", x: 86, y: 64, vx: 0.06, parallax: 0.09, bobAmp: 0.3, bobSpeed: 0.006, w: 24, h: 14, scale: 1 },
+      { type: "vineSway", theme: "JUNGLE", x: 210, y: 8, vx: -0.04, parallax: 0.18, bobAmp: 2.0, bobSpeed: 0.026, w: 12, h: 22, scale: 1 },
+      { type: "canopyBird", theme: "JUNGLE", x: 48, y: 36, vx: 0.34, parallax: 0.23, bobAmp: 2.1, bobSpeed: 0.064, w: 12, h: 6, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
@@ -94,6 +109,11 @@ const GAME_LEVELS = [
     name: "FACTORY",
     sequence: 3,
     theme: "FACTORY",
+    backgroundActors: [
+      { type: "railCrates", theme: "FACTORY", x: 122, y: 34, vx: 0.05, parallax: 0.11, bobAmp: 0.5, bobSpeed: 0.008, w: 24, h: 12, scale: 1 },
+      { type: "cableGondola", theme: "FACTORY", x: 226, y: 62, vx: -0.08, parallax: 0.16, bobAmp: 1.2, bobSpeed: 0.018, w: 24, h: 12, scale: 1 },
+      { type: "cargoDrone", theme: "FACTORY", x: 60, y: 52, vx: 0.16, parallax: 0.22, bobAmp: 1.4, bobSpeed: 0.028, w: 14, h: 8, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
@@ -120,6 +140,11 @@ const GAME_LEVELS = [
     name: "CASTLE",
     sequence: 4,
     theme: "CASTLE",
+    backgroundActors: [
+      { type: "drawbridgeLift", theme: "CASTLE", x: 146, y: 66, vx: 0.04, parallax: 0.09, bobAmp: 0.35, bobSpeed: 0.006, w: 24, h: 14, scale: 1 },
+      { type: "tornBanner", theme: "CASTLE", x: 52, y: 18, vx: -0.07, parallax: 0.15, bobAmp: 0.8, bobSpeed: 0.014, w: 16, h: 20, scale: 1 },
+      { type: "raven", theme: "CASTLE", x: 228, y: 34, vx: -0.16, parallax: 0.19, bobAmp: 1.0, bobSpeed: 0.040, w: 12, h: 6, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
@@ -146,6 +171,11 @@ const GAME_LEVELS = [
     name: "ICE",
     sequence: 5,
     theme: "ICE",
+    backgroundActors: [
+      { type: "frostyBalloon", theme: "ICE", x: 68, y: 22, vx: 0.10, parallax: 0.17, bobAmp: 2.8, bobSpeed: 0.024, w: 18, h: 22, scale: 1 },
+      { type: "iceShard", theme: "ICE", x: 212, y: 56, vx: -0.08, parallax: 0.12, bobAmp: 1.1, bobSpeed: 0.018, w: 18, h: 12, scale: 1 },
+      { type: "snowOwl", theme: "ICE", x: 246, y: 36, vx: -0.18, parallax: 0.22, bobAmp: 0.8, bobSpeed: 0.024, w: 12, h: 6, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
@@ -172,6 +202,11 @@ const GAME_LEVELS = [
     name: "VOLCANO",
     sequence: 6,
     theme: "VOLCANO",
+    backgroundActors: [
+      { type: "ashBlimp", theme: "VOLCANO", x: 160, y: 70, vx: 0.06, parallax: 0.10, bobAmp: 0.45, bobSpeed: 0.007, w: 24, h: 12, scale: 1 },
+      { type: "rockChunk", theme: "VOLCANO", x: 82, y: 58, vx: -0.09, parallax: 0.14, bobAmp: 0.9, bobSpeed: 0.012, w: 20, h: 12, scale: 1 },
+      { type: "emberWisp", theme: "VOLCANO", x: 238, y: 40, vx: 0.12, parallax: 0.24, bobAmp: 1.9, bobSpeed: 0.032, w: 8, h: 10, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
@@ -198,6 +233,11 @@ const GAME_LEVELS = [
     name: "NITE",
     sequence: 7,
     theme: "NITE",
+    backgroundActors: [
+      { type: "moonBalloon", theme: "NITE", x: 116, y: 20, vx: 0.10, parallax: 0.18, bobAmp: 2.6, bobSpeed: 0.024, w: 18, h: 22, scale: 1 },
+      { type: "shootingGlider", theme: "NITE", x: 210, y: 42, vx: -0.24, parallax: 0.26, bobAmp: 0.6, bobSpeed: 0.018, w: 24, h: 12, scale: 1 },
+      { type: "firefly", theme: "NITE", x: 64, y: 44, vx: 0.20, parallax: 0.23, bobAmp: 2.8, bobSpeed: 0.050, w: 6, h: 6, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
@@ -224,6 +264,11 @@ const GAME_LEVELS = [
     name: "SPACE",
     sequence: 8,
     theme: "SPACE",
+    backgroundActors: [
+      { type: "stationShuttle", theme: "SPACE", x: 230, y: 52, vx: -0.18, parallax: 0.12, bobAmp: 0.9, bobSpeed: 0.016, w: 24, h: 12, scale: 1 },
+      { type: "debrisTug", theme: "SPACE", x: 86, y: 34, vx: 0.10, parallax: 0.20, bobAmp: 0.7, bobSpeed: 0.014, w: 24, h: 12, scale: 1 },
+      { type: "antennaDrone", theme: "SPACE", x: 54, y: 58, vx: 0.14, parallax: 0.27, bobAmp: 1.2, bobSpeed: 0.024, w: 14, h: 8, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
@@ -252,6 +297,7 @@ GAME_LEVELS.sort((a, b) => a.sequence - b.sequence);
 const LEVELS = GAME_LEVELS.map(l => l.grid);
 const LEVEL_NAMES = GAME_LEVELS.map(l => l.name);
 const LEVEL_THEMES = GAME_LEVELS.map(l => l.theme);
+const LEVEL_BACKGROUND_ACTORS = GAME_LEVELS.map(l => l.backgroundActors || []);
 
 // Utility function: validate a level before adding
 function validateLevel(name, grid) {
