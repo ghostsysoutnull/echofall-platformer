@@ -873,7 +873,7 @@
     }
 
     bindInput() {
-      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyZ","KeyX","KeyR","KeyN","Digit9","Digit0"]);
+      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyZ","KeyQ","KeyR","KeyN","Digit9","Digit0"]);
 
       addEventListener("keydown", (e) => {
         if (preventKeys.has(e.code)) e.preventDefault();
@@ -888,7 +888,7 @@
             this.setCharacter((this.characterIndex + 1) % max);
             this.audio.tone(660, 0.04);
           }
-          if (e.code === "KeyX") this.tryActivateRobotPulse();
+          if (e.code === "KeyQ") this.tryActivateRobotPulse();
           if (e.code === "KeyR") this.loadLevel(this.levelIndex);
           if (e.code === "KeyN") {
             if (this.levelIndex === LEVELS.length - 1) {
@@ -2440,7 +2440,7 @@
         gfx.fillText("MOVE: Arrows / A,D", 24, 50);
         gfx.fillText("JUMP: Space / Up", 168, 50);
         gfx.fillText("Z: Switch Character", 24, 62);
-        gfx.fillText("X: Robot Pulse", 168, 62);
+        gfx.fillText("Q: Robot Pulse", 168, 62);
         gfx.fillText("R: Restart   N: Next", 168, 74);
         gfx.fillText("M: Mute   9/0: BGM -/+", 24, 74);
       }
@@ -2456,10 +2456,10 @@
       if (CHARACTERS[this.characterIndex].name === "ROBOT") {
         const phase2Ready = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
         const pulseText = this.robotPulse.timer > 0
-          ? (this.robotPulse.phase2Active ? "X PHASE2" : "X PULSE")
+          ? (this.robotPulse.phase2Active ? "Q PHASE2" : "Q PULSE")
           : this.robotPulse.cooldown > 0
-            ? ("X " + ((this.robotPulse.cooldown / 60) | 0) + "s")
-            : (phase2Ready ? "X READY+" : "X READY");
+            ? ("Q " + ((this.robotPulse.cooldown / 60) | 0) + "s")
+            : (phase2Ready ? "Q READY+" : "Q READY");
         gfx.fillText(pulseText, 258, 11);
       }
       if (this.audio.muted) gfx.fillText("MUTE", CANVAS_W - 34, 11);
