@@ -1119,6 +1119,22 @@
         gfx.fillRect((sx + 5) | 0, (sy - 3) | 0, 2, 3);
         gfx.fillRect((sx + 3) | 0, (sy - 1) | 0, 1, 2);
         gfx.fillRect((sx + 8) | 0, (sy - 2) | 0, 1, 2);
+      } else if (actor.type === "rotatingRingCoil") {
+        const cx = sx + 8;
+        const cy = sy + 8;
+        const pulse = ((Math.sin((actor.phase || 0) * 0.5 + this.player.anim * 0.06) + 1) * 0.5);
+        const spin = (this.player.anim * 0.05 + (actor.phase || 0));
+        gfx.strokeStyle = pulse > 0.55 ? "#4ef3ff" : "#8a6cff";
+        gfx.beginPath();
+        gfx.arc(cx, cy, 7, 0, 6.283);
+        gfx.stroke();
+        gfx.beginPath();
+        gfx.arc(cx, cy, 4, 0, 6.283);
+        gfx.stroke();
+        gfx.fillStyle = "#2d3342";
+        gfx.fillRect((cx - 1) | 0, (cy - 1) | 0, 2, 2);
+        gfx.fillStyle = "#f3d44a";
+        gfx.fillRect((cx + Math.cos(spin) * 6) | 0, (cy + Math.sin(spin) * 6) | 0, 1, 1);
       }
     }
 

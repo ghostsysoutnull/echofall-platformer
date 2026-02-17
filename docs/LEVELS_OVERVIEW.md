@@ -225,7 +225,7 @@ In `SPACE`, air types switch to more tracking-heavy behavior (lane tracking, tar
 - Nature/industrial: `ruinsSilhouette`, `vineSway`, `canopyBird`, `railCrates`, `cableGondola`, `cargoDrone`
 - Castle/gothic/horror: `drawbridgeLift`, `tornBanner`, `raven`, `cathedralSpire`, `roseWindow`, `gargoylePerch`, `hauntedMansion`, `graveGate`, `ghostLantern`, `batSwarm`
 - Elemental/sci-fi: `frostyBalloon`, `iceShard`, `snowOwl`, `ashBlimp`, `rockChunk`, `emberWisp`, `moonBalloon`, `shootingGlider`, `stationShuttle`, `debrisTug`, `antennaDrone`
-- Storm Foundry set: `teslaPylon`, `chainCrane`, `sparkVent`
+- Storm Foundry set: `teslaPylon`, `chainCrane`, `sparkVent`, `rotatingRingCoil`
 - Japan: `japanPagoda`, `toriiGate`, `paperKite`
 - Geometry dream set: `geoWireCube`, `geoPolyShard`, `geoGridPlane`, `geoMirrorDoor`, `geoOrbitRune`, `geoChromaprism`, `geoFluxLens`
 
@@ -365,14 +365,15 @@ Each line includes sequence, theme, width, checkpoints/light-zones, authored act
 
 ### 10.3) STORM FOUNDRY
 - Theme: `STORMFOUNDRY`
-- Width: 96
-- Checkpoints: 0 | Light zones: 0
-- Background actors: `teslaPylon`, `chainCrane`, `sparkVent`, `cableGondola`
-- Marker inventory: `o:5, U:1, E:1, V:1, W:1, Y:1, G:1, L:28, C:5, B:48`
+- Width: 576 (6x)
+- Checkpoints: 5 | Light zones: 6
+- Checkpoint labels: `Act 1: Intake Platforms`, `Act 2: Coil Gallery`, `Act 3: Furnace Spine`, `Act 4: Lightning Apex`, `Act 5: Overload Core`
+- Background actors: `teslaPylon`, `chainCrane`, `sparkVent`, `cableGondola`, `rotatingRingCoil`
+- Marker inventory: `o:30, U:6, E:6, V:6, W:6, Y:6, G:6, L:168, C:30, B:288`
 - Notes:
-	- introduces a dedicated storm-industrial visual pass
-	- mixes lava lanes (`L`) with cursed barriers (`C`) for timing pressure
-	- includes crypt-harbinger pressure (`G`) outside Bone Crypt
+	- now structured as a long-form 5-act storm gauntlet
+	- mixes spark-lane hazards (`L`) with energized rail lanes (`C`) across repeated sections
+	- keeps elite pressure (`G`) distributed through all six segments
 
 ### 10.6) BONE CRYPT
 - Theme: `BONECRYPT`
@@ -402,6 +403,9 @@ Each line includes sequence, theme, width, checkpoints/light-zones, authored act
 ---
 
 ## 8) Maintenance Notes
+
+- Storm Foundry production baseline:
+	- use `docs/STORM_FOUNDRY_PRODUCTION_SPEC.md` for 6x act ranges, mechanic state machines, marker grammar, tuning budgets, and variant templates
 
 - If you add a new theme:
 	- add physics profile in `PHYSICS_BY_THEME`
