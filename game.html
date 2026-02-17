@@ -99,7 +99,13 @@
     shotSpeedMin: 2.7,
     shotSpeedMax: 3.6,
     gravity: 0.11,
-    radius: 3.6
+    radius: 3.6,
+    phaseTwoRadiusMul: 1.85,
+    phaseTwoSpeedMul: 1.35,
+    phaseTwoExtraShots: 10,
+    phaseTwoNoticeFrames: 72,
+    phaseTwoPierce: 4,
+    phaseTwoRechargeFrames: 210
   };
   const BAT_COMPANION = {
     durationFrames: 620,
@@ -227,7 +233,7 @@
       this.robotPulse = { timer: 0, cooldown: 0, ringT: 0, x: 0, y: 0, phase2Active: 0, phase2Notice: 0, phase2ReadyLatch: 0, killNotice: 0, killCount: 0 };
       this.rangerGrapple = { active: 0, cooldown: 0, timer: 0, anchorX: 0, anchorY: 0, anchorTx: 0, anchorTy: 0, ringT: 0 };
       this.paladinDash = { active: 0, cooldown: 0, timer: 0, afterglow: 0 };
-      this.skeletonBurst = { cooldown: 0, flash: 0 };
+      this.skeletonBurst = { cooldown: 0, flash: 0, phase2Notice: 0, phase2ReadyLatch: 0, lastPhase2: 0, phase2Charged: 0, phase2ChargeFrames: 0 };
       this.skeletonBurstShots = [];
       this.batCompanion = { active: 0, timer: 0, angle: 0, x: 0, y: 0, shimmer: 0 };
       this.holyWard = 0;
@@ -243,6 +249,7 @@
       this.winPending = 0;
 
       this.score = 0;
+      this.skeletonCoins = 0;
       this.lives = 3;
       this.nextExtraLifeScore = 100;
       this.helpTimer = 0;
@@ -292,7 +299,7 @@
     }
 
     bindInput() {
-      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","Digit9","Digit0"]);
+      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","Digit7","Digit9","Digit0"]);
 
       addEventListener("keydown", (e) => {
         if (preventKeys.has(e.code)) e.preventDefault();
@@ -302,6 +309,16 @@
           if (e.code === "KeyX") this.audio.muted ^= 1;
           if (e.code === "Digit9") this.audio.adjustMusicVolume(-0.05);
           if (e.code === "Digit0") this.audio.adjustMusicVolume(0.05);
+          if (e.code === "Digit7") {
+            this.addSkeletonCoins(70);
+            if (!this.skeletonBurst.phase2Charged && this.skeletonBurst.phase2ChargeFrames <= 0) {
+              this.skeletonBurst.phase2ChargeFrames = SKELETON_BLOOD_BURST.phaseTwoRechargeFrames;
+            }
+            this.teleportNotice = "DEBUG: +70 BONE";
+            this.teleportNoticeTimer = 70;
+            this.audio.tone(840, 0.03, 0.00, "triangle", 0.03);
+            this.audio.tone(1040, 0.04, 0.02, "sine", 0.03);
+          }
           if (e.code === "KeyW") {
             this.cycleCharacterForward();
             this.audio.tone(660, 0.04);
@@ -449,6 +466,11 @@
       this.paladinDash.afterglow = 0;
       this.skeletonBurst.cooldown = 0;
       this.skeletonBurst.flash = 0;
+      this.skeletonBurst.phase2Notice = 0;
+      this.skeletonBurst.phase2ReadyLatch = 0;
+      this.skeletonBurst.lastPhase2 = 0;
+      this.skeletonBurst.phase2Charged = 0;
+      this.skeletonBurst.phase2ChargeFrames = 0;
       this.skeletonBurstShots = [];
       this.batCompanion.active = 0;
       this.batCompanion.timer = 0;
@@ -885,6 +907,8 @@
       this.paladinDash.afterglow = 0;
       this.skeletonBurst.flash = 0;
       this.skeletonBurstShots = [];
+      this.skeletonBurst.phase2Charged = 0;
+      this.skeletonBurst.phase2ChargeFrames = 0;
       this.holyWard = 0;
       this.robotPulse.timer = 0;
       this.robotPulse.ringT = 0;
@@ -1203,11 +1227,13 @@
     die(reset) {
       if (this.deathTimer > 0) return;
       if (!reset) this.lives--;
+      if (!reset) this.skeletonCoins = 0;
       this.audio.tone(120, 0.10);
 
       if (this.lives < 0) {
         this.lives = 3;
         this.score = 0;
+        this.skeletonCoins = 0;
         this.nextExtraLifeScore = 100;
         this.paladinUnlocked = 0;
         this.skeletonUnlocked = 0;
@@ -1408,6 +1434,34 @@
       }
     }
 
+    addSkeletonCoins(v) {
+      if (!Number.isFinite(v) || v <= 0) return;
+      this.skeletonCoins = Math.max(0, (this.skeletonCoins | 0) + (v | 0));
+    }
+
+    collectTileReward(tileId, cx, cy) {
+      if (tileId === 2) {
+        this.addScore(1);
+        this.addSkeletonCoins(1);
+        this.audio.tone(740, 0.03);
+      } else if (tileId === 13) {
+        this.addScore(20);
+        this.addSkeletonCoins(20);
+        this.audio.tone(1180, 0.06, 0.00, "triangle", 0.04);
+      } else if (tileId === 5) {
+        this.addScore(10);
+        this.addSkeletonCoins(10);
+        this.audio.tone(1040, 0.05);
+      } else if (tileId === 6) {
+        this.lives++;
+        this.audio.extraLifeJingle();
+        this.audio.oneUpBurstSparkle();
+        this.spawnOneUpRadialBurst(cx, cy);
+      } else if (tileId === 14) {
+        this.activateBatCompanion();
+      }
+    }
+
     spawnCoinDrops(x, y) {
       const n = 10 + ((this.rand01() * 9) | 0);
       for (let i = 0; i < n; i++) {
@@ -1435,23 +1489,7 @@
     collectMagnetPickup(item) {
       const cx = item.x + item.w * 0.5;
       const cy = item.y + item.h * 0.5;
-      if (item.tileId === 2) {
-        this.addScore(1);
-        this.audio.tone(740, 0.03);
-      } else if (item.tileId === 13) {
-        this.addScore(20);
-        this.audio.tone(1180, 0.06, 0.00, "triangle", 0.04);
-      } else if (item.tileId === 5) {
-        this.addScore(10);
-        this.audio.tone(1040, 0.05);
-      } else if (item.tileId === 6) {
-        this.lives++;
-        this.audio.extraLifeJingle();
-        this.audio.oneUpBurstSparkle();
-        this.spawnOneUpRadialBurst(cx, cy);
-      } else if (item.tileId === 14) {
-        this.activateBatCompanion();
-      }
+      this.collectTileReward(item.tileId, cx, cy);
       item.dead = 1;
     }
 
@@ -1562,20 +1600,32 @@
 
       this.skeletonBurst.cooldown = SKELETON_BLOOD_BURST.cooldownFrames;
       this.skeletonBurst.flash = SKELETON_BLOOD_BURST.flashFrames;
-      this.spawnSkeletonBloodBurst();
+      const phase2 = !!this.skeletonBurst.phase2Charged;
+      this.skeletonBurst.lastPhase2 = phase2 ? 1 : 0;
+      if (phase2) this.skeletonBurst.phase2Notice = SKELETON_BLOOD_BURST.phaseTwoNoticeFrames;
+      this.spawnSkeletonBloodBurst(phase2);
       this.audio.tone(260, 0.06, 0.00, "triangle", 0.05);
       this.audio.tone(380, 0.06, 0.03, "sawtooth", 0.04);
       this.audio.tone(560, 0.07, 0.06, "sine", 0.04);
+      if (phase2) {
+        this.skeletonBurst.phase2Charged = 0;
+        this.skeletonBurst.phase2ChargeFrames = SKELETON_BLOOD_BURST.phaseTwoRechargeFrames;
+        this.audio.tone(760, 0.05, 0.02, "triangle", 0.04);
+        this.audio.tone(940, 0.06, 0.05, "sine", 0.03);
+      }
     }
 
-    spawnSkeletonBloodBurst() {
+    spawnSkeletonBloodBurst(phase2) {
       if (!this.player) return;
       const p = this.player;
       const cx = p.x + p.w * 0.5;
       const cy = p.y + p.h * 0.35;
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * 6.283 + (this.rand01() - 0.5) * 0.18;
-        const speed = SKELETON_BLOOD_BURST.shotSpeedMin + this.rand01() * (SKELETON_BLOOD_BURST.shotSpeedMax - SKELETON_BLOOD_BURST.shotSpeedMin);
+      const shotCount = 6 + (phase2 ? SKELETON_BLOOD_BURST.phaseTwoExtraShots : 0);
+      const speedMul = phase2 ? SKELETON_BLOOD_BURST.phaseTwoSpeedMul : 1;
+      const radiusMul = phase2 ? SKELETON_BLOOD_BURST.phaseTwoRadiusMul : 1;
+      for (let i = 0; i < shotCount; i++) {
+        const a = (i / shotCount) * 6.283 + (this.rand01() - 0.5) * 0.18;
+        const speed = (SKELETON_BLOOD_BURST.shotSpeedMin + this.rand01() * (SKELETON_BLOOD_BURST.shotSpeedMax - SKELETON_BLOOD_BURST.shotSpeedMin)) * speedMul;
         const life = SKELETON_BLOOD_BURST.shotLifeMin + ((this.rand01() * (SKELETON_BLOOD_BURST.shotLifeMax - SKELETON_BLOOD_BURST.shotLifeMin + 1)) | 0);
         this.skeletonBurstShots.push({
           x: cx,
@@ -1584,7 +1634,9 @@
           vy: Math.sin(a) * speed - 0.35,
           t: life,
           life,
-          r: SKELETON_BLOOD_BURST.radius,
+          r: SKELETON_BLOOD_BURST.radius * radiusMul,
+          phase2: phase2 ? 1 : 0,
+          pierce: phase2 ? SKELETON_BLOOD_BURST.phaseTwoPierce : 0,
           dead: 0
         });
       }
@@ -1594,6 +1646,32 @@
     updateSkeletonBloodBurst(name) {
       if (this.skeletonBurst.cooldown > 0) this.skeletonBurst.cooldown--;
       if (this.skeletonBurst.flash > 0) this.skeletonBurst.flash--;
+      if (this.skeletonBurst.phase2Notice > 0) this.skeletonBurst.phase2Notice--;
+      const phase2Eligible = this.skeletonCoins >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
+      if (!phase2Eligible) {
+        this.skeletonBurst.phase2ReadyLatch = 0;
+        this.skeletonBurst.phase2Charged = 0;
+        this.skeletonBurst.phase2ChargeFrames = 0;
+        if (name !== "SKELETON" || !this.player) return;
+        return;
+      }
+
+      if (!this.skeletonBurst.phase2ReadyLatch) {
+        this.skeletonBurst.phase2ReadyLatch = 1;
+        if (!this.skeletonBurst.phase2Charged && this.skeletonBurst.phase2ChargeFrames <= 0) {
+          this.skeletonBurst.phase2ChargeFrames = SKELETON_BLOOD_BURST.phaseTwoRechargeFrames;
+        }
+      }
+
+      if (!this.skeletonBurst.phase2Charged && this.skeletonBurst.phase2ChargeFrames > 0) {
+        this.skeletonBurst.phase2ChargeFrames--;
+        if (this.skeletonBurst.phase2ChargeFrames <= 0) {
+          this.skeletonBurst.phase2Charged = 1;
+          this.skeletonBurst.phase2Notice = SKELETON_BLOOD_BURST.phaseTwoNoticeFrames;
+          this.audio.tone(920, 0.03, 0.00, "triangle", 0.03);
+          this.audio.tone(1120, 0.04, 0.03, "sine", 0.03);
+        }
+      }
       if (name !== "SKELETON" || !this.player) return;
     }
 
@@ -1618,8 +1696,9 @@
         const ty = (shot.y / TILE_SIZE) | 0;
         if (this.isSolid(this.tileIdAt(tx, ty))) { shot.dead = 1; continue; }
 
-        for (let gy = ty - 1; gy <= ty + 1; gy++) {
-          for (let gx = tx - 1; gx <= tx + 1; gx++) {
+        const burstRange = shot.phase2 ? 2 : 1;
+        for (let gy = ty - burstRange; gy <= ty + burstRange; gy++) {
+          for (let gx = tx - burstRange; gx <= tx + burstRange; gx++) {
             this.clearCollectibleTileByBurst(gx, gy);
           }
         }
@@ -1652,7 +1731,8 @@
             enemy.dead = 1;
             this.spawnEnemyShatter(enemy, levelTheme);
             this.spawnCoinDrops(enemy.x + 2, enemy.y + 2);
-            shot.dead = 1;
+            if (shot.pierce > 0) shot.pierce--;
+            else shot.dead = 1;
             break;
           }
         }
@@ -2065,18 +2145,9 @@
         for (let x = x0; x <= x1; x++) {
           const id = this.tileIdAt(x, y);
           if (id === 7 && !this.paladinDash.active) return this.startLavaDeath(0);
-          if (id === 2) { this.setTile(x,y,"."); this.addScore(1); this.audio.tone(740,0.03); }
-          else if (id === 13) { this.setTile(x,y,"."); this.addScore(20); this.audio.tone(1180,0.06,0.00,"triangle",0.04); }
-          else if (id === 5) { this.setTile(x,y,"."); this.addScore(10); this.audio.tone(1040,0.05); }
-          else if (id === 6) {
-            this.setTile(x,y,".");
-            this.lives++;
-            this.audio.extraLifeJingle();
-            this.audio.oneUpBurstSparkle();
-            this.spawnOneUpRadialBurst(x * TILE_SIZE + TILE_SIZE * 0.5, y * TILE_SIZE + TILE_SIZE * 0.5);
-          } else if (id === 14) {
+          if (id === 2 || id === 5 || id === 6 || id === 13 || id === 14) {
             this.setTile(x, y, ".");
-            this.activateBatCompanion();
+            this.collectTileReward(id, x * TILE_SIZE + TILE_SIZE * 0.5, y * TILE_SIZE + TILE_SIZE * 0.5);
           }
         }
       }
@@ -2211,9 +2282,7 @@
           const py = ty * TILE_SIZE + TILE_SIZE * 0.5;
           if (Math.hypot(cx - px, cy - py) > BAT_COMPANION.coinCollectRadius) continue;
           this.setTile(tx, ty, ".");
-          if (id === 2) { this.addScore(1); this.audio.tone(760, 0.02); }
-          else if (id === 5) { this.addScore(10); this.audio.tone(980, 0.03); }
-          else { this.addScore(20); this.audio.tone(1160, 0.04, 0.00, "triangle", 0.03); }
+          this.collectTileReward(id, px, py);
         }
       }
 
@@ -2223,6 +2292,7 @@
         if (Math.hypot(cx - (d.x + d.w * 0.5), cy - (d.y + d.h * 0.5)) <= BAT_COMPANION.coinCollectRadius) {
           d.dead = 1;
           this.addScore(1);
+          this.addSkeletonCoins(1);
           this.audio.tone(760, 0.02);
         }
       }
@@ -2408,7 +2478,7 @@
         d.vy += gr;
         d.vx *= 0.985;
         this.moveAndCollide(d);
-        if (d.collectDelay <= 0 && rectsOverlap(p, d)) { d.dead = 1; this.addScore(1); this.audio.tone(740, 0.03); }
+        if (d.collectDelay <= 0 && rectsOverlap(p, d)) { d.dead = 1; this.addScore(1); this.addSkeletonCoins(1); this.audio.tone(740, 0.03); }
       }
       this.coinDrops = this.coinDrops.filter(d => !d.dead);
 
@@ -2968,6 +3038,17 @@
         const bot = running ? (alt ? SPRITES.playerSkeletonBottomRun : SPRITES.playerSkeletonBottomIdle) : SPRITES.playerSkeletonBottomIdle;
         this.drawSprite(top, px, py, 1);
         this.drawSprite(bot, px, py + 10, 1);
+        const phase2Charged = !!this.skeletonBurst.phase2Charged;
+        if (phase2Charged) {
+          const pulse = (Math.sin(this.player.anim * 0.18) + 1) * 0.5;
+          gfx.globalAlpha = 0.35 + pulse * 0.45;
+          gfx.fillStyle = "#ff2a43";
+          gfx.fillRect((px + 2) | 0, (py + 2) | 0, 6, 5);
+          gfx.fillStyle = "#ffd0d0";
+          gfx.fillRect((px + 3) | 0, (py + 3) | 0, 1, 1);
+          gfx.fillRect((px + 6) | 0, (py + 3) | 0, 1, 1);
+          gfx.globalAlpha = 1;
+        }
         if (this.skeletonBurst.flash > 0) {
           gfx.globalAlpha = Math.max(0.2, this.skeletonBurst.flash / SKELETON_BLOOD_BURST.flashFrames);
           gfx.strokeStyle = "#c11f3b";
@@ -3262,12 +3343,16 @@
             : "Q READY";
         gfx.fillText(dashText, 258, 11);
       } else if (charName === "SKELETON") {
+        const phase2Eligible = this.skeletonCoins >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
+        const phase2Charged = !!this.skeletonBurst.phase2Charged;
+        const phase2Charging = phase2Eligible && !phase2Charged && this.skeletonBurst.phase2ChargeFrames > 0;
         const burstText = this.skeletonBurst.flash > 0
-          ? "Q BURST"
+          ? (this.skeletonBurst.lastPhase2 ? "Q BLOOD+" : "Q BURST")
           : this.skeletonBurst.cooldown > 0
             ? ("Q " + ((this.skeletonBurst.cooldown / 60) | 0) + "s")
-            : "Q READY";
+            : (phase2Charged ? "Q READY+" : (phase2Charging ? ("Q CHRG " + Math.max(1, ((this.skeletonBurst.phase2ChargeFrames / 60) | 0)) + "s") : "Q READY"));
         gfx.fillText(burstText, 258, 11);
+        gfx.fillText("BONE " + this.skeletonCoins + "/" + ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold, 6, 23);
       }
       if (this.audio.muted) gfx.fillText("MUTE", CANVAS_W - 34, 11);
 
@@ -3283,6 +3368,13 @@
         gfx.fillRect(106, 34, 108, 16);
         gfx.fillStyle = PALETTE.F;
         gfx.fillText("PHASE 2 KILL x" + this.robotPulse.killCount, 108, 45);
+      }
+
+      if (CHARACTERS[this.characterIndex].name === "SKELETON" && (this.skeletonBurst.phase2Notice > 0 || (this.skeletonBurst.flash > 0 && this.skeletonBurst.lastPhase2))) {
+        gfx.fillStyle = "#000b";
+        gfx.fillRect(106, 16, 108, 16);
+        gfx.fillStyle = "#fff";
+        gfx.fillText("BLOOD PHASE 2", 114, 27);
       }
 
       if (this.robotPulse.timer > 0 || this.robotPulse.ringT > 0) {
