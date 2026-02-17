@@ -59,6 +59,20 @@
     particleDrag: 0.95,
     particleGravity: 0.04
   };
+  const ROBOT_MAGNET_PULSE = {
+    durationFrames: 72,
+    cooldownFrames: 230,
+    enemyKillCooldownFrames: 150,
+    radius: 56,
+    pullStrength: 0.34,
+    enemyPullStrength: 0.30,
+    enemyKillRadius: 14,
+    pickupPullStrength: 0.32,
+    pickupCollectRadius: 8,
+    phaseTwoScoreThreshold: 50,
+    phaseTwoAnnounceFrames: 74,
+    ringFlashFrames: 18
+  };
   const PHYSICS_BY_THEME = {
     DAY:     { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     JUNGLE:  { gravity: 0.34, groundFriction: 0.83, airFriction: 0.95 },
@@ -810,8 +824,11 @@
       this.player = null;
       this.enemies = [];
       this.coinDrops = [];
+      this.magnetItems = [];
       this.blockDebris = [];
       this.oneupBursts = [];
+      this.enemyShatter = [];
+      this.robotPulse = { timer: 0, cooldown: 0, ringT: 0, x: 0, y: 0, phase2Active: 0, phase2Notice: 0, phase2ReadyLatch: 0 };
       this.playerShatter = [];
       this.deathTimer = 0;
       this.deathReset = 0;
@@ -856,7 +873,7 @@
     }
 
     bindInput() {
-      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyZ","KeyR","KeyN","Digit9","Digit0"]);
+      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","Space","KeyA","KeyD","KeyM","KeyZ","KeyX","KeyR","KeyN","Digit9","Digit0"]);
 
       addEventListener("keydown", (e) => {
         if (preventKeys.has(e.code)) e.preventDefault();
@@ -871,6 +888,7 @@
             this.setCharacter((this.characterIndex + 1) % max);
             this.audio.tone(660, 0.04);
           }
+          if (e.code === "KeyX") this.tryActivateRobotPulse();
           if (e.code === "KeyR") this.loadLevel(this.levelIndex);
           if (e.code === "KeyN") {
             if (this.levelIndex === LEVELS.length - 1) {
@@ -932,7 +950,16 @@
 
       this.enemies = [];
       this.coinDrops = [];
+      this.magnetItems = [];
       this.blockDebris = [];
+      this.oneupBursts = [];
+      this.enemyShatter = [];
+      this.robotPulse.timer = 0;
+      this.robotPulse.cooldown = 0;
+      this.robotPulse.ringT = 0;
+      this.robotPulse.phase2Active = 0;
+      this.robotPulse.phase2Notice = 0;
+      this.robotPulse.phase2ReadyLatch = 0;
       this.playerShatter = [];
       this.deathTimer = 0;
       this.deathReset = 0;
@@ -1500,6 +1527,37 @@
       }
     }
 
+    spawnMagnetPickup(tileId, cx, cy) {
+      this.magnetItems.push({
+        tileId,
+        x: cx - 5,
+        y: cy - 5,
+        w: 10,
+        h: 10,
+        vx: (this.rand01() - 0.5) * 0.7,
+        vy: (this.rand01() - 0.5) * 0.7,
+        t: 120
+      });
+    }
+
+    collectMagnetPickup(item) {
+      const cx = item.x + item.w * 0.5;
+      const cy = item.y + item.h * 0.5;
+      if (item.tileId === 2) {
+        this.addScore(1);
+        this.audio.tone(740, 0.03);
+      } else if (item.tileId === 5) {
+        this.addScore(10);
+        this.audio.tone(1040, 0.05);
+      } else if (item.tileId === 6) {
+        this.lives++;
+        this.audio.extraLifeJingle();
+        this.audio.oneUpBurstSparkle();
+        this.spawnOneUpRadialBurst(cx, cy);
+      }
+      item.dead = 1;
+    }
+
     spawnOneUpRadialBurst(x, y) {
       const cfg = ONEUP_RADIAL_BURST;
       const burst = {
@@ -1526,6 +1584,211 @@
       }
 
       this.oneupBursts.push(burst);
+    }
+
+    tryActivateRobotPulse() {
+      if (this.deathTimer > 0 || !this.player) return;
+      if (CHARACTERS[this.characterIndex].name !== "ROBOT") return;
+      if (this.robotPulse.timer > 0 || this.robotPulse.cooldown > 0) return;
+
+      this.robotPulse.timer = ROBOT_MAGNET_PULSE.durationFrames;
+      this.robotPulse.cooldown = ROBOT_MAGNET_PULSE.cooldownFrames;
+      this.robotPulse.ringT = ROBOT_MAGNET_PULSE.ringFlashFrames;
+      this.robotPulse.x = this.player.x + this.player.w * 0.5;
+      this.robotPulse.y = this.player.y + this.player.h * 0.5;
+      this.robotPulse.phase2Active = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold ? 1 : 0;
+      if (this.robotPulse.phase2Active) this.robotPulse.phase2Notice = ROBOT_MAGNET_PULSE.phaseTwoAnnounceFrames;
+
+      this.audio.tone(520, 0.04, 0.00, "triangle", 0.055);
+      this.audio.tone(760, 0.04, 0.04, "triangle", 0.052);
+      this.audio.tone(980, 0.05, 0.08, "sine", 0.048);
+      if (this.robotPulse.phase2Active) {
+        this.audio.tone(1180, 0.05, 0.02, "triangle", 0.04);
+        this.audio.tone(1360, 0.06, 0.07, "sine", 0.035);
+      }
+    }
+
+    updateRobotMagnetPulse(characterName) {
+      if (this.robotPulse.cooldown > 0) this.robotPulse.cooldown--;
+      if (this.robotPulse.ringT > 0) this.robotPulse.ringT--;
+      if (this.robotPulse.phase2Notice > 0) this.robotPulse.phase2Notice--;
+
+      const phase2Ready = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
+      if (characterName === "ROBOT" && phase2Ready && !this.robotPulse.phase2ReadyLatch) {
+        this.robotPulse.phase2ReadyLatch = 1;
+        this.robotPulse.phase2Notice = ROBOT_MAGNET_PULSE.phaseTwoAnnounceFrames;
+        this.audio.tone(980, 0.03, 0.00, "triangle", 0.03);
+        this.audio.tone(1220, 0.04, 0.04, "sine", 0.03);
+      } else if (!phase2Ready) {
+        this.robotPulse.phase2ReadyLatch = 0;
+      }
+
+      if (characterName !== "ROBOT" || this.robotPulse.timer <= 0 || !this.player) {
+        this.robotPulse.phase2Active = 0;
+        return;
+      }
+
+      this.robotPulse.timer--;
+      this.robotPulse.phase2Active = phase2Ready ? 1 : 0;
+
+      const p = this.player;
+      const cx = p.x + p.w * 0.5;
+      const cy = p.y + p.h * 0.5;
+      const radius = ROBOT_MAGNET_PULSE.radius;
+      this.robotPulse.x = cx;
+      this.robotPulse.y = cy;
+
+      for (let i = 0; i < this.coinDrops.length; i++) {
+        const d = this.coinDrops[i];
+        const dx = cx - (d.x + d.w * 0.5);
+        const dy = cy - (d.y + d.h * 0.5);
+        const dist = Math.hypot(dx, dy) || 1;
+        if (dist > radius) continue;
+        const pull = (1 - (dist / radius)) * ROBOT_MAGNET_PULSE.pullStrength;
+        d.vx += (dx / dist) * pull;
+        d.vy += (dy / dist) * pull - 0.03;
+      }
+
+      const minTx = Math.max(0, ((cx - radius) / TILE_SIZE) | 0);
+      const maxTx = Math.min(this.tileCols - 1, ((cx + radius) / TILE_SIZE) | 0);
+      const minTy = Math.max(0, ((cy - radius) / TILE_SIZE) | 0);
+      const maxTy = Math.min(this.tileRows - 1, ((cy + radius) / TILE_SIZE) | 0);
+
+      for (let y = minTy; y <= maxTy; y++) {
+        for (let x = minTx; x <= maxTx; x++) {
+          const id = this.tileIdAt(x, y);
+          if (id !== 2 && id !== 5 && id !== 6) continue;
+          const tx = x * TILE_SIZE + TILE_SIZE * 0.5;
+          const ty = y * TILE_SIZE + TILE_SIZE * 0.5;
+          if (Math.hypot(cx - tx, cy - ty) > radius) continue;
+
+          this.setTile(x, y, ".");
+          this.spawnMagnetPickup(id, tx, ty);
+        }
+      }
+
+      const levelTheme = getThemeForLevel(this.levelIndex);
+      let phase2Kills = 0;
+      for (let i = 0; i < this.enemies.length; i++) {
+        const e = this.enemies[i];
+        if (e.dead) continue;
+        const ex = e.x + e.w * 0.5;
+        const ey = e.y + e.h * 0.5;
+        const dx = cx - ex;
+        const dy = cy - ey;
+        const dist = Math.hypot(dx, dy) || 1;
+        if (dist > radius) continue;
+
+        const pull = (1 - (dist / radius)) * ROBOT_MAGNET_PULSE.enemyPullStrength;
+        if (e.type) {
+          e.x += (dx / dist) * pull;
+          e.y += (dy / dist) * pull;
+          e.baseX = e.x;
+          e.baseY = e.y;
+        } else {
+          e.vx += (dx / dist) * pull;
+          e.vy += (dy / dist) * pull * 0.7;
+        }
+
+        if (this.robotPulse.phase2Active && dist <= ROBOT_MAGNET_PULSE.enemyKillRadius) {
+          e.dead = 1;
+          phase2Kills++;
+          this.spawnEnemyShatter(e, levelTheme);
+          this.spawnCoinDrops(e.x + 2, e.y + 2);
+        }
+      }
+
+      if (phase2Kills > 0) {
+        this.robotPulse.cooldown = Math.max(this.robotPulse.cooldown, ROBOT_MAGNET_PULSE.cooldownFrames + ROBOT_MAGNET_PULSE.enemyKillCooldownFrames);
+        this.robotPulse.phase2Notice = ROBOT_MAGNET_PULSE.phaseTwoAnnounceFrames;
+        this.audio.tone(230, 0.05, 0.00, "sawtooth", 0.05);
+        this.audio.tone(170, 0.06, 0.04, "triangle", 0.05);
+      }
+
+    }
+
+    enemySpriteFor(enemy, theme) {
+      const f = ((enemy.anim >> 3) & 1);
+      if (enemy.type === 0) {
+        return theme === "CASTLE"
+          ? (((enemy.anim >> 4) & 1) ? SPRITES.ce1 : SPRITES.ce0)
+          : (((enemy.anim >> 4) & 1) ? SPRITES.e1 : SPRITES.e0);
+      }
+      if (enemy.type === 1) return theme === "CASTLE" ? (f ? SPRITES.cb1 : SPRITES.cb0) : (f ? SPRITES.ba1 : SPRITES.ba0);
+      if (enemy.type === 2) return theme === "CASTLE" ? (f ? SPRITES.cf1 : SPRITES.cf0) : (f ? SPRITES.fa1 : SPRITES.fa0);
+      return theme === "CASTLE" ? (f ? SPRITES.cg1 : SPRITES.cg0) : (f ? SPRITES.ga1 : SPRITES.ga0);
+    }
+
+    spawnEnemyShatter(enemy, theme) {
+      const sprite = this.enemySpriteFor(enemy, theme);
+      if (!sprite || !sprite.length) return;
+      const cfg = ENEMY_DEATH_SHATTER;
+      const chunk = cfg.chunkSizeMin + ((this.rand01() * (cfg.chunkSizeMax - cfg.chunkSizeMin + 1)) | 0);
+      const centerX = enemy.x + enemy.w * 0.5;
+      const centerY = enemy.y + enemy.h * 0.5;
+
+      for (let sy = 0; sy < sprite.length; sy += chunk) {
+        for (let sx = 0; sx < sprite[0].length; sx += chunk) {
+          const pixels = [];
+          for (let yy = 0; yy < chunk; yy++) {
+            const row = sprite[sy + yy];
+            if (!row) continue;
+            for (let xx = 0; xx < chunk; xx++) {
+              const ch = row[sx + xx];
+              if (!ch || ch === ".") continue;
+              pixels.push({ dx: xx, dy: yy, col: PALETTE[ch] || "#fff" });
+            }
+          }
+          if (!pixels.length) continue;
+
+          const pieceX = enemy.x + sx;
+          const pieceY = enemy.y + sy;
+          let dx = pieceX + chunk * 0.5 - centerX;
+          let dy = pieceY + chunk * 0.5 - centerY;
+          const len = Math.hypot(dx, dy) || 1;
+          dx /= len;
+          dy /= len;
+
+          const speed = cfg.burstSpeedMin + this.rand01() * (cfg.burstSpeedMax - cfg.burstSpeedMin);
+          const lift = cfg.upwardLiftMin + this.rand01() * (cfg.upwardLiftMax - cfg.upwardLiftMin);
+          const life = cfg.pieceLifeMin + ((this.rand01() * (cfg.pieceLifeMax - cfg.pieceLifeMin + 1)) | 0);
+          this.enemyShatter.push({
+            x: pieceX,
+            y: pieceY,
+            vx: dx * speed + (this.rand01() - 0.5) * cfg.lateralJitter,
+            vy: dy * speed - lift,
+            t: life,
+            life,
+            pixels
+          });
+        }
+      }
+    }
+
+    updateEnemyShatter(gravity) {
+      const cfg = ENEMY_DEATH_SHATTER;
+      for (let i = 0; i < this.enemyShatter.length; i++) {
+        const part = this.enemyShatter[i];
+        if (part.t-- <= 0) { part.dead = 1; continue; }
+        part.vy += gravity * cfg.gravityMul;
+        part.vx *= cfg.drag;
+        part.x += part.vx;
+        part.y += part.vy;
+      }
+      this.enemyShatter = this.enemyShatter.filter(p => !p.dead);
+    }
+
+    drawEnemyShatter() {
+      for (let i = 0; i < this.enemyShatter.length; i++) {
+        const part = this.enemyShatter[i];
+        gfx.globalAlpha = part.life ? (part.t / part.life) : 1;
+        for (let j = 0; j < part.pixels.length; j++) {
+          const px = part.pixels[j];
+          gfx.fillStyle = px.col;
+          gfx.fillRect(((part.x + px.dx) - this.cameraX) | 0, ((part.y + px.dy) - this.cameraY) | 0, 1, 1);
+        }
+      }
+      gfx.globalAlpha = 1;
     }
 
     collectTiles() {
@@ -1689,6 +1952,7 @@
       if (p.duckFlying && p.vy === 0 && !p.onGround) p.duckFlying = 0;
 
       this.collectTiles();
+      this.updateRobotMagnetPulse(name);
       if (this.goal) {
         if (!this.winPending && rectsOverlap(p, this.goal.hitboxFlag)) {
           this.winPending = 1;
@@ -1722,6 +1986,26 @@
       }
       this.coinDrops = this.coinDrops.filter(d => !d.dead);
 
+      for (let i = 0; i < this.magnetItems.length; i++) {
+        const item = this.magnetItems[i];
+        if (item.t-- <= 0) { item.dead = 1; continue; }
+        const dx = (p.x + p.w * 0.5) - (item.x + item.w * 0.5);
+        const dy = (p.y + p.h * 0.5) - (item.y + item.h * 0.5);
+        const dist = Math.hypot(dx, dy) || 1;
+        const pull = ROBOT_MAGNET_PULSE.pickupPullStrength;
+        item.vx += (dx / dist) * pull;
+        item.vy += (dy / dist) * pull;
+        item.vx *= 0.92;
+        item.vy *= 0.92;
+        item.x += item.vx;
+        item.y += item.vy;
+
+        if (dist <= ROBOT_MAGNET_PULSE.pickupCollectRadius || rectsOverlap(p, item)) {
+          this.collectMagnetPickup(item);
+        }
+      }
+      this.magnetItems = this.magnetItems.filter(item => !item.dead);
+
       // Help block debris
       for (let i = 0; i < this.blockDebris.length; i++) {
         const d = this.blockDebris[i];
@@ -1750,6 +2034,7 @@
         if (burst.ringT <= 0 && burst.particles.length === 0) burst.dead = 1;
       }
       this.oneupBursts = this.oneupBursts.filter(b => !b.dead);
+      this.updateEnemyShatter(gr);
 
       // Enemies
       const levelTheme = getThemeForLevel(this.levelIndex);
@@ -1814,10 +2099,12 @@
 
         if (rectsOverlap(p, e)) {
           if (e.type && name === "SKELETON") {
+            this.spawnEnemyShatter(e, levelTheme);
             e.dead = 1;
             this.spawnCoinDrops(e.x + 2, e.y + 2);
             this.audio.tone(180, 0.08);
           } else if (p.vy > 0 && p.y + p.h - 2 < e.y + e.h * 0.55) {
+            this.spawnEnemyShatter(e, levelTheme);
             e.dead = 1;
             p.vy = JUMP_VY * 0.6;
             this.spawnCoinDrops(e.x + 2, e.y + 2);
@@ -2072,6 +2359,14 @@
       }
 
       for (let i = 0; i < this.coinDrops.length; i++) this.drawSprite(this.collectibleSprite(2), this.coinDrops[i].x - this.cameraX, this.coinDrops[i].y - this.cameraY, 1);
+      for (let i = 0; i < this.magnetItems.length; i++) {
+        const item = this.magnetItems[i];
+        if (item.tileId === 6) {
+          this.drawSprite(theme === "CASTLE" ? SPRITES.coneup : theme === "JUNGLE" ? SPRITES.banana : SPRITES.oneup, item.x - this.cameraX, item.y - this.cameraY, 1);
+        } else {
+          this.drawSprite(this.collectibleSprite(item.tileId), item.x - this.cameraX, item.y - this.cameraY, 1);
+        }
+      }
 
       for (let i = 0; i < this.blockDebris.length; i++) {
         const d = this.blockDebris[i];
@@ -2104,23 +2399,12 @@
       for (let i = 0; i < this.enemies.length; i++) {
         const e = this.enemies[i];
         if (e.dead) continue;
-        const f = ((e.anim >> 3) & 1);
-        let spr;
-        if (e.type === 0) {
-          spr = theme === "CASTLE"
-            ? (((e.anim >> 4) & 1) ? SPRITES.ce1 : SPRITES.ce0)
-            : (((e.anim >> 4) & 1) ? SPRITES.e1 : SPRITES.e0);
-        } else if (e.type === 1) {
-          spr = theme === "CASTLE" ? (f ? SPRITES.cb1 : SPRITES.cb0) : (f ? SPRITES.ba1 : SPRITES.ba0);
-        } else if (e.type === 2) {
-          spr = theme === "CASTLE" ? (f ? SPRITES.cf1 : SPRITES.cf0) : (f ? SPRITES.fa1 : SPRITES.fa0);
-        } else {
-          spr = theme === "CASTLE" ? (f ? SPRITES.cg1 : SPRITES.cg0) : (f ? SPRITES.ga1 : SPRITES.ga0);
-        }
+        const spr = this.enemySpriteFor(e, theme);
         this.drawSprite(spr, e.x - this.cameraX, e.y - this.cameraY, 1);
         if (theme === "SPACE" && e.type) this.drawSpaceThruster(e);
       }
 
+      this.drawEnemyShatter();
       this.drawPlayerShatter();
 
       const p = this.player;
@@ -2156,7 +2440,8 @@
         gfx.fillText("MOVE: Arrows / A,D", 24, 50);
         gfx.fillText("JUMP: Space / Up", 168, 50);
         gfx.fillText("Z: Switch Character", 24, 62);
-        gfx.fillText("R: Restart   N: Next", 168, 62);
+        gfx.fillText("X: Robot Pulse", 168, 62);
+        gfx.fillText("R: Restart   N: Next", 168, 74);
         gfx.fillText("M: Mute   9/0: BGM -/+", 24, 74);
       }
 
@@ -2168,7 +2453,37 @@
       gfx.fillText("LIVES " + this.lives, 92, 11);
       gfx.fillText(LEVEL_NAMES[this.levelIndex], 152, 11);
       gfx.fillText(CHARACTERS[this.characterIndex].name, 210, 11);
+      if (CHARACTERS[this.characterIndex].name === "ROBOT") {
+        const phase2Ready = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
+        const pulseText = this.robotPulse.timer > 0
+          ? (this.robotPulse.phase2Active ? "X PHASE2" : "X PULSE")
+          : this.robotPulse.cooldown > 0
+            ? ("X " + ((this.robotPulse.cooldown / 60) | 0) + "s")
+            : (phase2Ready ? "X READY+" : "X READY");
+        gfx.fillText(pulseText, 258, 11);
+      }
       if (this.audio.muted) gfx.fillText("MUTE", CANVAS_W - 34, 11);
+
+      if (CHARACTERS[this.characterIndex].name === "ROBOT" && (this.robotPulse.phase2Notice > 0 || (this.robotPulse.timer > 0 && this.robotPulse.phase2Active))) {
+        gfx.fillStyle = "#000b";
+        gfx.fillRect(106, 16, 108, 16);
+        gfx.fillStyle = "#fff";
+        gfx.fillText("PHASE 2 ACTIVE", 114, 27);
+      }
+
+      if (this.robotPulse.timer > 0 || this.robotPulse.ringT > 0) {
+        const burstLife = ROBOT_MAGNET_PULSE.ringFlashFrames;
+        const baseT = this.robotPulse.ringT > 0 ? this.robotPulse.ringT : ((this.robotPulse.timer % 12) + 1);
+        const pulseP = 1 - (baseT / burstLife);
+        const radius = 12 + (ROBOT_MAGNET_PULSE.radius - 12) * pulseP;
+        const alpha = this.robotPulse.ringT > 0 ? (baseT / burstLife) : 0.35;
+        gfx.globalAlpha = alpha;
+        gfx.strokeStyle = this.robotPulse.phase2Active ? PALETTE.F : PALETTE.H;
+        gfx.beginPath();
+        gfx.arc((this.robotPulse.x - this.cameraX) | 0, (this.robotPulse.y - this.cameraY) | 0, radius, 0, 6.283);
+        gfx.stroke();
+        gfx.globalAlpha = 1;
+      }
     }
   }
 

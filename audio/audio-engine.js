@@ -197,10 +197,17 @@
 
     oneUpBurstSparkle() {
       if (this.sfx && this.sfx.oneUpBurstSparkle) return this.sfx.oneUpBurstSparkle(this);
-      this.tone(1320, 0.04, 0.00, "sine", 0.05);
-      this.tone(1568, 0.04, 0.05, "sine", 0.05);
-      this.tone(1760, 0.05, 0.10, "triangle", 0.05);
-      this.tone(2093, 0.05, 0.16, "triangle", 0.045);
+      const passes = [0.00, 0.11, 0.22];
+      for (let i = 0; i < passes.length; i++) {
+        const t = passes[i];
+        const lift = i * 18;
+        this.tone(1320 + lift, 0.028, t + 0.000, "sine", 0.050);
+        this.tone(1370 + lift, 0.026, t + 0.018, "sine", 0.048);
+        this.tone(1325 + lift, 0.026, t + 0.036, "sine", 0.046);
+        this.tone(1568 + lift, 0.030, t + 0.056, "triangle", 0.052);
+        this.tone(1620 + lift, 0.028, t + 0.076, "triangle", 0.048);
+        this.tone(1760 + lift, 0.040, t + 0.098, "triangle", 0.050);
+      }
     }
 
     flagRaiseJingle() {

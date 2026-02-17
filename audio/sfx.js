@@ -7,10 +7,17 @@
     },
 
     oneUpBurstSparkle(engine) {
-      engine.tone(1320, 0.04, 0.00, "sine", 0.05);
-      engine.tone(1568, 0.04, 0.05, "sine", 0.05);
-      engine.tone(1760, 0.05, 0.10, "triangle", 0.05);
-      engine.tone(2093, 0.05, 0.16, "triangle", 0.045);
+      const passes = [0.00, 0.11, 0.22];
+      for (let i = 0; i < passes.length; i++) {
+        const t = passes[i];
+        const lift = i * 18;
+        engine.tone(1320 + lift, 0.028, t + 0.000, "sine", 0.050);
+        engine.tone(1370 + lift, 0.026, t + 0.018, "sine", 0.048);
+        engine.tone(1325 + lift, 0.026, t + 0.036, "sine", 0.046);
+        engine.tone(1568 + lift, 0.030, t + 0.056, "triangle", 0.052);
+        engine.tone(1620 + lift, 0.028, t + 0.076, "triangle", 0.048);
+        engine.tone(1760 + lift, 0.040, t + 0.098, "triangle", 0.050);
+      }
     },
 
     flagRaise(engine) {
