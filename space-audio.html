@@ -1,0 +1,292 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Space Theme Audio (WebAudio)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 16px; }
+    button { font-size: 16px; padding: 10px 14px; margin-right: 10px; }
+    label { margin-right: 14px; }
+  </style>
+</head>
+<body>
+  <button id="startBtn">Start Space Theme</button>
+  <button id="stopBtn">Stop</button>
+  <label><input id="mute" type="checkbox" /> Mute</label>
+  <div id="status" style="margin-top:10px; opacity:.8;"></div>
+
+<script>
+/**
+ * SPACE THEME (procedural)
+ * - 2 drones (detuned) through a moving lowpass
+ * - bandpassed noise ("cosmic dust") slowly drifting
+ * - random short "blip" pings + subtle delay
+ *
+ * Drop-in usage inside your game:
+ *   await audio.ensureStartedFromUserGesture();
+ *   audio.playSpaceTheme(); // fade in
+ *   audio.stopTheme();      // fade out
+ */
+
+class SpaceAudio {
+  constructor() {
+    this.ctx = null;
+    this.master = null;
+
+    this.themeGain = null;
+    this.nodes = [];
+    this.timers = [];
+
+    this.isMuted = false;
+  }
+
+  async ensureStartedFromUserGesture() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.9;
+      this.master.connect(this.ctx.destination);
+
+      // Global safety: if tab is hidden, many browsers suspend anyway; this helps on return.
+      document.addEventListener("visibilitychange", async () => {
+        if (!this.ctx) return;
+        if (!document.hidden && this.ctx.state === "suspended") {
+          try { await this.ctx.resume(); } catch {}
+        }
+      });
+    }
+
+    if (this.ctx.state === "suspended") {
+      await this.ctx.resume();
+    }
+  }
+
+  setMute(muted) {
+    this.isMuted = muted;
+    if (this.master) this.master.gain.value = muted ? 0 : 0.9;
+  }
+
+  // Smoothly fade a gain node to a value over ms
+  _ramp(gainNode, value, ms) {
+    const t = this.ctx.currentTime;
+    gainNode.gain.cancelScheduledValues(t);
+    gainNode.gain.setValueAtTime(gainNode.gain.value, t);
+    gainNode.gain.linearRampToValueAtTime(value, t + ms / 1000);
+  }
+
+  stopTheme({ fadeMs = 600 } = {}) {
+    if (!this.ctx || !this.themeGain) return;
+
+    this._ramp(this.themeGain, 0.0, fadeMs);
+
+    // stop timers
+    for (const id of this.timers) clearInterval(id);
+    this.timers.length = 0;
+
+    // stop nodes after fade
+    const stopAt = this.ctx.currentTime + fadeMs / 1000 + 0.05;
+    for (const n of this.nodes) {
+      try {
+        if (typeof n.stop === "function") n.stop(stopAt);
+      } catch {}
+      try {
+        if (typeof n.disconnect === "function") n.disconnect();
+      } catch {}
+    }
+    this.nodes.length = 0;
+
+    // keep themeGain allocated but disconnected nodes are gone
+  }
+
+  playSpaceTheme({ fadeMs = 900 } = {}) {
+    if (!this.ctx) throw new Error("Call ensureStartedFromUserGesture() first.");
+    this.stopTheme({ fadeMs: 250 }); // quick fade any previous theme
+
+    // Theme bus
+    this.themeGain = this.ctx.createGain();
+    this.themeGain.gain.value = 0.0001; // start near silent, fade in
+    this.themeGain.connect(this.master);
+
+    // Subtle delay for “space depth”
+    const delay = this.ctx.createDelay(1.0);
+    delay.delayTime.value = 0.22;
+
+    const fb = this.ctx.createGain();
+    fb.gain.value = 0.22;
+
+    delay.connect(fb);
+    fb.connect(delay);
+
+    // Delay mix
+    const delayMix = this.ctx.createGain();
+    delayMix.gain.value = 0.22;
+    delay.connect(delayMix);
+    delayMix.connect(this.themeGain);
+
+    // ---------- DRONES ----------
+    // Drone filter
+    const droneLP = this.ctx.createBiquadFilter();
+    droneLP.type = "lowpass";
+    droneLP.frequency.value = 800;
+    droneLP.Q.value = 0.7;
+
+    const droneGain = this.ctx.createGain();
+    droneGain.gain.value = 0.35;
+
+    droneGain.connect(droneLP);
+    droneLP.connect(this.themeGain);
+
+    // LFO for slow filter movement
+    const lfo = this.ctx.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.value = 0.03;
+
+    const lfoAmt = this.ctx.createGain();
+    lfoAmt.gain.value = 550; // how much the filter sweeps
+
+    lfo.connect(lfoAmt);
+    lfoAmt.connect(droneLP.frequency);
+    lfo.start();
+
+    // Two detuned oscillators as the drone
+    const baseHz = 55; // A1-ish
+    const o1 = this.ctx.createOscillator();
+    o1.type = "triangle";
+    o1.frequency.value = baseHz;
+
+    const o2 = this.ctx.createOscillator();
+    o2.type = "sine";
+    o2.frequency.value = baseHz * 1.005;
+
+    // Slight slow pitch drift on o2
+    const drift = this.ctx.createOscillator();
+    drift.type = "sine";
+    drift.frequency.value = 0.015;
+
+    const driftAmt = this.ctx.createGain();
+    driftAmt.gain.value = 0.25;
+
+    drift.connect(driftAmt);
+    driftAmt.connect(o2.detune);
+    drift.start();
+
+    o1.connect(droneGain);
+    o2.connect(droneGain);
+    o1.start();
+    o2.start();
+
+    this.nodes.push(lfo, lfoAmt, drift, driftAmt, o1, o2, droneGain, droneLP);
+
+    // ---------- COSMIC DUST (NOISE) ----------
+    const noise = this._makeNoiseSource();
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 1200;
+    bp.Q.value = 1.2;
+
+    const dustGain = this.ctx.createGain();
+    dustGain.gain.value = 0.12;
+
+    // Slow drift of bandpass center frequency
+    const dustLfo = this.ctx.createOscillator();
+    dustLfo.type = "sine";
+    dustLfo.frequency.value = 0.025;
+
+    const dustAmt = this.ctx.createGain();
+    dustAmt.gain.value = 700;
+
+    dustLfo.connect(dustAmt);
+    dustAmt.connect(bp.frequency);
+    dustLfo.start();
+
+    noise.connect(bp);
+    bp.connect(dustGain);
+    dustGain.connect(this.themeGain);
+
+    noise.start();
+    this.nodes.push(noise, bp, dustGain, dustLfo, dustAmt);
+
+    // ---------- RANDOM BLIPS ----------
+    const blipInterval = setInterval(() => {
+      if (!this.ctx) return;
+      // ~40% chance each tick; adjust to taste
+      if (Math.random() < 0.40) this._blip(delay);
+    }, 1200);
+    this.timers.push(blipInterval);
+
+    // Fade in
+    this._ramp(this.themeGain, 1.0, fadeMs);
+  }
+
+  _makeNoiseSource() {
+    // 1s mono noise buffer looped
+    const sr = this.ctx.sampleRate;
+    const buffer = this.ctx.createBuffer(1, sr, sr);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    return src;
+  }
+
+  _blip(delayNode) {
+    const now = this.ctx.currentTime;
+
+    // Choose pitch from a small “spacey” set (minor-ish)
+    const choices = [220, 247, 262, 294, 330, 392];
+    const f = choices[(Math.random() * choices.length) | 0] * (Math.random() < 0.25 ? 2 : 1);
+
+    const osc = this.ctx.createOscillator();
+    osc.type = Math.random() < 0.5 ? "sine" : "triangle";
+    osc.frequency.setValueAtTime(f, now);
+
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 2200;
+    lp.Q.value = 0.9;
+
+    osc.connect(g);
+    g.connect(lp);
+
+    // Some blips go dry, some go to delay too
+    lp.connect(this.themeGain);
+    if (Math.random() < 0.7) lp.connect(delayNode);
+
+    osc.start(now);
+    osc.stop(now + 0.5);
+
+    this.nodes.push(osc, g, lp);
+  }
+}
+
+// ---- Demo wiring ----
+const audio = new SpaceAudio();
+const status = document.getElementById("status");
+
+document.getElementById("startBtn").addEventListener("click", async () => {
+  await audio.ensureStartedFromUserGesture();
+  audio.playSpaceTheme();
+  status.textContent = "Playing: Space theme (procedural).";
+});
+
+document.getElementById("stopBtn").addEventListener("click", () => {
+  audio.stopTheme();
+  status.textContent = "Stopped.";
+});
+
+document.getElementById("mute").addEventListener("change", (e) => {
+  audio.setMute(e.target.checked);
+  status.textContent = e.target.checked ? "Muted." : "Unmuted.";
+});
+</script>
+</body>
+</html>

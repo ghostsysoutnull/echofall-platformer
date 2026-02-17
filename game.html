@@ -96,12 +96,12 @@
     nt4:["JJJJJJJJJJ","JAAAAAAAAJ","JAJJJJJJAJ","JAJAAAAJAJ","JAJAJJJAJJ","JAJAAAAJAJ","JAJJJJJJAJ","JAAAAAAAAJ","JJJJJJJJJJ","JJJJJJJJJJ"],
     spt1:["MMMMMMMMMM","MHHHHHHHHM","MHMHHMHHHM","MHHMMMHHHM","MHMHHMHHHM","MHHMMMHHHM","MHMHHMHHHM","MHHHHHHHHM","MMMMMMMMMM","MMMMMMMMMM"],
     spt4:["HHHHHHHHHH","HMMMMMMMMH","HMHHHHHHMH","HMHMMMMHMH","HMHMHHMHMH","HMHMMMMHMH","HMHHHHHHMH","HMMMMMMMMH","HHHHHHHHHH","HHHHHHHHHH"],
-hbt0:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLBBLLBBLF","FLLLBBLLLF","FLLBBLLLLF",".FLLBBLLF.","..FFFFFF..","..........",".........."],
-hbt1:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLLBBLLBBF","FLLLBBLLLF","FLLBBLLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
-hbb0:["..FFFFFF..",".FLLLLLLF.","FLLLLBBLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLBBLLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
-hbb1:["..FFFFFF..",".FLLLLLLF.","FLLLLBBLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLLBBLLF",".FLLLLLLF.","..FFFFFF..","..........",".........."],
-hut:["..FFFFFF..",".FBBBBBBF.","FBBLLBBBBF","FBBBBLLBBF","FBBLLBBBBF","FBBBBBBLBF",".FBBBBBBF.","..FFFFFF..","..........",".........."],
-hub:["..FFFFFF..",".FBBBBBBF.","FBBBBLLBBF","FBBLLBBBBF","FBBBBBBLBF","FBBLLBBBBF",".FBBBBBBF.","..FFFFFF..","..........",".........."],
+    hbt0:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLBBLLBBLF","FLLLBBLLLF","FLLBBLLLLF","FLLBBLLLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLLLLLLF"],
+    hbt1:["..FFFFFF..",".FLLLLLLF.","FLLBBBBLLF","FLLBBLLBBF","FLLLBBLLLF","FLLBBLLLLF","FLLBBLLLLF","FLLLLBLLLF","FLLLLLLLLF","FLLLLLLLLF"],
+    hbb0:["FLLLLLLLLF","FLLLLLLLLF","FLLLLLLLLF","FLLLLLLLLF","FLLLBBLLLF","FLLLBBLLLF","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FFFFFF.."],
+    hbb1:["FLLLLLLLLF","FLLLLLLLLF","FLLLLLLLLF","FLLLLLLLLF","FLLLLBBLLF","FLLLLBBLLF","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FFFFFF.."],
+    hut:["..FFFFFF..",".FBBBBBBF.","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF"],
+    hub:["FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF","FBBBBBBBBF",".FBBBBBBF.","..FFFFFF.."],
     coin:["..........","....FF....","...FLLF...","..FLLLFF..","..FLLLFF..","..FFLLF...","...FFLF...","....FF....","..........",".........."],
     bcoin:["....FF....","...FLLF...","..FLLLLF..",".FLLLLLLF.","FLLLLLLLLF","FLLLLLLLLF",".FLLLLLLF.","..FLLLLF..","...FLLF...","....FF...."],
     fruit:["..........","....DD....","...DLD....","..DLCLD...","..LCCCL...","..LCCCL...","...LCL....","....L.....","..........",".........."],
@@ -833,17 +833,18 @@ hub:["..FFFFFF..",".FBBBBBBF.","FBBBBLLBBF","FBBLLBBBBF","FBBBBBBLBF","FBBLLBBBB
         if (e.type) {
           if (spaceMode) {
             if (e.type === 1) {
-              e.vx = e.dir * 1.5;
+              e.vx = e.dir * 1.35;
               e.x += e.vx;
               this.collideX(e);
               e.y = e.baseY + Math.sin(e.anim * 0.22 + e.phase) * 5;
             } else if (e.type === 2) {
-              const targetX = p.x + Math.sin(e.anim * 0.05 + e.phase) * 18;
-              const desired = targetX >= e.x ? 1.15 : -1.15;
-              e.vx += (desired - e.vx) * 0.08;
+              const lane = Math.sin(e.phase * 1.9) > 0 ? 14 : -14;
+              const targetX = p.x + lane + Math.sin(e.anim * 0.05 + e.phase) * 12;
+              const desired = targetX >= e.x ? 1.0 : -1.0;
+              e.vx += (desired - e.vx) * 0.07;
               e.x += e.vx;
               this.collideX(e);
-              const swoop = Math.max(0, Math.sin(e.anim * 0.11 + e.phase)) * 10;
+              const swoop = Math.max(0, Math.sin(e.anim * 0.11 + e.phase)) * 8;
               e.y = e.baseY + Math.sin(e.anim * 0.08 + e.phase) * 2 + swoop;
             } else {
               const loopT = e.anim * 0.12 + e.phase;
@@ -898,6 +899,24 @@ hub:["..FFFFFF..",".FBBBBBBF.","FBBBBLLBBF","FBBLLBBBBF","FBBBBBBLBF","FBBLLBBBB
         }
 
         if (e.y > this.tileRows * TILE_SIZE + 90) e.dead = 1;
+      }
+
+      if (spaceMode) {
+        for (let i = 0; i < this.enemies.length; i++) {
+          const a = this.enemies[i];
+          if (a.dead || !a.type) continue;
+          for (let j = i + 1; j < this.enemies.length; j++) {
+            const b = this.enemies[j];
+            if (b.dead || !b.type) continue;
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            if (Math.abs(dx) < 14 && Math.abs(dy) < 9) {
+              const push = dx >= 0 ? 0.4 : -0.4;
+              a.x += push;
+              b.x -= push;
+            }
+          }
+        }
       }
 
       // Wrap / fall
