@@ -132,6 +132,7 @@
     CASTLE:  { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
     ICE:     { gravity: 0.30, groundFriction: 0.95, airFriction: 0.97 },
     VOLCANO: { gravity: 0.36, groundFriction: 0.80, airFriction: 0.94 },
+    STORMFOUNDRY: { gravity: 0.35, groundFriction: 0.81, airFriction: 0.95 },
     SKYRUINS:{ gravity: 0.33, groundFriction: 0.83, airFriction: 0.95 },
     JAPAN:   { gravity: 0.34, groundFriction: 0.82, airFriction: 0.95 },
     HORROR:  { gravity: 0.34, groundFriction: 0.81, airFriction: 0.95 },
@@ -1090,6 +1091,34 @@
         this.drawSprite(SPRITES.bgLanternSmall, sx, sy, actor.scale || 1);
       } else if (actor.type === "firefly") {
         this.drawSprite(SPRITES.bgFireflySmall, sx, sy, actor.scale || 1);
+      } else if (actor.type === "teslaPylon") {
+        const flick = ((Math.sin((actor.phase || 0) * 0.8 + this.player.anim * 0.05) + 1) * 0.5);
+        gfx.fillStyle = "#2d3342";
+        gfx.fillRect(sx | 0, sy | 0, 10, 14);
+        gfx.fillStyle = "#1b212d";
+        gfx.fillRect((sx + 2) | 0, (sy - 8) | 0, 6, 8);
+        gfx.strokeStyle = flick > 0.5 ? "#8a6cff" : "#4ef3ff";
+        gfx.beginPath();
+        gfx.moveTo((sx + 5) | 0, (sy - 8) | 0);
+        gfx.lineTo((sx + 2) | 0, (sy - 14) | 0);
+        gfx.lineTo((sx + 8) | 0, (sy - 14) | 0);
+        gfx.lineTo((sx + 5) | 0, (sy - 20) | 0);
+        gfx.stroke();
+      } else if (actor.type === "chainCrane") {
+        gfx.fillStyle = "#444f63";
+        gfx.fillRect(sx | 0, sy | 0, 18, 4);
+        gfx.fillStyle = "#2a3240";
+        gfx.fillRect((sx + 13) | 0, (sy + 4) | 0, 3, 12);
+        gfx.fillStyle = "#7f8aa3";
+        gfx.fillRect((sx + 14) | 0, (sy + 16) | 0, 1, 5);
+      } else if (actor.type === "sparkVent") {
+        const flick = ((Math.sin((actor.phase || 0) * 0.6 + this.player.anim * 0.09) + 1) * 0.5);
+        gfx.fillStyle = "#2e3443";
+        gfx.fillRect(sx | 0, sy | 0, 12, 8);
+        gfx.fillStyle = flick > 0.5 ? "#f3d44a" : "#4ef3ff";
+        gfx.fillRect((sx + 5) | 0, (sy - 3) | 0, 2, 3);
+        gfx.fillRect((sx + 3) | 0, (sy - 1) | 0, 1, 2);
+        gfx.fillRect((sx + 8) | 0, (sy - 2) | 0, 1, 2);
       }
     }
 
@@ -2208,6 +2237,7 @@
       if (theme === "DAY") return tileId === 2 ? SPRITES.coinDay : SPRITES.coinDayBig;
       if (theme === "AFTERNOON") return tileId === 2 ? SPRITES.coinAfternoon : SPRITES.coinAfternoonBig;
       if (theme === "VOLCANO") return tileId === 2 ? SPRITES.coinVolcano : SPRITES.coinVolcanoBig;
+      if (theme === "STORMFOUNDRY") return tileId === 2 ? SPRITES.coinStormFoundry : SPRITES.coinStormFoundryBig;
       if (theme === "CASTLE") return tileId === 2 ? SPRITES.coinCastle : SPRITES.coinCastleBig;
       if (theme === "GOTHIC") return tileId === 2 ? SPRITES.coinGothic : SPRITES.coinGothicBig;
       if (theme === "SKYRUINS") return tileId === 2 ? SPRITES.coinSkyRuins : SPRITES.coinSkyRuinsBig;
@@ -2223,6 +2253,7 @@
       if (theme === "JUNGLE") return SPRITES.oneUpJungle;
       if (theme === "AFTERNOON") return SPRITES.oneUpAfternoon;
       if (theme === "FACTORY") return SPRITES.oneUpFactory;
+      if (theme === "STORMFOUNDRY") return SPRITES.oneUpStormFoundry;
       if (theme === "CASTLE") return SPRITES.oneUpCastle;
       if (theme === "GOTHIC") return SPRITES.oneUpGothic;
       if (theme === "ICE") return SPRITES.oneUpIce;
@@ -2242,6 +2273,7 @@
       if (tileId === 1) {
          return theme === "JUNGLE" ? SPRITES.tileJungleA :
            theme === "FACTORY" ? SPRITES.tileFactoryA :
+           theme === "STORMFOUNDRY" ? SPRITES.tileStormFoundryA :
            theme === "CASTLE" ? SPRITES.tileCastleA :
            theme === "GOTHIC" ? SPRITES.tileGothicA :
            theme === "ICE" ? SPRITES.tileIceA :
@@ -2256,6 +2288,7 @@
       if (tileId === 4) {
          return theme === "JUNGLE" ? SPRITES.tileJungleB :
            theme === "FACTORY" ? SPRITES.tileFactoryB :
+           theme === "STORMFOUNDRY" ? SPRITES.tileStormFoundryB :
            theme === "CASTLE" ? SPRITES.tileCastleB :
            theme === "GOTHIC" ? SPRITES.tileGothicB :
            theme === "ICE" ? SPRITES.tileIceB :
@@ -3069,6 +3102,24 @@
         for (let i=0;i<18;i++){let x=((i*37-(camx*0.6))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,92,10,98);}
         gfx.fillStyle="#ff6a0020";
         for (let i=0;i<28;i++){let x=((i*19-(camx*0.9))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,0,4,28);}
+      } else if (theme === "STORMFOUNDRY") {
+        gfx.fillStyle="#0e1219"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+        const p1=((camx*0.17)|0)%CANVAS_W, p2=((camx*0.36)|0)%CANVAS_W;
+        const flash = ((this.player.anim + ((camx * 0.1) | 0)) % 180) < 3;
+        gfx.fillStyle="#252d3b";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x,122,250,68); gfx.fillRect(x+92,104,270,86);}        
+        gfx.fillStyle="#161d29";
+        for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,132,300,58); gfx.fillRect(x+70,116,286,74);}        
+        gfx.fillStyle="#8a6cff24";
+        for (let i=0;i<18;i++){let x=((i*23-(camx*0.62))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,14,2,2);}        
+        gfx.fillStyle="#4ef3ff1d";
+        for (let i=0;i<20;i++){let x=((i*29-(camx*0.48))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,82,6,108);}        
+        if (flash) {
+          gfx.globalAlpha = 0.12;
+          gfx.fillStyle = "#dfe8ff";
+          gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+          gfx.globalAlpha = 1;
+        }
       } else if (theme === "SKYRUINS") {
         gfx.fillStyle="#8fc0ff"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
         const p1=((camx*0.14)|0)%CANVAS_W, p2=((camx*0.28)|0)%CANVAS_W;

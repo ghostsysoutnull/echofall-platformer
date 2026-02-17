@@ -126,6 +126,12 @@ In `SPACE`, air types switch to more tracking-heavy behavior (lane tracking, tar
 	- 1UP sprite: `oneUpVolcano`
 	- Background style: deep crimson/purple + ember streaks
 
+- `STORMFOUNDRY`
+	- Physics: 0.35 / 0.81 / 0.95
+	- Coin sprites: `coinStormFoundry`, `coinStormFoundryBig`
+	- 1UP sprite: `oneUpStormFoundry`
+	- Background style: steel storm sky + electric pulse flashes + industrial silhouettes
+
 - `SKYRUINS`
 	- Physics: 0.33 / 0.83 / 0.95
 	- Coin sprites: `coinSkyRuins`, `coinSkyRuinsBig`
@@ -219,6 +225,7 @@ In `SPACE`, air types switch to more tracking-heavy behavior (lane tracking, tar
 - Nature/industrial: `ruinsSilhouette`, `vineSway`, `canopyBird`, `railCrates`, `cableGondola`, `cargoDrone`
 - Castle/gothic/horror: `drawbridgeLift`, `tornBanner`, `raven`, `cathedralSpire`, `roseWindow`, `gargoylePerch`, `hauntedMansion`, `graveGate`, `ghostLantern`, `batSwarm`
 - Elemental/sci-fi: `frostyBalloon`, `iceShard`, `snowOwl`, `ashBlimp`, `rockChunk`, `emberWisp`, `moonBalloon`, `shootingGlider`, `stationShuttle`, `debrisTug`, `antennaDrone`
+- Storm Foundry set: `teslaPylon`, `chainCrane`, `sparkVent`
 - Japan: `japanPagoda`, `toriiGate`, `paperKite`
 - Geometry dream set: `geoWireCube`, `geoPolyShard`, `geoGridPlane`, `geoMirrorDoor`, `geoOrbitRune`, `geoChromaprism`, `geoFluxLens`
 
@@ -355,6 +362,17 @@ Each line includes sequence, theme, width, checkpoints/light-zones, authored act
 	- first major cursed-barrier usage (`C`)
 	- introduces authored vampires (`Z`) and giant vampires (`R`)
 	- heavy relic economy (`T`) and authored portals (`P`,`D`)
+
+### 10.3) STORM FOUNDRY
+- Theme: `STORMFOUNDRY`
+- Width: 96
+- Checkpoints: 0 | Light zones: 0
+- Background actors: `teslaPylon`, `chainCrane`, `sparkVent`, `cableGondola`
+- Marker inventory: `o:5, U:1, E:1, V:1, W:1, Y:1, G:1, L:28, C:5, B:48`
+- Notes:
+	- introduces a dedicated storm-industrial visual pass
+	- mixes lava lanes (`L`) with cursed barriers (`C`) for timing pressure
+	- includes crypt-harbinger pressure (`G`) outside Bone Crypt
 
 ### 10.6) BONE CRYPT
 - Theme: `BONECRYPT`
