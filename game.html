@@ -63,14 +63,15 @@
     durationFrames: 72,
     cooldownFrames: 230,
     enemyKillCooldownFrames: 150,
-    radius: 56,
+    radius: 64,
     pullStrength: 0.34,
-    enemyPullStrength: 0.30,
-    enemyKillRadius: 14,
+    enemyPullStrength: 0.52,
+    enemyKillRadius: 24,
     pickupPullStrength: 0.32,
     pickupCollectRadius: 8,
     phaseTwoScoreThreshold: 50,
     phaseTwoAnnounceFrames: 74,
+    killNoticeFrames: 42,
     ringFlashFrames: 18
   };
   const PHYSICS_BY_THEME = {
@@ -871,7 +872,7 @@
       this.blockDebris = [];
       this.oneupBursts = [];
       this.enemyShatter = [];
-      this.robotPulse = { timer: 0, cooldown: 0, ringT: 0, x: 0, y: 0, phase2Active: 0, phase2Notice: 0, phase2ReadyLatch: 0 };
+      this.robotPulse = { timer: 0, cooldown: 0, ringT: 0, x: 0, y: 0, phase2Active: 0, phase2Notice: 0, phase2ReadyLatch: 0, killNotice: 0, killCount: 0 };
       this.playerShatter = [];
       this.deathTimer = 0;
       this.deathReset = 0;
@@ -1003,6 +1004,8 @@
       this.robotPulse.phase2Active = 0;
       this.robotPulse.phase2Notice = 0;
       this.robotPulse.phase2ReadyLatch = 0;
+      this.robotPulse.killNotice = 0;
+      this.robotPulse.killCount = 0;
       this.playerShatter = [];
       this.deathTimer = 0;
       this.deathReset = 0;
@@ -1655,6 +1658,7 @@
       if (this.robotPulse.cooldown > 0) this.robotPulse.cooldown--;
       if (this.robotPulse.ringT > 0) this.robotPulse.ringT--;
       if (this.robotPulse.phase2Notice > 0) this.robotPulse.phase2Notice--;
+      if (this.robotPulse.killNotice > 0) this.robotPulse.killNotice--;
 
       const phase2Ready = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
       if (characterName === "ROBOT" && phase2Ready && !this.robotPulse.phase2ReadyLatch) {
@@ -1722,7 +1726,8 @@
         const dist = Math.hypot(dx, dy) || 1;
         if (dist > radius) continue;
 
-        const pull = (1 - (dist / radius)) * ROBOT_MAGNET_PULSE.enemyPullStrength;
+        let pull = (1 - (dist / radius)) * ROBOT_MAGNET_PULSE.enemyPullStrength;
+        if (this.robotPulse.phase2Active) pull *= 1.35;
         if (e.type) {
           e.x += (dx / dist) * pull;
           e.y += (dy / dist) * pull;
@@ -1732,7 +1737,7 @@
           // ground enemies: modify position directly because their AI resets `vx` each frame
           // (enemy update does `e.vx = e.dir * ENEMY_SPEED`), so adding to vx had no effect.
           e.x += (dx / dist) * pull;
-          e.y += (dy / dist) * pull * 0.7;
+          e.y += (dy / dist) * pull * 0.85;
         }
 
         if (this.robotPulse.phase2Active && dist <= ROBOT_MAGNET_PULSE.enemyKillRadius) {
@@ -1746,6 +1751,8 @@
       if (phase2Kills > 0) {
         this.robotPulse.cooldown = Math.max(this.robotPulse.cooldown, ROBOT_MAGNET_PULSE.cooldownFrames + ROBOT_MAGNET_PULSE.enemyKillCooldownFrames);
         this.robotPulse.phase2Notice = ROBOT_MAGNET_PULSE.phaseTwoAnnounceFrames;
+        this.robotPulse.killNotice = ROBOT_MAGNET_PULSE.killNoticeFrames;
+        this.robotPulse.killCount = phase2Kills;
         this.audio.tone(230, 0.05, 0.00, "sawtooth", 0.05);
         this.audio.tone(170, 0.06, 0.04, "triangle", 0.05);
       }
@@ -2536,6 +2543,13 @@
         gfx.fillRect(106, 16, 108, 16);
         gfx.fillStyle = "#fff";
         gfx.fillText("PHASE 2 ACTIVE", 114, 27);
+      }
+
+      if (CHARACTERS[this.characterIndex].name === "ROBOT" && this.robotPulse.killNotice > 0) {
+        gfx.fillStyle = "#000c";
+        gfx.fillRect(106, 34, 108, 16);
+        gfx.fillStyle = PALETTE.F;
+        gfx.fillText("PHASE 2 KILL x" + this.robotPulse.killCount, 108, 45);
       }
 
       if (this.robotPulse.timer > 0 || this.robotPulse.ringT > 0) {
