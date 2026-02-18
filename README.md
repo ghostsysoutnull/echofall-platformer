@@ -7,6 +7,7 @@ Quick index for this workspace.
 - [Add Levels Guide](docs/ADD_LEVELS_README.md)
 - [Level Design Guide](docs/LEVEL_DESIGN_GUIDE.md)
 - [Levels Overview](docs/LEVELS_OVERVIEW.md)
+- [Jungle 4x Production Spec](docs/JUNGLE_4X_PRODUCTION_SPEC.md)
 - [Storm Foundry Production Spec](docs/STORM_FOUNDRY_PRODUCTION_SPEC.md)
 - [Sprite Edit Guide](docs/SPRITE_EDIT_GUIDE.md)
 

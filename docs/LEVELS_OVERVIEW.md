@@ -10,6 +10,10 @@ This document is a source-of-truth style overview of all current levels and leve
 
 All values here are based on current `levels.js`, `game.html`, and `sprites.js`.
 
+Related production specs:
+- `STORMFOUNDRY` 6x: `docs/STORM_FOUNDRY_PRODUCTION_SPEC.md`
+- `JUNGLE` 4x hand-authored expansion: `docs/JUNGLE_4X_PRODUCTION_SPEC.md`
+
 ---
 
 ## 1) Global Tile / Marker Legend
