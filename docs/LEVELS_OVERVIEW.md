@@ -42,6 +42,13 @@ All values here are based on current `levels.js`, `game.html`, and `sprites.js`.
 - `P` = section portal
 - `D` = dimensional portal
 
+### Storm mechanic markers (Phase 1 parser support)
+- `=` = energized rail segment anchor (parsed; runtime state object)
+- `A` = arc node controller marker (parsed; runtime state object)
+- `J` = spark jet emitter marker (parsed; runtime state object)
+- `~` = storm surge trigger beacon (parsed; runtime state object)
+- `a..f` = rail link-id paint markers (`0..5`) for node/rail linkage resolution
+
 ---
 
 ## 2) Enemy Roster + Behavior

@@ -91,6 +91,39 @@
     afterglowFrames: 16,
     wardHitCooldown: 72
   };
+  const DUCK_GALE_DIVE = {
+    durationFrames: 18,
+    cooldownFrames: 94,
+    diveSpeed: 5.1,
+    bounceVy: -2.6,
+    afterglowFrames: 14,
+    startFlashFrames: 14,
+    impactFlashFrames: 18,
+    startRadius: 16,
+    impactRadius: 28
+  };
+  const NINJA_SHADOW_STEP = {
+    dashFrames: 14,
+    cooldownFrames: 108,
+    dashSpeed: 4.6,
+    afterglowFrames: 14,
+    airLiftVy: -1.8,
+    trailSpawnEvery: 2,
+    overdriveCoinCost: 10
+  };
+  const BUNNY_CARROT_ROCKET = {
+    durationFrames: 28,
+    launchVx: 3.2,
+    launchVy: -4.7,
+    driftAccel: 0.22,
+    maxDriftVx: 3.6,
+    afterglowFrames: 16,
+    trailSpawnEvery: 2,
+    maxCharges: 2,
+    rechargeFrames: 176,
+    burstRadius: 18,
+    burstFlashFrames: 12
+  };
   const SKELETON_BLOOD_BURST = {
     cooldownFrames: 120,
     flashFrames: 14,
@@ -107,13 +140,55 @@
     phaseTwoPierce: 4,
     phaseTwoRechargeFrames: 210
   };
+  const SHIELDED_WORKER = {
+    shieldUpFrames: 90,
+    exposedFrames: 45,
+    recoverFrames: 36,
+    patrolFramesMin: 96,
+    patrolFramesMax: 160,
+    perfectWindowFrames: 18,
+    paladinExposeBonusFrames: 30,
+    frontBlockKnockbackX: 1.8,
+    frontBlockKnockbackY: -2.0
+  };
+  const CONDUCTOR_CORE = {
+    durationFrames: 360,
+    cooldownFrames: 480,
+    magnetRadius: 42,
+    magnetPullAccel: 0.26,
+    noticeFrames: 74,
+    pulseFrames: 26,
+    robotStackCapMul: 1.6
+  };
   const BAT_COMPANION = {
-    durationFrames: 620,
+    durationFrames: 1240,
     orbitRadius: 13,
     orbitSpeed: 0.13,
+    chaseRange: 220,
+    chaseAccel: 0.34,
+    chaseMaxSpeed: 4.5,
+    fallbackAccel: 0.18,
+    fallbackMaxSpeed: 2.2,
+    returnFrames: 34,
+    returnAccel: 0.42,
+    returnMaxSpeed: 4.9,
+    returnCatchRadius: 14,
+    motionDrag: 0.92,
+    trailSpawnEvery: 2,
+    trailLifeFrames: 16,
+    trailSizeMin: 1,
+    trailSizeMax: 3,
     coinCollectRadius: 8,
-    enemyHitRadius: 7,
-    shimmerFrames: 14
+    coinDropIntervalMin: 24,
+    coinDropIntervalMax: 48,
+    coinDropBurstMin: 2,
+    coinDropBurstMax: 4,
+    enemyHitRadius: 9,
+    enemyPushStrength: 2.15,
+    enemyPushLift: 0.52,
+    pushSfxCooldownFrames: 14,
+    shimmerFrames: 14,
+    expireBurstFrames: 26
   };
   const BONECRYPT_WEATHER = {
     zoneStartRatio: 0.30,
@@ -243,9 +318,13 @@
       this.robotPulse = { timer: 0, cooldown: 0, ringT: 0, x: 0, y: 0, phase2Active: 0, phase2Notice: 0, phase2ReadyLatch: 0, killNotice: 0, killCount: 0 };
       this.rangerGrapple = { active: 0, cooldown: 0, timer: 0, anchorX: 0, anchorY: 0, anchorTx: 0, anchorTy: 0, ringT: 0 };
       this.paladinDash = { active: 0, cooldown: 0, timer: 0, afterglow: 0 };
+      this.duckDive = { active: 0, cooldown: 0, timer: 0, afterglow: 0, flash: 0, flashX: 0, flashY: 0, flashKind: 0 };
+      this.bunnyRocket = { active: 0, timer: 0, afterglow: 0, dir: 1, trail: [], trailTick: 0, charges: BUNNY_CARROT_ROCKET.maxCharges, rechargeTimer: 0, burstUsed: 0, burstFlash: 0, burstX: 0, burstY: 0 };
+      this.ninjaShadow = { active: 0, cooldown: 0, timer: 0, afterglow: 0, dir: 1, trail: [], trailTick: 0, overdriveUsed: 0 };
       this.skeletonBurst = { cooldown: 0, flash: 0, phase2Notice: 0, phase2ReadyLatch: 0, lastPhase2: 0, phase2Charged: 0, phase2ChargeFrames: 0 };
       this.skeletonBurstShots = [];
-      this.batCompanion = { active: 0, timer: 0, angle: 0, x: 0, y: 0, shimmer: 0 };
+      this.batCompanion = { active: 0, timer: 0, angle: 0, x: 0, y: 0, vx: 0, vy: 0, shimmer: 0, trail: [], trailTick: 0, coinDropTimer: 0, burstT: 0, burstLife: 0, burstX: 0, burstY: 0, pushSfxCooldown: 0, returningFrames: 0 };
+      this.conductorCore = { active: 0, timer: 0, cooldown: 0, notice: 0, pulse: 0 };
       this.holyWard = 0;
       this.holyWardCooldown = 0;
       this.levelLightZones = [];
@@ -278,14 +357,628 @@
       this.teleportNotice = "";
       this.teleportNoticeTimer = 0;
       this.pendingTeleportNotice = "";
+      this.immortalMode = 0;
 
       this.boneCryptWeather = { rain: [], lightning: 0, lightningCooldown: 0, cloudDriftNear: 0, cloudDriftFar: 0 };
+      this.stormMechanics = this.createStormMechanicsState();
 
       this.bindInput();
       this.fitCanvas();
       addEventListener("resize", () => this.fitCanvas());
 
       this.loadLevel(0);
+    }
+
+    createStormMechanicsState() {
+      return {
+        rails: [],
+        nodes: [],
+        jets: [],
+        surges: [],
+        linkPaints: [],
+        unresolvedLinks: [],
+        surge: {
+          state: "DORMANT",
+          timer: 0,
+          cooldown: 420,
+          baseCooldown: 600,
+          prewarnFrames: 90,
+          activeFrames: 240,
+          decayFrames: 60
+        },
+        safety: {
+          timer: 0,
+          centerXTile: 0,
+          radiusTiles: 12,
+          durationFrames: 90
+        },
+        overlap: {
+          maxChannelsPerWindow: 2,
+          windowTiles: 16,
+          deferFrames: 24
+        },
+        actRanges: [
+          { id: 1, startX: 0, endX: 95 },
+          { id: 2, startX: 96, endX: 191 },
+          { id: 3, startX: 192, endX: 287 },
+          { id: 4, startX: 288, endX: 383 },
+          { id: 5, startX: 384, endX: 575 }
+        ]
+      };
+    }
+
+    stormSegmentFromTileX(tileX) {
+      return clamp(((tileX / 96) | 0), 0, Math.max(0, ((this.tileCols / 96) | 0)));
+    }
+
+    stormActIndexFromTileX(tileX) {
+      const tx = tileX | 0;
+      if (tx < 96) return 0;
+      if (tx < 192) return 1;
+      if (tx < 288) return 2;
+      if (tx < 384) return 3;
+      return 4;
+    }
+
+    stormLinkIdFromChar(ch) {
+      if (!ch || ch.length !== 1) return null;
+      const code = ch.charCodeAt(0);
+      if (code < 97 || code > 102) return null;
+      return code - 97;
+    }
+
+    nearestStormLinkPaint(tileX, tileY, predicate) {
+      const links = this.stormMechanics.linkPaints || [];
+      if (!links.length) return null;
+      let best = null;
+      let bestDist = 1e9;
+      for (let i = 0; i < links.length; i++) {
+        const link = links[i];
+        if (predicate && !predicate(link)) continue;
+        const dist = Math.abs(link.tx - tileX) + Math.abs(link.ty - tileY);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = link;
+        }
+      }
+      return best;
+    }
+
+    resolveStormMechanicLinks() {
+      const state = this.stormMechanics;
+      if (!state) return;
+
+      const railByLink = new Map();
+      for (let i = 0; i < state.rails.length; i++) {
+        const rail = state.rails[i];
+        const nearest = this.nearestStormLinkPaint(rail.tx, rail.ty, (l) => l.segment === rail.segment);
+        rail.linkId = nearest ? nearest.linkId : null;
+        rail.hasController = 0;
+        rail.autonomous = rail.linkId === null ? 1 : 0;
+        if (rail.linkId !== null) {
+          if (!railByLink.has(rail.linkId)) railByLink.set(rail.linkId, []);
+          railByLink.get(rail.linkId).push(rail);
+        }
+      }
+
+      for (let i = 0; i < state.nodes.length; i++) {
+        const node = state.nodes[i];
+        const sameSegment = this.nearestStormLinkPaint(node.tx, node.ty, (l) => l.segment === node.segment);
+        const sameAct = this.nearestStormLinkPaint(node.tx, node.ty, (l) => l.actIndex === node.actIndex);
+        const chosen = sameSegment || sameAct;
+        node.linkId = chosen ? chosen.linkId : null;
+        node.invalidLink = node.linkId === null || !railByLink.has(node.linkId);
+        if (node.invalidLink) {
+          state.unresolvedLinks.push({ type: "node", tx: node.tx, ty: node.ty, reason: "no-target-rail" });
+        } else {
+          const controlled = railByLink.get(node.linkId);
+          for (let r = 0; r < controlled.length; r++) controlled[r].hasController = 1;
+        }
+      }
+
+      for (let i = 0; i < state.jets.length; i++) {
+        const jet = state.jets[i];
+        let nearestNode = null;
+        let nearestDist = 1e9;
+        for (let n = 0; n < state.nodes.length; n++) {
+          const node = state.nodes[n];
+          if (node.segment !== jet.segment) continue;
+          const dist = Math.abs(node.tx - jet.tx) + Math.abs(node.ty - jet.ty);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestNode = node;
+          }
+        }
+        jet.linkId = nearestNode && nearestNode.linkId !== null ? nearestNode.linkId : null;
+        jet.standalone = jet.linkId === null ? 1 : 0;
+      }
+
+      for (let i = 0; i < state.rails.length; i++) {
+        const rail = state.rails[i];
+        if (!rail.hasController) rail.autonomous = 1;
+        rail.state = "OFF";
+        rail.timer = rail.autonomous ? (66 + ((rail.tx + rail.ty) % 20)) : 0;
+        rail.prewarnFrames = rail.autonomous ? 30 : 36;
+        rail.onFrames = rail.autonomous ? 54 : 72;
+        rail.cooldownFrames = rail.autonomous ? 66 : 48;
+        rail.audioLatch = 0;
+        rail.visualPulse = 0;
+      }
+
+      for (let i = 0; i < state.nodes.length; i++) {
+        const node = state.nodes[i];
+        node.state = "IDLE";
+        node.timer = 20 + ((node.tx * 7 + node.ty * 3) % 35);
+        node.chargingFrames = 30;
+        node.firingFrames = 72;
+        node.recoverFrames = 60;
+        node.audioLatch = 0;
+      }
+
+      for (let i = 0; i < state.jets.length; i++) {
+        const jet = state.jets[i];
+        jet.state = "WAIT";
+        jet.timer = 56 + ((jet.tx * 5 + jet.ty * 11) % 48);
+        jet.waitFrames = 84;
+        jet.prewarnFrames = 24;
+        jet.burstFrames = 18;
+        jet.audioLatch = 0;
+        jet.justStartedBurst = 0;
+      }
+    }
+
+    stormActRailCap(actIndex) {
+      if (actIndex <= 0) return 1;
+      if (actIndex === 1) return 1;
+      if (actIndex === 2) return 2;
+      if (actIndex === 3) return 2;
+      return 3;
+    }
+
+    stormActTuning(actIndex) {
+      if (actIndex <= 0) return { prewarnMul: 1.18, onMul: 0.84, cooldownMul: 1.18, waitMul: 1.18, burstMul: 0.90, deferBonus: 8 };
+      if (actIndex === 1) return { prewarnMul: 1.10, onMul: 0.92, cooldownMul: 1.10, waitMul: 1.12, burstMul: 0.95, deferBonus: 5 };
+      if (actIndex === 2) return { prewarnMul: 1.00, onMul: 1.00, cooldownMul: 1.00, waitMul: 1.00, burstMul: 1.00, deferBonus: 0 };
+      if (actIndex === 3) return { prewarnMul: 0.96, onMul: 1.06, cooldownMul: 0.96, waitMul: 0.95, burstMul: 1.04, deferBonus: -1 };
+      return { prewarnMul: 0.92, onMul: 1.10, cooldownMul: 0.90, waitMul: 0.90, burstMul: 1.08, deferBonus: -3 };
+    }
+
+    isStormSafetyActive() {
+      return !!(this.stormMechanics && this.stormMechanics.safety && this.stormMechanics.safety.timer > 0);
+    }
+
+    isStormTileInSafetyRadius(tileX) {
+      if (!this.isStormSafetyActive()) return 0;
+      const safety = this.stormMechanics.safety;
+      return Math.abs((tileX | 0) - safety.centerXTile) <= safety.radiusTiles;
+    }
+
+    startStormSafetyWindow(centerXTile, durationFrames) {
+      const state = this.stormMechanics;
+      if (!state || !state.safety) return;
+      const duration = Number.isFinite(durationFrames) ? (durationFrames | 0) : state.safety.durationFrames;
+      state.safety.centerXTile = clamp(centerXTile | 0, 0, Math.max(0, this.tileCols - 1));
+      state.safety.timer = Math.max(state.safety.timer, Math.max(0, duration));
+    }
+
+    stormLethalChannelsNear(tileX) {
+      const state = this.stormMechanics;
+      if (!state || !state.overlap) return 0;
+      let count = 0;
+      const win = state.overlap.windowTiles;
+      for (let i = 0; i < state.rails.length; i++) {
+        const rail = state.rails[i];
+        if (rail.state !== "ON") continue;
+        if (Math.abs(rail.tx - tileX) <= win) count++;
+      }
+      for (let i = 0; i < state.jets.length; i++) {
+        const jet = state.jets[i];
+        if (jet.state !== "BURST") continue;
+        if (Math.abs(jet.tx - tileX) <= win) count++;
+      }
+      return count;
+    }
+
+    stormCanStartLethalChannel(tileX) {
+      const state = this.stormMechanics;
+      if (!state || !state.overlap) return 1;
+      if (this.isStormTileInSafetyRadius(tileX)) return 0;
+      const active = this.stormLethalChannelsNear(tileX | 0);
+      return active < state.overlap.maxChannelsPerWindow;
+    }
+
+    updateStormSurge(levelTheme) {
+      if (levelTheme !== "STORMFOUNDRY") return;
+      const state = this.stormMechanics;
+      if (!state || !state.surge) return;
+      const surge = state.surge;
+      const safety = state.safety;
+
+      if (safety && safety.timer > 0) safety.timer--;
+      if (surge.cooldown > 0) surge.cooldown--;
+      if (surge.timer > 0) surge.timer--;
+
+      if (surge.state === "DORMANT") {
+        if (surge.cooldown <= 0 && this.player && state.surges.length) {
+          const ptx = ((this.player.x + this.player.w * 0.5) / TILE_SIZE) | 0;
+          const pty = ((this.player.y + this.player.h * 0.5) / TILE_SIZE) | 0;
+          let trigger = null;
+          let bestDist = 99999;
+          for (let i = 0; i < state.surges.length; i++) {
+            const beacon = state.surges[i];
+            if (!beacon || beacon.consumed) continue;
+            const d = Math.abs(beacon.tx - ptx) + Math.abs(beacon.ty - pty);
+            if (d <= 14 && d < bestDist) {
+              bestDist = d;
+              trigger = beacon;
+            }
+          }
+          if (trigger) {
+            trigger.consumed = 1;
+            surge.state = "PREWARN";
+            surge.timer = surge.prewarnFrames;
+            this.audio.tone(320, 0.06, 0.00, "triangle", 0.04);
+            this.audio.tone(430, 0.05, 0.07, "sine", 0.03);
+            this.audio.tone(560, 0.05, 0.14, "triangle", 0.03);
+          }
+        }
+        return;
+      }
+
+      if (surge.state === "PREWARN") {
+        if (surge.timer <= 0) {
+          if (this.isStormSafetyActive()) {
+            surge.timer = 1;
+          } else {
+            surge.state = "ACTIVE";
+            surge.timer = surge.activeFrames;
+            this.audio.tone(980, 0.05, 0.00, "sawtooth", 0.05);
+            this.audio.tone(720, 0.06, 0.04, "triangle", 0.04);
+          }
+        }
+        return;
+      }
+
+      if (surge.state === "ACTIVE") {
+        if (surge.timer <= 0) {
+          surge.state = "DECAY";
+          surge.timer = surge.decayFrames;
+        }
+        return;
+      }
+
+      if (surge.state === "DECAY") {
+        if (surge.timer <= 0) {
+          surge.state = "DORMANT";
+          surge.cooldown = surge.baseCooldown;
+          surge.timer = 0;
+        }
+      }
+    }
+
+    updateStormMechanics(levelTheme) {
+      if (levelTheme !== "STORMFOUNDRY") return;
+      const state = this.stormMechanics;
+      if (!state) return;
+      this.updateStormSurge(levelTheme);
+
+      const surge = state.surge;
+      const surgeActive = surge && surge.state === "ACTIVE";
+      const prewarnMul = surgeActive ? 0.75 : 1;
+      const jetWaitMul = surgeActive ? 0.8 : 1;
+      const overlapDefer = (state.overlap && state.overlap.deferFrames) ? state.overlap.deferFrames : 24;
+
+      const nodesByLink = new Map();
+      for (let i = 0; i < state.nodes.length; i++) {
+        const node = state.nodes[i];
+        node.timer = Math.max(0, (node.timer | 0) - 1);
+
+        if (node.invalidLink) {
+          node.state = "IDLE";
+          node.timer = Math.max(node.timer, 18);
+          continue;
+        }
+
+        if (node.state === "IDLE" && node.timer <= 0) {
+          node.state = "CHARGING";
+          node.timer = node.chargingFrames;
+          this.audio.tone(560, 0.02, 0.00, "triangle", 0.02);
+          this.audio.tone(760, 0.03, 0.02, "sine", 0.02);
+        } else if (node.state === "CHARGING" && node.timer <= 0) {
+          node.state = "FIRING";
+          node.timer = node.firingFrames;
+          this.audio.tone(920, 0.03, 0.00, "sawtooth", 0.03);
+        } else if (node.state === "FIRING" && node.timer <= 0) {
+          node.state = "RECOVER";
+          node.timer = node.recoverFrames;
+        } else if (node.state === "RECOVER" && node.timer <= 0) {
+          node.state = "IDLE";
+          node.timer = 24 + ((node.tx * 3 + node.ty * 5) % 40);
+        }
+
+        if (node.linkId !== null && node.linkId !== undefined) {
+          if (!nodesByLink.has(node.linkId)) nodesByLink.set(node.linkId, []);
+          nodesByLink.get(node.linkId).push(node);
+        }
+      }
+
+      for (let i = 0; i < state.rails.length; i++) {
+        const rail = state.rails[i];
+        const actTune = this.stormActTuning(rail.actIndex);
+        rail.visualPulse = ((rail.visualPulse | 0) + 1) % 120;
+        const dynamicPrewarn = Math.max(18, ((rail.prewarnFrames * prewarnMul * actTune.prewarnMul) | 0));
+        const dynamicOn = Math.max(24, ((rail.onFrames * actTune.onMul) | 0));
+        const dynamicCooldown = Math.max(28, ((rail.cooldownFrames * actTune.cooldownMul) | 0));
+        const dynamicOverlapDefer = Math.max(16, overlapDefer + actTune.deferBonus);
+
+        if (this.isStormTileInSafetyRadius(rail.tx)) {
+          rail.state = "OFF";
+          rail.timer = Math.max(rail.timer | 0, 30);
+          continue;
+        }
+
+        if (rail.autonomous) {
+          rail.timer = Math.max(0, (rail.timer | 0) - 1);
+          if (rail.state === "OFF" && rail.timer <= 0) {
+            rail.state = "PREWARN";
+            rail.timer = dynamicPrewarn;
+            this.audio.tone(640, 0.02, 0.00, "triangle", 0.02);
+          } else if (rail.state === "PREWARN" && rail.timer <= 0) {
+            if (this.stormCanStartLethalChannel(rail.tx)) {
+              rail.state = "ON";
+              rail.timer = dynamicOn;
+              this.audio.tone(860, 0.03, 0.00, "sawtooth", 0.03);
+            } else {
+              rail.state = "PREWARN";
+              rail.timer = dynamicOverlapDefer;
+            }
+          } else if (rail.state === "ON" && rail.timer <= 0) {
+            rail.state = "COOLDOWN";
+            rail.timer = dynamicCooldown;
+          } else if (rail.state === "COOLDOWN" && rail.timer <= 0) {
+            rail.state = "OFF";
+            rail.timer = 66;
+          }
+          continue;
+        }
+
+        const linkedNodes = rail.linkId !== null ? (nodesByLink.get(rail.linkId) || []) : [];
+        let nodeState = "IDLE";
+        let minTimer = 0;
+        if (linkedNodes.length) {
+          let hasFiring = 0;
+          let hasCharging = 0;
+          minTimer = 99999;
+          for (let n = 0; n < linkedNodes.length; n++) {
+            const ns = linkedNodes[n].state;
+            if (ns === "FIRING") hasFiring = 1;
+            else if (ns === "CHARGING") hasCharging = 1;
+            minTimer = Math.min(minTimer, linkedNodes[n].timer);
+          }
+          nodeState = hasFiring ? "FIRING" : (hasCharging ? "CHARGING" : "IDLE");
+          if (minTimer === 99999) minTimer = 0;
+        }
+
+        if (nodeState === "CHARGING") {
+          if (rail.state !== "PREWARN") {
+            rail.state = "PREWARN";
+            rail.timer = Math.max(18, minTimer || dynamicPrewarn);
+            this.audio.tone(620, 0.02, 0.00, "triangle", 0.02);
+            this.audio.tone(760, 0.03, 0.02, "sine", 0.02);
+          } else {
+            rail.timer = Math.max(1, minTimer || rail.timer);
+          }
+        } else if (nodeState === "FIRING") {
+          const cap = this.stormActRailCap(rail.actIndex);
+          let activeInAct = 0;
+          for (let r = 0; r < state.rails.length; r++) {
+            const other = state.rails[r];
+            if (other.actIndex === rail.actIndex && other.state === "ON") activeInAct++;
+          }
+          if (rail.state === "ON" || (activeInAct < cap && this.stormCanStartLethalChannel(rail.tx))) {
+            if (rail.state !== "ON") {
+              rail.state = "ON";
+              rail.timer = Math.max(1, minTimer || dynamicOn);
+              this.audio.tone(900, 0.03, 0.00, "sawtooth", 0.025);
+            } else {
+              rail.timer = Math.max(1, minTimer || rail.timer);
+            }
+          } else {
+            rail.state = "PREWARN";
+            rail.timer = dynamicOverlapDefer;
+          }
+        } else {
+          if (rail.state === "ON" || rail.state === "PREWARN") {
+            rail.state = "COOLDOWN";
+            rail.timer = dynamicCooldown;
+          } else if (rail.state === "COOLDOWN") {
+            rail.timer = Math.max(0, (rail.timer | 0) - 1);
+            if (rail.timer <= 0) {
+              rail.state = "OFF";
+              rail.timer = 0;
+            }
+          } else {
+            rail.state = "OFF";
+          }
+        }
+      }
+
+      for (let i = 0; i < state.jets.length; i++) {
+        const jet = state.jets[i];
+        const actTune = this.stormActTuning(jet.actIndex);
+        jet.justStartedBurst = 0;
+        const dynamicWait = Math.max(48, ((jet.waitFrames * jetWaitMul * actTune.waitMul) | 0));
+        const dynamicPrewarn = Math.max(18, ((jet.prewarnFrames * actTune.prewarnMul) | 0));
+        const dynamicBurst = Math.max(12, ((jet.burstFrames * actTune.burstMul) | 0));
+        const dynamicOverlapDefer = Math.max(16, overlapDefer + actTune.deferBonus);
+
+        if (this.isStormTileInSafetyRadius(jet.tx)) {
+          jet.state = "WAIT";
+          jet.timer = Math.max(jet.timer | 0, 42);
+          continue;
+        }
+
+        jet.timer = Math.max(0, (jet.timer | 0) - 1);
+
+        if (jet.state === "WAIT" && jet.timer <= 0) {
+          jet.state = "PREWARN";
+          jet.timer = dynamicPrewarn;
+          this.audio.tone(780, 0.02, 0.00, "triangle", 0.02);
+        } else if (jet.state === "PREWARN" && jet.timer <= 0) {
+          let blockedByNeighbor = 0;
+          for (let j = 0; j < state.jets.length; j++) {
+            if (i === j) continue;
+            const other = state.jets[j];
+            if (other.state !== "BURST") continue;
+            const dist = Math.abs(other.tx - jet.tx) + Math.abs(other.ty - jet.ty);
+            if (dist <= 8) { blockedByNeighbor = 1; break; }
+          }
+
+          if (blockedByNeighbor) {
+            jet.state = "WAIT";
+            jet.timer = dynamicOverlapDefer;
+          } else {
+            if (this.stormCanStartLethalChannel(jet.tx)) {
+              jet.state = "BURST";
+              jet.timer = dynamicBurst;
+              jet.justStartedBurst = 1;
+              this.audio.tone(980, 0.02, 0.00, "square", 0.025);
+            } else {
+              jet.state = "WAIT";
+              jet.timer = dynamicOverlapDefer;
+            }
+          }
+        } else if (jet.state === "BURST" && jet.timer <= 0) {
+          jet.state = "WAIT";
+          jet.timer = dynamicWait;
+        }
+      }
+    }
+
+    updateStormMechanicHazardCollision(levelTheme) {
+      if (levelTheme !== "STORMFOUNDRY") return;
+      if (!this.player || this.respawnGrace > 0 || this.deathTimer > 0) return;
+      if (this.immortalMode) return;
+      if (this.hasConductorCoreActive()) return;
+      const p = this.player;
+      const px0 = p.x;
+      const py0 = p.y;
+      const px1 = p.x + p.w;
+      const py1 = p.y + p.h;
+      const state = this.stormMechanics;
+      if (!state) return;
+
+      for (let i = 0; i < state.rails.length; i++) {
+        const rail = state.rails[i];
+        if (rail.state !== "ON") continue;
+        if (this.isStormTileInSafetyRadius(rail.tx)) continue;
+        const tx0 = rail.tx * TILE_SIZE;
+        const ty0 = rail.ty * TILE_SIZE;
+        const tx1 = tx0 + TILE_SIZE;
+        const ty1 = ty0 + TILE_SIZE;
+        if (px0 < tx1 && px1 > tx0 && py0 < ty1 && py1 > ty0) {
+          this.startLavaDeath(0);
+          return;
+        }
+      }
+
+      for (let i = 0; i < state.jets.length; i++) {
+        const jet = state.jets[i];
+        if (jet.state !== "BURST") continue;
+        if (this.isStormTileInSafetyRadius(jet.tx)) continue;
+        const jx = jet.tx * TILE_SIZE;
+        const jy = jet.ty * TILE_SIZE;
+        const hx = jx + 2;
+        const hy = jy - TILE_SIZE * 2;
+        const hw = TILE_SIZE - 4;
+        const hh = TILE_SIZE * 3;
+        if (px0 < hx + hw && px1 > hx && py0 < hy + hh && py1 > hy) {
+          this.startLavaDeath(0);
+          return;
+        }
+      }
+    }
+
+    drawStormMechanicsOverlay(theme) {
+      if (theme !== "STORMFOUNDRY") return;
+      const state = this.stormMechanics;
+      if (!state) return;
+
+      for (let i = 0; i < state.rails.length; i++) {
+        const rail = state.rails[i];
+        const px = rail.tx * TILE_SIZE - this.cameraX;
+        const py = rail.ty * TILE_SIZE - this.cameraY;
+        const blink = ((this.player.anim + rail.tx + rail.ty) % 12) < 6;
+
+        if (rail.state === "PREWARN") {
+          gfx.globalAlpha = blink ? 0.75 : 0.28;
+          gfx.fillStyle = "#ffb347";
+          gfx.fillRect((px + 1) | 0, (py + 3) | 0, 8, 4);
+        } else if (rail.state === "ON") {
+          const pulse = (Math.sin((this.player.anim + rail.visualPulse) * 0.24) + 1) * 0.5;
+          gfx.globalAlpha = 0.62 + pulse * 0.28;
+          gfx.fillStyle = "#8ef6ff";
+          gfx.fillRect((px + 1) | 0, (py + 2) | 0, 8, 6);
+          gfx.globalAlpha = 0.45 + pulse * 0.25;
+          gfx.fillStyle = "#dfefff";
+          gfx.fillRect((px + 2) | 0, (py + 4) | 0, 6, 2);
+        } else if (rail.state === "COOLDOWN") {
+          gfx.globalAlpha = 0.20;
+          gfx.fillStyle = "#c97dff";
+          gfx.fillRect((px + 2) | 0, (py + 4) | 0, 6, 2);
+        }
+      }
+
+      for (let i = 0; i < state.nodes.length; i++) {
+        const node = state.nodes[i];
+        const px = node.tx * TILE_SIZE - this.cameraX;
+        const py = node.ty * TILE_SIZE - this.cameraY;
+        const pulse = (Math.sin((this.player.anim + i * 7) * 0.20) + 1) * 0.5;
+        gfx.globalAlpha = 0.35 + pulse * 0.35;
+        gfx.strokeStyle = node.invalidLink ? "#9a7f7f" : (node.state === "FIRING" ? "#8ef6ff" : "#ffb347");
+        gfx.strokeRect((px + 1) | 0, (py + 1) | 0, 8, 8);
+        gfx.strokeRect((px + 3) | 0, (py + 3) | 0, 4, 4);
+      }
+
+      for (let i = 0; i < state.jets.length; i++) {
+        const jet = state.jets[i];
+        const px = jet.tx * TILE_SIZE - this.cameraX;
+        const py = jet.ty * TILE_SIZE - this.cameraY;
+        const blink = ((this.player.anim + i * 3) % 10) < 5;
+        if (jet.state === "PREWARN") {
+          gfx.globalAlpha = blink ? 0.8 : 0.3;
+          gfx.fillStyle = "#ffb347";
+          gfx.fillRect((px + 3) | 0, (py + 7) | 0, 4, 2);
+        } else if (jet.state === "BURST") {
+          const pulse = (Math.sin((this.player.anim + i * 5) * 0.30) + 1) * 0.5;
+          gfx.globalAlpha = 0.55 + pulse * 0.30;
+          gfx.fillStyle = "#8ef6ff";
+          gfx.fillRect((px + 4) | 0, (py - 20) | 0, 2, 30);
+          gfx.globalAlpha = 0.35 + pulse * 0.25;
+          gfx.fillStyle = "#dfefff";
+          gfx.fillRect((px + 3) | 0, (py - 18) | 0, 4, 2);
+        }
+      }
+
+      if (state.surge) {
+        const surge = state.surge;
+        if (surge.state === "PREWARN") {
+          const blink = ((this.player.anim >> 2) & 1) === 0;
+          gfx.globalAlpha = blink ? 0.20 : 0.08;
+          gfx.fillStyle = "#ffb347";
+          gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+        } else if (surge.state === "ACTIVE") {
+          const pulse = (Math.sin(this.player.anim * 0.24) + 1) * 0.5;
+          gfx.globalAlpha = 0.08 + pulse * 0.07;
+          gfx.fillStyle = "#8ef6ff";
+          gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+        } else if (surge.state === "DECAY") {
+          gfx.globalAlpha = 0.05;
+          gfx.fillStyle = "#c97dff";
+          gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+        }
+      }
+      gfx.globalAlpha = 1;
     }
 
     makeStars() {
@@ -310,7 +1003,7 @@
     }
 
     bindInput() {
-      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","Digit7","Digit9","Digit0"]);
+      const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","Digit7","Digit9","Digit0"]);
 
       addEventListener("keydown", (e) => {
         if (preventKeys.has(e.code)) e.preventDefault();
@@ -333,6 +1026,12 @@
           if (e.code === "KeyW") {
             this.cycleCharacterForward();
             this.audio.tone(660, 0.04);
+          }
+          if (e.code === "KeyE") {
+            this.immortalMode ^= 1;
+            this.teleportNotice = this.immortalMode ? "DEBUG: IMMORTAL ON" : "DEBUG: IMMORTAL OFF";
+            this.teleportNoticeTimer = 90;
+            this.audio.tone(this.immortalMode ? 980 : 420, 0.05, 0.00, "triangle", 0.04);
           }
           if (e.code === "KeyQ") this.tryActivateCharacterSkill();
           if (e.code === "KeyP") {
@@ -399,6 +1098,24 @@
       this.rangerGrapple.active = 0;
       this.paladinDash.active = 0;
       this.paladinDash.timer = 0;
+      this.duckDive.active = 0;
+      this.duckDive.cooldown = 0;
+      this.duckDive.timer = 0;
+      this.duckDive.afterglow = 0;
+      this.duckDive.flash = 0;
+      this.bunnyRocket.active = 0;
+      this.bunnyRocket.timer = 0;
+      this.bunnyRocket.afterglow = 0;
+      this.bunnyRocket.trail = [];
+      this.bunnyRocket.charges = BUNNY_CARROT_ROCKET.maxCharges;
+      this.bunnyRocket.rechargeTimer = 0;
+      this.bunnyRocket.burstUsed = 0;
+      this.bunnyRocket.burstFlash = 0;
+      this.ninjaShadow.active = 0;
+      this.ninjaShadow.timer = 0;
+      this.ninjaShadow.afterglow = 0;
+      this.ninjaShadow.trail = [];
+      this.ninjaShadow.overdriveUsed = 0;
       this.skeletonBurst.flash = 0;
     }
 
@@ -476,6 +1193,27 @@
       this.paladinDash.cooldown = 0;
       this.paladinDash.timer = 0;
       this.paladinDash.afterglow = 0;
+      this.duckDive.active = 0;
+      this.duckDive.cooldown = 0;
+      this.duckDive.timer = 0;
+      this.duckDive.afterglow = 0;
+      this.duckDive.flash = 0;
+      this.bunnyRocket.active = 0;
+      this.bunnyRocket.timer = 0;
+      this.bunnyRocket.afterglow = 0;
+      this.bunnyRocket.trail = [];
+      this.bunnyRocket.trailTick = 0;
+      this.bunnyRocket.charges = BUNNY_CARROT_ROCKET.maxCharges;
+      this.bunnyRocket.rechargeTimer = 0;
+      this.bunnyRocket.burstUsed = 0;
+      this.bunnyRocket.burstFlash = 0;
+      this.ninjaShadow.active = 0;
+      this.ninjaShadow.cooldown = 0;
+      this.ninjaShadow.timer = 0;
+      this.ninjaShadow.afterglow = 0;
+      this.ninjaShadow.trail = [];
+      this.ninjaShadow.trailTick = 0;
+      this.ninjaShadow.overdriveUsed = 0;
       this.skeletonBurst.cooldown = 0;
       this.skeletonBurst.flash = 0;
       this.skeletonBurst.phase2Notice = 0;
@@ -484,9 +1222,23 @@
       this.skeletonBurst.phase2Charged = 0;
       this.skeletonBurst.phase2ChargeFrames = 0;
       this.skeletonBurstShots = [];
+      this.conductorCore.active = 0;
+      this.conductorCore.timer = 0;
+      this.conductorCore.cooldown = 0;
+      this.conductorCore.notice = 0;
+      this.conductorCore.pulse = 0;
       this.batCompanion.active = 0;
       this.batCompanion.timer = 0;
+      this.batCompanion.vx = 0;
+      this.batCompanion.vy = 0;
       this.batCompanion.shimmer = 0;
+      this.batCompanion.trail = [];
+      this.batCompanion.trailTick = 0;
+      this.batCompanion.coinDropTimer = 0;
+      this.batCompanion.burstT = 0;
+      this.batCompanion.burstLife = 0;
+      this.batCompanion.pushSfxCooldown = 0;
+      this.batCompanion.returningFrames = 0;
       this.holyWard = 0;
       this.holyWardCooldown = 0;
       this.levelLightZones = (typeof LEVEL_LIGHT_ZONES !== "undefined" && LEVEL_LIGHT_ZONES[this.levelIndex]) ? LEVEL_LIGHT_ZONES[this.levelIndex] : [];
@@ -514,6 +1266,7 @@
       this.geometryMusicLabel = "";
       this.teleportNotice = "";
       this.teleportNoticeTimer = 0;
+      this.stormMechanics = this.createStormMechanicsState();
 
       let spawnX = 10, spawnY = 10;
       let goalMarker = null;
@@ -538,6 +1291,25 @@
           anim: 0,
           phase: ((tileX * 17 + tileY * 11) % 628) * 0.01,
           variant: ((tileX * 7 + tileY * 11 + type * 5) & 1)
+        });
+      };
+
+      const spawnShieldedWorker = (tileX, tileY) => {
+        this.enemies.push({
+          type: 8,
+          x: tileX * TILE_SIZE,
+          y: tileY * TILE_SIZE,
+          vx: 0,
+          vy: 0,
+          w: 10,
+          h: 10,
+          dir: (tileX & 1) ? 1 : -1,
+          onGround: 0,
+          dead: 0,
+          anim: 0,
+          variant: ((tileX * 13 + tileY * 5 + 17) & 1),
+          workerState: "PATROL",
+          workerStateTimer: SHIELDED_WORKER.patrolFramesMin + ((this.rand01() * (SHIELDED_WORKER.patrolFramesMax - SHIELDED_WORKER.patrolFramesMin + 1)) | 0)
         });
       };
 
@@ -574,6 +1346,11 @@
           } else if (ch === "G") {
             spawnFlyer(7, x, y);
             this.tileGrid[y][x] = ".";
+          } else if (ch === "K") {
+            spawnShieldedWorker(x, y);
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "M") {
+            this.tileGrid[y][x] = "M";
           } else if (ch === "F") {
             goalMarker = { x: x, y: y };
             this.tileGrid[y][x] = ".";
@@ -583,7 +1360,69 @@
           } else if (ch === "D") {
             this.portals.push({ type: "dimensional", x: x * TILE_SIZE, y: y * TILE_SIZE, w: 12, h: 18, tx: x, ty: y });
             this.tileGrid[y][x] = ".";
+          } else if (ch === "=") {
+            this.stormMechanics.rails.push({
+              tx: x,
+              ty: y,
+              segment: this.stormSegmentFromTileX(x),
+              actIndex: this.stormActIndexFromTileX(x),
+              linkId: null,
+              hasController: 0,
+              autonomous: 0
+            });
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "A") {
+            this.stormMechanics.nodes.push({
+              tx: x,
+              ty: y,
+              segment: this.stormSegmentFromTileX(x),
+              actIndex: this.stormActIndexFromTileX(x),
+              linkId: null,
+              invalidLink: 0,
+              fallbackVisualOnly: 0
+            });
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "J") {
+            this.stormMechanics.jets.push({
+              tx: x,
+              ty: y,
+              segment: this.stormSegmentFromTileX(x),
+              actIndex: this.stormActIndexFromTileX(x),
+              orientation: "up",
+              linkId: null,
+              standalone: 0
+            });
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "~") {
+            this.stormMechanics.surges.push({
+              tx: x,
+              ty: y,
+              segment: this.stormSegmentFromTileX(x),
+              actIndex: this.stormActIndexFromTileX(x),
+              consumed: 0
+            });
+            this.tileGrid[y][x] = ".";
+          } else {
+            const linkId = this.stormLinkIdFromChar(ch);
+            if (linkId !== null) {
+              this.stormMechanics.linkPaints.push({
+                tx: x,
+                ty: y,
+                linkId,
+                segment: this.stormSegmentFromTileX(x),
+                actIndex: this.stormActIndexFromTileX(x)
+              });
+              this.tileGrid[y][x] = ".";
+            }
           }
+        }
+      }
+
+      if (levelTheme === "STORMFOUNDRY") {
+        this.resolveStormMechanicLinks();
+        for (let i = 0; i < this.stormMechanics.nodes.length; i++) {
+          const node = this.stormMechanics.nodes[i];
+          node.fallbackVisualOnly = node.invalidLink ? 1 : 0;
         }
       }
 
@@ -925,10 +1764,35 @@
       this.paladinDash.active = 0;
       this.paladinDash.timer = 0;
       this.paladinDash.afterglow = 0;
+      this.duckDive.active = 0;
+      this.duckDive.cooldown = 0;
+      this.duckDive.timer = 0;
+      this.duckDive.afterglow = 0;
+      this.duckDive.flash = 0;
+      this.ninjaShadow.active = 0;
+      this.ninjaShadow.timer = 0;
+      this.ninjaShadow.afterglow = 0;
+      this.ninjaShadow.trail = [];
+      this.ninjaShadow.trailTick = 0;
+      this.ninjaShadow.overdriveUsed = 0;
+      this.bunnyRocket.active = 0;
+      this.bunnyRocket.timer = 0;
+      this.bunnyRocket.afterglow = 0;
+      this.bunnyRocket.trail = [];
+      this.bunnyRocket.trailTick = 0;
+      this.bunnyRocket.charges = BUNNY_CARROT_ROCKET.maxCharges;
+      this.bunnyRocket.rechargeTimer = 0;
+      this.bunnyRocket.burstUsed = 0;
+      this.bunnyRocket.burstFlash = 0;
       this.skeletonBurst.flash = 0;
       this.skeletonBurstShots = [];
       this.skeletonBurst.phase2Charged = 0;
       this.skeletonBurst.phase2ChargeFrames = 0;
+      this.conductorCore.active = 0;
+      this.conductorCore.timer = 0;
+      this.conductorCore.cooldown = 0;
+      this.conductorCore.notice = 0;
+      this.conductorCore.pulse = 0;
       this.holyWard = 0;
       this.robotPulse.timer = 0;
       this.robotPulse.ringT = 0;
@@ -936,6 +1800,41 @@
       this.deathTimer = 0;
       this.respawnGrace = 70;
       this.checkpointNotice = cp ? 75 : this.checkpointNotice;
+
+      if (getThemeForLevel(this.levelIndex) === "STORMFOUNDRY" && this.stormMechanics) {
+        const state = this.stormMechanics;
+        const centerTile = cp ? cp.xTile : (((p.x + p.w * 0.5) / TILE_SIZE) | 0);
+        this.startStormSafetyWindow(centerTile, 90);
+
+        for (let i = 0; i < state.rails.length; i++) {
+          const rail = state.rails[i];
+          rail.state = "OFF";
+          rail.timer = Math.max(30, rail.timer | 0);
+        }
+
+        for (let i = 0; i < state.jets.length; i++) {
+          const jet = state.jets[i];
+          jet.state = "WAIT";
+          jet.timer = Math.max(42, jet.timer | 0);
+        }
+
+        if (state.surge) {
+          if (state.surge.state === "ACTIVE" || state.surge.state === "PREWARN") {
+            state.surge.state = "DECAY";
+            state.surge.timer = state.surge.decayFrames;
+          } else {
+            state.surge.cooldown = Math.max(state.surge.cooldown | 0, 180);
+          }
+        }
+      }
+
+      for (let i = 0; i < this.enemies.length; i++) {
+        const e = this.enemies[i];
+        if (!e || e.dead || e.type !== 8) continue;
+        e.workerState = "PATROL";
+        e.workerStateTimer = SHIELDED_WORKER.patrolFramesMin + ((this.rand01() * (SHIELDED_WORKER.patrolFramesMax - SHIELDED_WORKER.patrolFramesMin + 1)) | 0);
+      }
+
       this.respawnVampires();
       this.audio.tone(420, 0.05, 0.00, "square", 0.03);
     }
@@ -1148,6 +2047,7 @@
              ch === "o" ? 2 :
               ch === "T" ? 13 :
               ch === "X" ? 14 :
+              ch === "M" ? 15 :
              ch === "O" ? 5 :
              ch === "U" ? 6 :
              ch === "H" ? 8 :
@@ -1327,6 +2227,7 @@
 
     die(reset) {
       if (this.deathTimer > 0) return;
+      if (this.immortalMode && !reset) return;
       if (!reset) this.lives--;
       if (!reset) {
         this.score = 0;
@@ -1374,6 +2275,7 @@
 
     startEnemyDeath(reset) {
       if (this.deathTimer > 0) return;
+      if (this.immortalMode && !reset) return;
 
       const p = this.player;
       const rows = this.currentPlayerSpriteRows();
@@ -1437,6 +2339,7 @@
 
     startLavaDeath(reset) {
       if (this.deathTimer > 0) return;
+      if (this.immortalMode && !reset) return;
 
       const p = this.player;
       if (!p) return this.die(reset);
@@ -1554,6 +2457,92 @@
         this.spawnOneUpRadialBurst(cx, cy);
       } else if (tileId === 14) {
         this.activateBatCompanion();
+      } else if (tileId === 15) {
+        this.activateConductorCore();
+      }
+    }
+
+    hasConductorCoreActive() {
+      return !!(this.conductorCore && this.conductorCore.active && this.conductorCore.timer > 0);
+    }
+
+    pickupMagnetStrengthMultiplier() {
+      let mul = 1;
+      if (this.hasConductorCoreActive()) mul += 0.35;
+      if (this.robotPulse && this.robotPulse.timer > 0) mul += 0.25;
+      return Math.min(CONDUCTOR_CORE.robotStackCapMul, mul);
+    }
+
+    activateConductorCore() {
+      if (this.conductorCore.cooldown > 0 && !this.conductorCore.active) {
+        this.audio.tone(380, 0.04, 0.00, "square", 0.03);
+        return;
+      }
+      this.conductorCore.active = 1;
+      this.conductorCore.timer = CONDUCTOR_CORE.durationFrames;
+      this.conductorCore.cooldown = CONDUCTOR_CORE.durationFrames + CONDUCTOR_CORE.cooldownFrames;
+      this.conductorCore.notice = CONDUCTOR_CORE.noticeFrames;
+      this.conductorCore.pulse = CONDUCTOR_CORE.pulseFrames;
+      this.audio.tone(680, 0.05, 0.00, "triangle", 0.04);
+      this.audio.tone(980, 0.06, 0.03, "sine", 0.04);
+      this.audio.tone(1220, 0.07, 0.08, "triangle", 0.03);
+    }
+
+    updateConductorCore() {
+      if (this.conductorCore.cooldown > 0) this.conductorCore.cooldown--;
+      if (this.conductorCore.notice > 0) this.conductorCore.notice--;
+      if (this.conductorCore.pulse > 0) this.conductorCore.pulse--;
+      if (!this.hasConductorCoreActive() || !this.player) {
+        this.conductorCore.active = 0;
+        return;
+      }
+
+      const p = this.player;
+      this.conductorCore.timer--;
+      if (this.conductorCore.timer <= 0) {
+        this.conductorCore.active = 0;
+        this.conductorCore.timer = 0;
+        this.audio.tone(360, 0.04, 0.00, "triangle", 0.03);
+        return;
+      }
+
+      const cx = p.x + p.w * 0.5;
+      const cy = p.y + p.h * 0.5;
+      const radius = CONDUCTOR_CORE.magnetRadius;
+      const accel = CONDUCTOR_CORE.magnetPullAccel;
+
+      for (let i = 0; i < this.coinDrops.length; i++) {
+        const d = this.coinDrops[i];
+        if (d.dead) continue;
+        const dx = cx - (d.x + d.w * 0.5);
+        const dy = cy - (d.y + d.h * 0.5);
+        const dist = Math.hypot(dx, dy) || 1;
+        if (dist > radius) continue;
+        const pull = (1 - (dist / radius)) * accel;
+        d.vx += (dx / dist) * pull;
+        d.vy += (dy / dist) * pull - 0.02;
+        if (dist <= ROBOT_MAGNET_PULSE.pickupCollectRadius + 1) {
+          d.dead = 1;
+          this.addScore(1);
+          this.audio.tone(760, 0.02);
+        }
+      }
+
+      const minTx = Math.max(0, ((cx - radius) / TILE_SIZE) | 0);
+      const maxTx = Math.min(this.tileCols - 1, ((cx + radius) / TILE_SIZE) | 0);
+      const minTy = Math.max(0, ((cy - radius) / TILE_SIZE) | 0);
+      const maxTy = Math.min(this.tileRows - 1, ((cy + radius) / TILE_SIZE) | 0);
+
+      for (let y = minTy; y <= maxTy; y++) {
+        for (let x = minTx; x <= maxTx; x++) {
+          const id = this.tileIdAt(x, y);
+          if (id !== 2 && id !== 5 && id !== 6 && id !== 13 && id !== 14 && id !== 15) continue;
+          const tx = x * TILE_SIZE + TILE_SIZE * 0.5;
+          const ty = y * TILE_SIZE + TILE_SIZE * 0.5;
+          if (Math.hypot(cx - tx, cy - ty) > radius) continue;
+          this.setTile(x, y, ".");
+          this.spawnMagnetPickup(id, tx, ty);
+        }
       }
     }
 
@@ -1670,8 +2659,11 @@
       if (!this.player || this.deathTimer > 0) return;
       const name = CHARACTERS[this.characterIndex].name;
       if (name === "ROBOT") this.tryActivateRobotPulse();
+      else if (name === "DUCK") this.tryActivateDuckGaleDive();
+      else if (name === "BUNNY") this.tryActivateBunnyCarrotRocket();
       else if (name === "RANGER") this.tryActivateRangerGrapple();
       else if (name === "PALADIN") this.tryActivatePaladinAegisDash();
+      else if (name === "NINJA") this.tryActivateNinjaShadowStep();
       else if (name === "SKELETON") this.tryActivateSkeletonBloodBurst();
     }
 
@@ -1681,11 +2673,53 @@
       this.batCompanion.timer = BAT_COMPANION.durationFrames;
       this.batCompanion.angle = 0;
       this.batCompanion.shimmer = BAT_COMPANION.shimmerFrames;
+      this.batCompanion.vx = 0;
+      this.batCompanion.vy = 0;
+      this.batCompanion.trail = [];
+      this.batCompanion.trailTick = 0;
+      this.batCompanion.coinDropTimer = this.rollFairyCoinDropTimer();
+      this.batCompanion.burstT = 0;
+      this.batCompanion.burstLife = 0;
+      this.batCompanion.pushSfxCooldown = 0;
+      this.batCompanion.returningFrames = 0;
       this.batCompanion.x = this.player.x + this.player.w * 0.5;
       this.batCompanion.y = this.player.y + this.player.h * 0.35;
-      this.audio.tone(760, 0.05, 0.00, "triangle", 0.04);
-      this.audio.tone(960, 0.05, 0.03, "sine", 0.04);
-      this.audio.tone(1180, 0.06, 0.07, "triangle", 0.03);
+      this.audio.tone(980, 0.06, 0.00, "sine", 0.04);
+      this.audio.tone(1320, 0.07, 0.03, "triangle", 0.035);
+      this.audio.tone(1660, 0.08, 0.08, "sine", 0.03);
+    }
+
+    rollFairyCoinDropTimer() {
+      return BAT_COMPANION.coinDropIntervalMin + ((this.rand01() * (BAT_COMPANION.coinDropIntervalMax - BAT_COMPANION.coinDropIntervalMin + 1)) | 0);
+    }
+
+    spawnFairyCoinDrop(cx, cy) {
+      const count = BAT_COMPANION.coinDropBurstMin + ((this.rand01() * (BAT_COMPANION.coinDropBurstMax - BAT_COMPANION.coinDropBurstMin + 1)) | 0);
+      for (let i = 0; i < count; i++) {
+        this.coinDrops.push({
+          x: cx - 5 + (this.rand01() - 0.5) * 7,
+          y: cy - 6,
+          vx: (this.rand01() - 0.5) * 0.55,
+          vy: -1.15 - this.rand01() * 0.75,
+          w: 10,
+          h: 10,
+          onGround: 0,
+          t: 220,
+          collectDelay: 20
+        });
+      }
+      this.audio.tone(1180, 0.03, 0.00, "triangle", 0.02);
+      this.audio.tone(1440, 0.025, 0.015, "sine", 0.018);
+    }
+
+    triggerFairyCompanionExpireBurst(x, y) {
+      this.batCompanion.burstX = x;
+      this.batCompanion.burstY = y;
+      this.batCompanion.burstLife = BAT_COMPANION.expireBurstFrames;
+      this.batCompanion.burstT = BAT_COMPANION.expireBurstFrames;
+      this.audio.tone(1320, 0.09, 0.00, "sine", 0.045);
+      this.audio.tone(1760, 0.08, 0.03, "triangle", 0.035);
+      this.audio.tone(2210, 0.06, 0.08, "sine", 0.03);
     }
 
     tryActivateSkeletonBloodBurst() {
@@ -1864,6 +2898,250 @@
       if (this.paladinDash.timer <= 0) this.paladinDash.active = 0;
     }
 
+    tryActivateDuckGaleDive() {
+      if (this.deathTimer > 0 || !this.player) return;
+      if (CHARACTERS[this.characterIndex].name !== "DUCK") return;
+      if (this.duckDive.active || this.duckDive.cooldown > 0) return;
+      if (this.player.onGround) {
+        this.audio.tone(190, 0.03, 0.00, "square", 0.03);
+        return;
+      }
+
+      this.duckDive.active = 1;
+      this.duckDive.timer = DUCK_GALE_DIVE.durationFrames;
+      this.duckDive.cooldown = DUCK_GALE_DIVE.cooldownFrames;
+      this.duckDive.afterglow = DUCK_GALE_DIVE.afterglowFrames;
+      this.player.duckFlying = 0;
+      this.player.vx *= 0.6;
+      this.player.vy = Math.max(this.player.vy, DUCK_GALE_DIVE.diveSpeed);
+      this.duckDive.flash = DUCK_GALE_DIVE.startFlashFrames;
+      this.duckDive.flashX = this.player.x + this.player.w * 0.5;
+      this.duckDive.flashY = this.player.y + this.player.h * 0.5;
+      this.duckDive.flashKind = 1;
+      this.audio.tone(360, 0.04, 0.00, "square", 0.04);
+      this.audio.tone(280, 0.05, 0.03, "triangle", 0.03);
+    }
+
+    triggerDuckDiveImpactFx(x, y) {
+      this.duckDive.flash = DUCK_GALE_DIVE.impactFlashFrames;
+      this.duckDive.flashX = x;
+      this.duckDive.flashY = y;
+      this.duckDive.flashKind = 2;
+    }
+
+    updateDuckGaleDive(name) {
+      if (this.duckDive.cooldown > 0) this.duckDive.cooldown--;
+      if (this.duckDive.afterglow > 0) this.duckDive.afterglow--;
+      if (this.duckDive.flash > 0) this.duckDive.flash--;
+
+      if (name !== "DUCK" || !this.player) {
+        this.duckDive.active = 0;
+        this.duckDive.timer = 0;
+        return;
+      }
+
+      if (!this.duckDive.active) return;
+      const p = this.player;
+      p.duckFlying = 0;
+      p.vy = Math.max(p.vy, DUCK_GALE_DIVE.diveSpeed);
+      p.vx *= 0.94;
+
+      if (this.duckDive.timer > 0) this.duckDive.timer--;
+      if (this.duckDive.timer <= 0) this.duckDive.active = 0;
+    }
+
+    tryActivateBunnyCarrotRocket() {
+      if (this.deathTimer > 0 || !this.player) return;
+      if (CHARACTERS[this.characterIndex].name !== "BUNNY") return;
+      if (this.bunnyRocket.active) return;
+      if (this.bunnyRocket.charges <= 0) {
+        this.audio.tone(170, 0.03, 0.00, "square", 0.03);
+        return;
+      }
+
+      const inputDir = (this.keyDown.ArrowRight || this.keyDown.KeyD ? 1 : 0) - (this.keyDown.ArrowLeft || this.keyDown.KeyA ? 1 : 0);
+      const dir = inputDir || (this.player.face >= 0 ? 1 : -1) || 1;
+
+      this.bunnyRocket.active = 1;
+      this.bunnyRocket.timer = BUNNY_CARROT_ROCKET.durationFrames;
+      this.bunnyRocket.afterglow = BUNNY_CARROT_ROCKET.afterglowFrames;
+      this.bunnyRocket.dir = dir;
+      this.bunnyRocket.trail = [];
+      this.bunnyRocket.trailTick = 0;
+      this.bunnyRocket.burstUsed = 0;
+      this.bunnyRocket.charges = Math.max(0, this.bunnyRocket.charges - 1);
+      if (this.bunnyRocket.charges < BUNNY_CARROT_ROCKET.maxCharges && this.bunnyRocket.rechargeTimer <= 0) {
+        this.bunnyRocket.rechargeTimer = BUNNY_CARROT_ROCKET.rechargeFrames;
+      }
+
+      this.player.face = dir;
+      this.player.vx = dir * BUNNY_CARROT_ROCKET.launchVx;
+      this.player.vy = BUNNY_CARROT_ROCKET.launchVy;
+      this.player.duckFlying = 0;
+
+      this.audio.tone(620, 0.03, 0.00, "square", 0.05);
+      this.audio.tone(880, 0.04, 0.03, "triangle", 0.04);
+      this.audio.tone(1040, 0.03, 0.06, "sine", 0.03);
+    }
+
+    triggerBunnyRocketBurst(cx, cy, levelTheme) {
+      if (!this.player || this.bunnyRocket.burstUsed) return;
+      this.bunnyRocket.burstUsed = 1;
+      this.bunnyRocket.burstFlash = BUNNY_CARROT_ROCKET.burstFlashFrames;
+      this.bunnyRocket.burstX = cx;
+      this.bunnyRocket.burstY = cy;
+
+      const radius = BUNNY_CARROT_ROCKET.burstRadius;
+      for (let i = 0; i < this.enemies.length; i++) {
+        const enemy = this.enemies[i];
+        if (!enemy || enemy.dead) continue;
+        const ex = enemy.x + enemy.w * 0.5;
+        const ey = enemy.y + enemy.h * 0.5;
+        const hitR = radius + Math.max(4, Math.min(enemy.w, enemy.h) * 0.36);
+        if (Math.hypot(ex - cx, ey - cy) > hitR) continue;
+        this.handleSpecialEnemyDefeat(enemy);
+        enemy.dead = 1;
+        this.spawnEnemyShatter(enemy, levelTheme);
+        this.spawnCoinDrops(enemy.x + 2, enemy.y + 2);
+      }
+
+      this.bunnyRocket.active = 0;
+      this.bunnyRocket.timer = 0;
+      this.audio.tone(460, 0.04, 0.00, "square", 0.05);
+      this.audio.tone(700, 0.04, 0.03, "triangle", 0.04);
+      this.audio.tone(980, 0.03, 0.06, "sine", 0.03);
+    }
+
+    updateBunnyCarrotRocket(name) {
+      if (this.bunnyRocket.burstFlash > 0) this.bunnyRocket.burstFlash--;
+      if (this.bunnyRocket.afterglow > 0) this.bunnyRocket.afterglow--;
+
+      if (this.bunnyRocket.charges < BUNNY_CARROT_ROCKET.maxCharges) {
+        if (this.bunnyRocket.rechargeTimer > 0) this.bunnyRocket.rechargeTimer--;
+        if (this.bunnyRocket.rechargeTimer <= 0) {
+          this.bunnyRocket.charges++;
+          if (this.bunnyRocket.charges < BUNNY_CARROT_ROCKET.maxCharges) {
+            this.bunnyRocket.rechargeTimer = BUNNY_CARROT_ROCKET.rechargeFrames;
+          }
+        }
+      } else {
+        this.bunnyRocket.rechargeTimer = 0;
+      }
+
+      if (name !== "BUNNY" || !this.player) {
+        this.bunnyRocket.active = 0;
+        this.bunnyRocket.timer = 0;
+      } else if (this.bunnyRocket.active) {
+        const p = this.player;
+        p.face = this.bunnyRocket.dir;
+        p.vx += this.bunnyRocket.dir * BUNNY_CARROT_ROCKET.driftAccel;
+        p.vx = clamp(p.vx, -BUNNY_CARROT_ROCKET.maxDriftVx, BUNNY_CARROT_ROCKET.maxDriftVx);
+        if (Math.sign(p.vx) !== this.bunnyRocket.dir) p.vx = this.bunnyRocket.dir * 1.2;
+
+        this.bunnyRocket.trailTick++;
+        if ((this.bunnyRocket.trailTick % BUNNY_CARROT_ROCKET.trailSpawnEvery) === 0) {
+          this.bunnyRocket.trail.push({
+            x: p.x,
+            y: p.y,
+            w: p.w,
+            h: p.h,
+            t: BUNNY_CARROT_ROCKET.afterglowFrames,
+            life: BUNNY_CARROT_ROCKET.afterglowFrames
+          });
+        }
+
+        if (this.bunnyRocket.timer > 0) this.bunnyRocket.timer--;
+        if (this.bunnyRocket.timer <= 0) this.bunnyRocket.active = 0;
+      }
+
+      for (let i = 0; i < this.bunnyRocket.trail.length; i++) {
+        const ghost = this.bunnyRocket.trail[i];
+        if (ghost.t-- <= 0) ghost.dead = 1;
+      }
+      this.bunnyRocket.trail = this.bunnyRocket.trail.filter(g => !g.dead);
+    }
+
+    tryActivateNinjaShadowStep() {
+      if (this.deathTimer > 0 || !this.player) return;
+      if (CHARACTERS[this.characterIndex].name !== "NINJA") return;
+      if (this.ninjaShadow.active) return;
+
+      const overdrive = this.ninjaShadow.cooldown > 0;
+      if (overdrive) {
+        if (this.ninjaShadow.overdriveUsed) {
+          this.audio.tone(170, 0.03, 0.00, "square", 0.03);
+          return;
+        }
+        if (this.score < NINJA_SHADOW_STEP.overdriveCoinCost) {
+          this.audio.tone(150, 0.03, 0.00, "square", 0.03);
+          return;
+        }
+        this.score = Math.max(0, this.score - NINJA_SHADOW_STEP.overdriveCoinCost);
+        this.ninjaShadow.overdriveUsed = 1;
+        this.teleportNotice = "SHADOW STEP -" + NINJA_SHADOW_STEP.overdriveCoinCost + " COINS";
+        this.teleportNoticeTimer = 60;
+      } else {
+        this.ninjaShadow.overdriveUsed = 0;
+      }
+
+      const inputDir = (this.keyDown.ArrowRight || this.keyDown.KeyD ? 1 : 0) - (this.keyDown.ArrowLeft || this.keyDown.KeyA ? 1 : 0);
+      const dir = inputDir || (this.player.face >= 0 ? 1 : -1) || 1;
+
+      this.ninjaShadow.active = 1;
+      this.ninjaShadow.timer = NINJA_SHADOW_STEP.dashFrames;
+      this.ninjaShadow.cooldown = NINJA_SHADOW_STEP.cooldownFrames;
+      this.ninjaShadow.afterglow = NINJA_SHADOW_STEP.afterglowFrames;
+      this.ninjaShadow.dir = dir;
+      this.ninjaShadow.trail = [];
+      this.ninjaShadow.trailTick = 0;
+
+      this.player.face = dir;
+      this.player.vx = dir * NINJA_SHADOW_STEP.dashSpeed;
+      this.player.vy = Math.min(this.player.vy, NINJA_SHADOW_STEP.airLiftVy);
+      this.player.duckFlying = 0;
+
+      this.audio.tone(520, 0.03, 0.00, "triangle", 0.05);
+      this.audio.tone(760, 0.04, 0.03, "sine", 0.04);
+      this.audio.tone(980, 0.03, 0.06, "triangle", 0.035);
+    }
+
+    updateNinjaShadowStep(name) {
+      if (this.ninjaShadow.cooldown > 0) this.ninjaShadow.cooldown--;
+      if (this.ninjaShadow.cooldown <= 0) this.ninjaShadow.overdriveUsed = 0;
+      if (this.ninjaShadow.afterglow > 0) this.ninjaShadow.afterglow--;
+
+      if (name !== "NINJA" || !this.player) {
+        this.ninjaShadow.active = 0;
+        this.ninjaShadow.timer = 0;
+      } else if (this.ninjaShadow.active) {
+        const p = this.player;
+        p.face = this.ninjaShadow.dir;
+        p.vx = this.ninjaShadow.dir * NINJA_SHADOW_STEP.dashSpeed;
+        p.vy = Math.min(p.vy, 0.4);
+
+        this.ninjaShadow.trailTick++;
+        if ((this.ninjaShadow.trailTick % NINJA_SHADOW_STEP.trailSpawnEvery) === 0) {
+          this.ninjaShadow.trail.push({
+            x: p.x,
+            y: p.y,
+            w: p.w,
+            h: p.h,
+            t: NINJA_SHADOW_STEP.afterglowFrames,
+            life: NINJA_SHADOW_STEP.afterglowFrames
+          });
+        }
+
+        if (this.ninjaShadow.timer > 0) this.ninjaShadow.timer--;
+        if (this.ninjaShadow.timer <= 0) this.ninjaShadow.active = 0;
+      }
+
+      for (let i = 0; i < this.ninjaShadow.trail.length; i++) {
+        const ghost = this.ninjaShadow.trail[i];
+        if (ghost.t-- <= 0) ghost.dead = 1;
+      }
+      this.ninjaShadow.trail = this.ninjaShadow.trail.filter(g => !g.dead);
+    }
+
     updateHolyZones() {
       if (this.holyWardCooldown > 0) this.holyWardCooldown--;
       this.holyWard = 0;
@@ -1984,6 +3262,21 @@
       p.vx += (dx / dist) * RANGER_GRAPPLE.pullAccel;
       p.vy += (dy / dist) * RANGER_GRAPPLE.pullAccel;
 
+      for (let i = 0; i < this.enemies.length; i++) {
+        const enemy = this.enemies[i];
+        if (!enemy || enemy.dead || enemy.type !== 8 || enemy.workerState !== "SHIELD_UP") continue;
+        const ex = enemy.x + enemy.w * 0.5;
+        const ey = enemy.y + enemy.h * 0.5;
+        if (Math.hypot(cx - ex, cy - ey) > 16) continue;
+        enemy.dir *= -1;
+        enemy.workerState = "RECOVER";
+        enemy.workerStateTimer = SHIELDED_WORKER.recoverFrames;
+        this.rangerGrapple.active = 0;
+        this.audio.tone(520, 0.04, 0.00, "triangle", 0.03);
+        this.audio.tone(700, 0.05, 0.02, "sine", 0.03);
+        break;
+      }
+
       const speed = Math.hypot(p.vx, p.vy);
       if (speed > RANGER_GRAPPLE.maxPullSpeed) {
         const s = RANGER_GRAPPLE.maxPullSpeed / speed;
@@ -2064,7 +3357,7 @@
       for (let y = minTy; y <= maxTy; y++) {
         for (let x = minTx; x <= maxTx; x++) {
           const id = this.tileIdAt(x, y);
-          if (id !== 2 && id !== 5 && id !== 6 && id !== 13 && id !== 14) continue;
+          if (id !== 2 && id !== 5 && id !== 6 && id !== 13 && id !== 14 && id !== 15) continue;
           const tx = x * TILE_SIZE + TILE_SIZE * 0.5;
           const ty = y * TILE_SIZE + TILE_SIZE * 0.5;
           if (Math.hypot(cx - tx, cy - ty) > radius) continue;
@@ -2153,6 +3446,15 @@
       if (enemy.type === 7) {
         return f ? SPRITES.enemyCryptHarbingerB : SPRITES.enemyCryptHarbingerA;
       }
+      if (enemy.type === 8) {
+        if (enemy.workerState === "SHIELD_UP") {
+          return (variant & 1) ? SPRITES.enemyCastleWalkerAltIdle : SPRITES.enemyCastleWalkerIdle;
+        }
+        const runFrame = ((enemy.anim >> 4) & 1);
+        return (variant & 1)
+          ? (runFrame ? SPRITES.enemyWalkerAltRun : SPRITES.enemyWalkerAltIdle)
+          : (runFrame ? SPRITES.enemyWalkerRun : SPRITES.enemyWalkerIdle);
+      }
       if (theme === "CASTLE" || theme === "GOTHIC") return (variant & 1) ? (f ? SPRITES.enemyCastleGhostOrbB : SPRITES.enemyCastleGhostOrbA) : (f ? SPRITES.enemyCastleGhostFlapB : SPRITES.enemyCastleGhostFlapA);
       return (variant & 1) ? (f ? SPRITES.enemyGhostOrbB : SPRITES.enemyGhostOrbA) : (f ? SPRITES.enemyGhostFlapB : SPRITES.enemyGhostFlapA);
     }
@@ -2240,7 +3542,7 @@
         for (let x = x0; x <= x1; x++) {
           const id = this.tileIdAt(x, y);
           if (id === 7 && !this.paladinDash.active) return this.startLavaDeath(0);
-          if (id === 2 || id === 5 || id === 6 || id === 13 || id === 14) {
+          if (id === 2 || id === 5 || id === 6 || id === 13 || id === 14 || id === 15) {
             this.setTile(x, y, ".");
             this.collectTileReward(id, x * TILE_SIZE + TILE_SIZE * 0.5, y * TILE_SIZE + TILE_SIZE * 0.5);
           }
@@ -2356,8 +3658,16 @@
     }
 
     updateBatCompanion(levelTheme) {
+      for (let i = 0; i < this.batCompanion.trail.length; i++) {
+        const t = this.batCompanion.trail[i];
+        if (t.t-- <= 0) t.dead = 1;
+      }
+      this.batCompanion.trail = this.batCompanion.trail.filter(t => !t.dead);
+      if (this.batCompanion.burstT > 0) this.batCompanion.burstT--;
+
       if (!this.batCompanion.active || !this.player) return;
       if (this.batCompanion.timer-- <= 0) {
+        this.triggerFairyCompanionExpireBurst(this.batCompanion.x, this.batCompanion.y);
         this.batCompanion.active = 0;
         this.batCompanion.timer = 0;
         return;
@@ -2366,10 +3676,82 @@
       const p = this.player;
       this.batCompanion.angle += BAT_COMPANION.orbitSpeed;
       this.batCompanion.shimmer = (this.batCompanion.shimmer + 1) % BAT_COMPANION.shimmerFrames;
-      const cx = p.x + p.w * 0.5 + Math.cos(this.batCompanion.angle) * BAT_COMPANION.orbitRadius;
-      const cy = p.y + p.h * 0.32 + Math.sin(this.batCompanion.angle * 1.5) * 5;
+      if (this.batCompanion.pushSfxCooldown > 0) this.batCompanion.pushSfxCooldown--;
+      const pcx = p.x + p.w * 0.5;
+      const pcy = p.y + p.h * 0.32;
+      let targetX = pcx + Math.cos(this.batCompanion.angle) * BAT_COMPANION.orbitRadius;
+      let targetY = pcy + Math.sin(this.batCompanion.angle * 1.5) * 5;
+      let targetAccel = BAT_COMPANION.fallbackAccel;
+      let targetMaxSpeed = BAT_COMPANION.fallbackMaxSpeed;
+
+      if (this.batCompanion.returningFrames > 0) {
+        targetX = pcx + Math.cos(this.batCompanion.angle) * (BAT_COMPANION.orbitRadius * 0.6);
+        targetY = pcy + Math.sin(this.batCompanion.angle * 1.8) * 4;
+        targetAccel = BAT_COMPANION.returnAccel;
+        targetMaxSpeed = BAT_COMPANION.returnMaxSpeed;
+        this.batCompanion.returningFrames--;
+        if (Math.hypot(this.batCompanion.x - pcx, this.batCompanion.y - pcy) <= BAT_COMPANION.returnCatchRadius) {
+          this.batCompanion.returningFrames = 0;
+        }
+      } else {
+        let bestEnemy = null;
+        let bestDist = BAT_COMPANION.chaseRange;
+        for (let i = 0; i < this.enemies.length; i++) {
+          const enemy = this.enemies[i];
+          if (!enemy || enemy.dead) continue;
+          const ex = enemy.x + enemy.w * 0.5;
+          const ey = enemy.y + enemy.h * 0.5;
+          const d = Math.hypot(ex - this.batCompanion.x, ey - this.batCompanion.y);
+          if (d < bestDist) {
+            bestDist = d;
+            bestEnemy = enemy;
+          }
+        }
+
+        if (bestEnemy) {
+          targetX = bestEnemy.x + bestEnemy.w * 0.5 + (bestEnemy.vx || 0) * 3;
+          targetY = bestEnemy.y + bestEnemy.h * 0.5 + (bestEnemy.vy || 0) * 2;
+          targetAccel = BAT_COMPANION.chaseAccel;
+          targetMaxSpeed = BAT_COMPANION.chaseMaxSpeed;
+        }
+      }
+
+      const seekDx = targetX - this.batCompanion.x;
+      const seekDy = targetY - this.batCompanion.y;
+      const seekDist = Math.hypot(seekDx, seekDy) || 1;
+      this.batCompanion.vx += (seekDx / seekDist) * targetAccel;
+      this.batCompanion.vy += (seekDy / seekDist) * targetAccel;
+      this.batCompanion.vx *= BAT_COMPANION.motionDrag;
+      this.batCompanion.vy *= BAT_COMPANION.motionDrag;
+      const vMag = Math.hypot(this.batCompanion.vx, this.batCompanion.vy);
+      if (vMag > targetMaxSpeed) {
+        const s = targetMaxSpeed / vMag;
+        this.batCompanion.vx *= s;
+        this.batCompanion.vy *= s;
+      }
+      this.batCompanion.x += this.batCompanion.vx;
+      this.batCompanion.y += this.batCompanion.vy;
+      const cx = this.batCompanion.x;
+      const cy = this.batCompanion.y;
       this.batCompanion.x = cx;
       this.batCompanion.y = cy;
+
+      this.batCompanion.trailTick++;
+      if ((this.batCompanion.trailTick % BAT_COMPANION.trailSpawnEvery) === 0) {
+        this.batCompanion.trail.push({
+          x: cx + (this.rand01() - 0.5) * 2,
+          y: cy + (this.rand01() - 0.5) * 2,
+          t: BAT_COMPANION.trailLifeFrames,
+          life: BAT_COMPANION.trailLifeFrames,
+          size: BAT_COMPANION.trailSizeMin + ((this.rand01() * (BAT_COMPANION.trailSizeMax - BAT_COMPANION.trailSizeMin + 1)) | 0)
+        });
+      }
+
+      if (this.batCompanion.coinDropTimer > 0) this.batCompanion.coinDropTimer--;
+      if (this.batCompanion.coinDropTimer <= 0) {
+        this.spawnFairyCoinDrop(cx, cy);
+        this.batCompanion.coinDropTimer = this.rollFairyCoinDropTimer();
+      }
 
       const minTx = Math.max(0, ((cx - BAT_COMPANION.coinCollectRadius) / TILE_SIZE) | 0);
       const maxTx = Math.min(this.tileCols - 1, ((cx + BAT_COMPANION.coinCollectRadius) / TILE_SIZE) | 0);
@@ -2379,7 +3761,7 @@
       for (let ty = minTy; ty <= maxTy; ty++) {
         for (let tx = minTx; tx <= maxTx; tx++) {
           const id = this.tileIdAt(tx, ty);
-          if (id !== 2 && id !== 5 && id !== 13) continue;
+          if (id !== 2 && id !== 5 && id !== 13 && id !== 15) continue;
           const px = tx * TILE_SIZE + TILE_SIZE * 0.5;
           const py = ty * TILE_SIZE + TILE_SIZE * 0.5;
           if (Math.hypot(cx - px, cy - py) > BAT_COMPANION.coinCollectRadius) continue;
@@ -2391,6 +3773,7 @@
       for (let i = 0; i < this.coinDrops.length; i++) {
         const d = this.coinDrops[i];
         if (d.dead) continue;
+        if (d.collectDelay > 0) continue;
         if (Math.hypot(cx - (d.x + d.w * 0.5), cy - (d.y + d.h * 0.5)) <= BAT_COMPANION.coinCollectRadius) {
           d.dead = 1;
           this.addScore(1);
@@ -2400,25 +3783,49 @@
 
       for (let i = 0; i < this.magnetItems.length; i++) {
         const item = this.magnetItems[i];
-        if (item.dead || (item.tileId !== 2 && item.tileId !== 5 && item.tileId !== 13)) continue;
+        if (item.dead || (item.tileId !== 2 && item.tileId !== 5 && item.tileId !== 13 && item.tileId !== 15)) continue;
         if (Math.hypot(cx - (item.x + item.w * 0.5), cy - (item.y + item.h * 0.5)) <= BAT_COMPANION.coinCollectRadius + 1) {
           this.collectMagnetPickup(item);
         }
       }
 
+      let pushedEnemy = 0;
       for (let i = 0; i < this.enemies.length; i++) {
         const enemy = this.enemies[i];
         if (!enemy || enemy.dead) continue;
         const ex = enemy.x + enemy.w * 0.5;
         const ey = enemy.y + enemy.h * 0.5;
         const hitR = BAT_COMPANION.enemyHitRadius + Math.max(4, Math.min(enemy.w, enemy.h) * 0.30);
-        if (Math.hypot(cx - ex, cy - ey) <= hitR) {
-          this.handleSpecialEnemyDefeat(enemy);
-          enemy.dead = 1;
-          this.spawnEnemyShatter(enemy, levelTheme);
-          this.spawnCoinDrops(enemy.x + 2, enemy.y + 2);
-          this.audio.tone(300, 0.03, 0.00, "triangle", 0.03);
+        const dx = ex - cx;
+        const dy = ey - cy;
+        const dist = Math.hypot(dx, dy) || 1;
+        if (dist > hitR) continue;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const strength = BAT_COMPANION.enemyPushStrength * (1 - (dist / hitR));
+        if (enemy.type) {
+          enemy.x += nx * strength;
+          enemy.y += ny * strength * 0.8;
+          enemy.baseX = enemy.x;
+          enemy.baseY = enemy.y;
+        } else {
+          enemy.x += nx * strength;
+          enemy.y += ny * strength * 0.45;
+          enemy.vx += nx * (strength * 0.45);
+          enemy.vy += ny * BAT_COMPANION.enemyPushLift;
+          if (Math.abs(nx) > 0.08) enemy.dir = nx >= 0 ? 1 : -1;
         }
+        if (this.batCompanion.pushSfxCooldown <= 0) {
+          this.audio.tone(860, 0.025, 0.00, "triangle", 0.02);
+          this.batCompanion.pushSfxCooldown = BAT_COMPANION.pushSfxCooldownFrames;
+        }
+        pushedEnemy = 1;
+        this.batCompanion.returningFrames = BAT_COMPANION.returnFrames;
+        break;
+      }
+
+      if (pushedEnemy && this.batCompanion.coinDropTimer > 6) {
+        this.batCompanion.coinDropTimer = 6;
       }
     }
 
@@ -2450,8 +3857,9 @@
       const R = this.keyDown.ArrowRight || this.keyDown.KeyD;
       const D = this.keyDown.ArrowDown || this.keyDown.KeyS;
       const JH = this.keyDown.Space || this.keyDown.ArrowUp;
+      const levelTheme = getThemeForLevel(this.levelIndex);
 
-      const physics = PHYSICS_BY_THEME[getThemeForLevel(this.levelIndex)] || PHYSICS_BY_THEME[DEFAULT_THEME];
+      const physics = PHYSICS_BY_THEME[levelTheme] || PHYSICS_BY_THEME[DEFAULT_THEME];
       const gr = physics.gravity;
       const fr = physics.groundFriction;
       const af = physics.airFriction;
@@ -2460,12 +3868,25 @@
       const name = character.name;
       const rangerGrappling = (name === "RANGER" && this.rangerGrapple.active);
       const paladinDashing = (name === "PALADIN" && this.paladinDash.active);
+      const duckDiving = (name === "DUCK" && this.duckDive.active);
+      const bunnyRocketing = (name === "BUNNY" && this.bunnyRocket.active);
+      const ninjaShadowing = (name === "NINJA" && this.ninjaShadow.active);
       this.updateSkeletonCrouch(name, D);
       this.updateHolyZones();
+      this.updateStormMechanics(levelTheme);
 
       // Horizontal
       const dir = (R ? 1 : 0) - (L ? 1 : 0);
-      if (paladinDashing) {
+      if (duckDiving) {
+        p.vx *= 0.90;
+      } else if (bunnyRocketing) {
+        p.vx += this.bunnyRocket.dir * BUNNY_CARROT_ROCKET.driftAccel;
+        p.vx = clamp(p.vx, -BUNNY_CARROT_ROCKET.maxDriftVx, BUNNY_CARROT_ROCKET.maxDriftVx);
+        p.face = this.bunnyRocket.dir;
+      } else if (ninjaShadowing) {
+        p.vx = this.ninjaShadow.dir * NINJA_SHADOW_STEP.dashSpeed;
+        p.face = this.ninjaShadow.dir;
+      } else if (paladinDashing) {
         p.vx = (p.face >= 0 ? 1 : -1) * PALADIN_AEGIS.dashSpeed;
       } else if (!rangerGrappling && dir) {
         p.vx += dir * PLAYER_AX;
@@ -2504,7 +3925,7 @@
       }
 
       // Jump consume (same logic, clearer names)
-      if (p.jumpBuf && !paladinDashing) {
+      if (p.jumpBuf && !paladinDashing && !ninjaShadowing && !bunnyRocketing && !duckDiving) {
         const isDuck = (name === "DUCK");
         const isNinja = (name === "NINJA");
 
@@ -2538,20 +3959,32 @@
 
       this.updateRangerGrapple(name);
       this.updatePaladinAegisDash(name);
+      this.updateDuckGaleDive(name);
+      this.updateBunnyCarrotRocket(name);
+      this.updateNinjaShadowStep(name);
       this.updateSkeletonBloodBurst(name);
 
       // Gravity + jump cut
-      p.vy += gr * (paladinDashing ? 0.15 : (p.duckFlying ? 0.25 : 1));
+      p.vy += gr * (duckDiving ? 0.15 : (bunnyRocketing ? 0.2 : (ninjaShadowing ? 0.25 : (paladinDashing ? 0.15 : (p.duckFlying ? 0.25 : 1)))));
       if (p.vy > 8.5) p.vy = 8.5;
-      if (!paladinDashing && !JH && p.vy < 0) p.vy *= 0.55;
+      if (!paladinDashing && !ninjaShadowing && !bunnyRocketing && !duckDiving && !JH && p.vy < 0) p.vy *= 0.55;
 
       this.moveAndCollide(p);
+      if (duckDiving && this.duckDive.active && p.onGround) {
+        this.duckDive.active = 0;
+        this.triggerDuckDiveImpactFx(p.x + p.w * 0.5, p.y + p.h * 0.85);
+      }
+      if (bunnyRocketing && this.bunnyRocket.active && p.onGround && !this.bunnyRocket.burstUsed) {
+        this.triggerBunnyRocketBurst(p.x + p.w * 0.5, p.y + p.h * 0.85, levelTheme);
+      }
       this.updateCheckpointProgress();
       this.updatePortals();
+      this.updateStormMechanicHazardCollision(levelTheme);
 
       if (p.duckFlying && p.vy === 0 && !p.onGround) p.duckFlying = 0;
 
       this.collectTiles();
+      this.updateConductorCore();
       this.updateRobotMagnetPulse(name);
       if (this.goal) {
         if (!this.winPending && rectsOverlap(p, this.goal.hitboxFlag)) {
@@ -2592,7 +4025,7 @@
         const dx = (p.x + p.w * 0.5) - (item.x + item.w * 0.5);
         const dy = (p.y + p.h * 0.5) - (item.y + item.h * 0.5);
         const dist = Math.hypot(dx, dy) || 1;
-        const pull = ROBOT_MAGNET_PULSE.pickupPullStrength;
+        const pull = ROBOT_MAGNET_PULSE.pickupPullStrength * this.pickupMagnetStrengthMultiplier();
         item.vx += (dx / dist) * pull;
         item.vy += (dy / dist) * pull;
         item.vx *= 0.92;
@@ -2634,7 +4067,6 @@
         if (burst.ringT <= 0 && burst.particles.length === 0) burst.dead = 1;
       }
       this.oneupBursts = this.oneupBursts.filter(b => !b.dead);
-      const levelTheme = getThemeForLevel(this.levelIndex);
       this.updateCheckpointRain();
       this.updateEnemyShatter(gr);
       for (let i = 0; i < this.vampireBlood.length; i++) {
@@ -2660,6 +4092,7 @@
 
       // Enemies
       const spaceMode = levelTheme === "SPACE";
+      const stormSurgeAggroMul = (levelTheme === "STORMFOUNDRY" && this.stormMechanics && this.stormMechanics.surge && this.stormMechanics.surge.state === "ACTIVE") ? 1.2 : 1;
       let latePulseKills = 0;
       for (let i = 0; i < this.enemies.length; i++) {
         const e = this.enemies[i];
@@ -2694,7 +4127,7 @@
             } else if (e.type === 5) {
               const track = Math.sin(e.anim * 0.022 + e.phase) > 0 ? 26 : -26;
               const targetX = p.x + track;
-              const desired = targetX >= e.x ? 0.92 : -0.92;
+              const desired = targetX >= e.x ? (0.92 * stormSurgeAggroMul) : (-0.92 * stormSurgeAggroMul);
               e.vx += (desired - e.vx) * 0.05;
               e.x += e.vx;
               this.collideX(e);
@@ -2711,12 +4144,42 @@
             } else if (e.type === 7) {
               const lane = Math.sin(e.anim * 0.04 + e.phase) > 0 ? 24 : -24;
               const targetX = p.x + lane;
-              const desired = targetX >= e.x ? 0.75 : -0.75;
+              const desired = targetX >= e.x ? (0.75 * stormSurgeAggroMul) : (-0.75 * stormSurgeAggroMul);
               e.vx += (desired - e.vx) * 0.05;
               e.x += e.vx;
               this.collideX(e);
               e.y = e.baseY + Math.sin(e.anim * 0.07 + e.phase) * 12;
               if ((e.anim & 3) === 0) this.spawnCryptTrail(e, "sigil");
+            } else if (e.type === 8) {
+              if (!e.workerState) {
+                e.workerState = "PATROL";
+                e.workerStateTimer = SHIELDED_WORKER.patrolFramesMin + ((this.rand01() * (SHIELDED_WORKER.patrolFramesMax - SHIELDED_WORKER.patrolFramesMin + 1)) | 0);
+              }
+              e.workerStateTimer = Math.max(0, (e.workerStateTimer | 0) - 1);
+              const moveSpeed = (e.workerState === "SHIELD_UP" ? 0.46 : (e.workerState === "RECOVER" ? 0.62 : 0.88)) * stormSurgeAggroMul;
+              e.vx = e.dir * moveSpeed;
+              e.vy += gr;
+              if (e.vy > 8.5) e.vy = 8.5;
+              this.moveAndCollide(e);
+              if (e.onGround) {
+                const ax = e.x + (e.dir > 0 ? e.w + 1 : -1);
+                const tx = (ax / TILE_SIZE) | 0;
+                const ty = ((e.y + e.h + 1) / TILE_SIZE) | 0;
+                if (!this.isSolid(this.tileIdAt(tx, ty))) e.dir *= -1;
+              }
+              if (e.workerState === "PATROL" && e.workerStateTimer <= 0) {
+                e.workerState = "SHIELD_UP";
+                e.workerStateTimer = SHIELDED_WORKER.shieldUpFrames;
+              } else if (e.workerState === "SHIELD_UP" && e.workerStateTimer <= 0) {
+                e.workerState = "EXPOSED";
+                e.workerStateTimer = SHIELDED_WORKER.exposedFrames;
+              } else if (e.workerState === "EXPOSED" && e.workerStateTimer <= 0) {
+                e.workerState = "RECOVER";
+                e.workerStateTimer = SHIELDED_WORKER.recoverFrames;
+              } else if (e.workerState === "RECOVER" && e.workerStateTimer <= 0) {
+                e.workerState = "PATROL";
+                e.workerStateTimer = SHIELDED_WORKER.patrolFramesMin + ((this.rand01() * (SHIELDED_WORKER.patrolFramesMax - SHIELDED_WORKER.patrolFramesMin + 1)) | 0);
+              }
             } else {
               const loopT = e.anim * 0.12 + e.phase;
               const drift = Math.sin(e.anim * 0.03 + e.phase) * 10;
@@ -2744,7 +4207,7 @@
             e.y = e.baseY + swoop + hunt;
             if ((e.anim & 2) === 0) this.spawnVampireBlood(e, 1);
           } else if (e.type === 5) {
-            e.vx = e.dir * 0.88;
+            e.vx = e.dir * 0.88 * stormSurgeAggroMul;
             e.x += e.vx;
             this.collideX(e);
             const swoop = Math.sin(e.anim * 0.07 + e.phase) * 12;
@@ -2759,13 +4222,46 @@
             e.y = e.baseY + wave;
             if ((e.anim & 2) === 0) this.spawnCryptTrail(e, "wisp");
           } else if (e.type === 7) {
-            e.vx = e.dir * 0.78;
+            e.vx = e.dir * 0.78 * stormSurgeAggroMul;
             e.x += e.vx;
             this.collideX(e);
             const pulse = Math.sin(e.anim * 0.06 + e.phase) * 14;
             const hunt = Math.sign((p.x + p.w * 0.5) - (e.x + e.w * 0.5)) * 1.4;
             e.y = e.baseY + pulse + hunt;
             if ((e.anim & 3) === 0) this.spawnCryptTrail(e, "sigil");
+          } else if (e.type === 8) {
+            if (!e.workerState) {
+              e.workerState = "PATROL";
+              e.workerStateTimer = SHIELDED_WORKER.patrolFramesMin + ((this.rand01() * (SHIELDED_WORKER.patrolFramesMax - SHIELDED_WORKER.patrolFramesMin + 1)) | 0);
+            }
+            e.workerStateTimer = Math.max(0, (e.workerStateTimer | 0) - 1);
+
+            const moveSpeed = (e.workerState === "SHIELD_UP" ? 0.46 : (e.workerState === "RECOVER" ? 0.62 : 0.88)) * stormSurgeAggroMul;
+            e.vx = e.dir * moveSpeed;
+            e.vy += gr;
+            if (e.vy > 8.5) e.vy = 8.5;
+            this.moveAndCollide(e);
+
+            if (e.onGround) {
+              const ax = e.x + (e.dir > 0 ? e.w + 1 : -1);
+              const tx = (ax / TILE_SIZE) | 0;
+              const ty = ((e.y + e.h + 1) / TILE_SIZE) | 0;
+              if (!this.isSolid(this.tileIdAt(tx, ty))) e.dir *= -1;
+            }
+
+            if (e.workerState === "PATROL" && e.workerStateTimer <= 0) {
+              e.workerState = "SHIELD_UP";
+              e.workerStateTimer = SHIELDED_WORKER.shieldUpFrames;
+            } else if (e.workerState === "SHIELD_UP" && e.workerStateTimer <= 0) {
+              e.workerState = "EXPOSED";
+              e.workerStateTimer = SHIELDED_WORKER.exposedFrames;
+            } else if (e.workerState === "EXPOSED" && e.workerStateTimer <= 0) {
+              e.workerState = "RECOVER";
+              e.workerStateTimer = SHIELDED_WORKER.recoverFrames;
+            } else if (e.workerState === "RECOVER" && e.workerStateTimer <= 0) {
+              e.workerState = "PATROL";
+              e.workerStateTimer = SHIELDED_WORKER.patrolFramesMin + ((this.rand01() * (SHIELDED_WORKER.patrolFramesMax - SHIELDED_WORKER.patrolFramesMin + 1)) | 0);
+            }
           } else {
             const loopT = e.anim * 0.09 + e.phase;
             e.x = e.baseX + Math.cos(loopT) * 12;
@@ -2818,27 +4314,76 @@
           }
         }
 
-        if (this.respawnGrace <= 0 && rectsOverlap(p, e)) {
+        if (this.respawnGrace <= 0 && bunnyRocketing && rectsOverlap(p, e)) {
+          this.triggerBunnyRocketBurst(p.x + p.w * 0.5, p.y + p.h * 0.5, levelTheme);
+          continue;
+        }
+
+        if (this.respawnGrace <= 0 && duckDiving && rectsOverlap(p, e)) {
+          this.handleSpecialEnemyDefeat(e);
+          this.spawnEnemyShatter(e, levelTheme);
+          e.dead = 1;
+          this.spawnCoinDrops(e.x + 2, e.y + 2);
+          p.vy = DUCK_GALE_DIVE.bounceVy;
+          this.duckDive.active = 0;
+          this.triggerDuckDiveImpactFx(e.x + e.w * 0.5, e.y + e.h * 0.5);
+          this.audio.tone(260, 0.05, 0.00, "triangle", 0.04);
+          continue;
+        }
+
+        if (this.respawnGrace <= 0 && ninjaShadowing && rectsOverlap(p, e)) {
+          this.handleSpecialEnemyDefeat(e);
+          this.spawnEnemyShatter(e, levelTheme);
+          e.dead = 1;
+          this.spawnCoinDrops(e.x + 2, e.y + 2);
+          this.audio.tone(340, 0.03, 0.00, "triangle", 0.03);
+          continue;
+        }
+
+        if (this.respawnGrace <= 0 && !ninjaShadowing && rectsOverlap(p, e)) {
           const giantVampire = e.type === 5;
+          const shieldedWorker = e.type === 8;
+          const shieldUp = shieldedWorker && e.workerState === "SHIELD_UP";
+          const exposed = shieldedWorker && e.workerState === "EXPOSED";
+          const stompedFromAbove = p.vy > 0 && p.y + p.h - 2 < e.y + e.h * 0.55;
+          const playerCenterX = p.x + p.w * 0.5;
+          const enemyCenterX = e.x + e.w * 0.5;
+          const frontHit = shieldedWorker && ((e.dir >= 0 && playerCenterX >= enemyCenterX) || (e.dir < 0 && playerCenterX <= enemyCenterX));
+
           if (name === "PALADIN" && this.paladinDash.active) {
-            this.handleSpecialEnemyDefeat(e);
-            this.spawnEnemyShatter(e, levelTheme);
-            e.dead = 1;
-            p.vy = Math.min(p.vy, -0.7);
-            this.spawnCoinDrops(e.x + 2, e.y + 2);
-            this.audio.tone(300, 0.05, 0.00, "square", 0.03);
+            if (shieldUp) {
+              e.workerState = "EXPOSED";
+              e.workerStateTimer = SHIELDED_WORKER.exposedFrames + SHIELDED_WORKER.paladinExposeBonusFrames;
+              p.vy = Math.min(p.vy, -0.7);
+              this.audio.tone(540, 0.04, 0.00, "triangle", 0.03);
+            } else {
+              this.handleSpecialEnemyDefeat(e);
+              this.spawnEnemyShatter(e, levelTheme);
+              e.dead = 1;
+              p.vy = Math.min(p.vy, -0.7);
+              this.spawnCoinDrops(e.x + 2, e.y + 2);
+              this.audio.tone(300, 0.05, 0.00, "square", 0.03);
+            }
           } else if (this.holyWard && this.holyWardCooldown <= 0) {
             this.holyWardCooldown = PALADIN_AEGIS.wardHitCooldown;
             p.vx = (p.x < e.x ? -1 : 1) * 1.8;
             p.vy = -2.2;
             this.audio.tone(520, 0.05, 0.00, "triangle", 0.03);
+          } else if (shieldUp && frontHit) {
+            p.vx = (p.x < e.x ? -1 : 1) * SHIELDED_WORKER.frontBlockKnockbackX;
+            p.vy = Math.min(p.vy, SHIELDED_WORKER.frontBlockKnockbackY);
+            this.audio.tone(420, 0.04, 0.00, "square", 0.03);
           } else if (e.type && name === "SKELETON" && !giantVampire) {
             this.handleSpecialEnemyDefeat(e);
             this.spawnEnemyShatter(e, levelTheme);
             e.dead = 1;
             this.spawnCoinDrops(e.x + 2, e.y + 2);
             this.audio.tone(180, 0.08);
-          } else if (p.vy > 0 && p.y + p.h - 2 < e.y + e.h * 0.55) {
+          } else if (stompedFromAbove && (!shieldedWorker || exposed)) {
+            if (shieldedWorker && e.workerStateTimer > (SHIELDED_WORKER.exposedFrames - SHIELDED_WORKER.perfectWindowFrames)) {
+              this.addScore(10);
+              this.audio.tone(1120, 0.04, 0.00, "triangle", 0.03);
+            }
             this.handleSpecialEnemyDefeat(e);
             this.spawnEnemyShatter(e, levelTheme);
             e.dead = 1;
@@ -3344,6 +4889,65 @@
         gfx.strokeRect((px - 2) | 0, (py - 2) | 0, p.w + 4, p.h + 4);
         gfx.globalAlpha = 1;
       }
+
+      if (name === "NINJA" && (this.ninjaShadow.active || this.ninjaShadow.afterglow > 0)) {
+        gfx.globalAlpha = this.ninjaShadow.active ? 0.6 : Math.max(0.2, this.ninjaShadow.afterglow / NINJA_SHADOW_STEP.afterglowFrames);
+        gfx.strokeStyle = this.ninjaShadow.active ? "#8a6cff" : "#4ef3ff";
+        gfx.strokeRect((px - 2) | 0, (py - 2) | 0, p.w + 4, p.h + 4);
+        gfx.globalAlpha = 1;
+      }
+
+      if (name === "BUNNY" && (this.bunnyRocket.active || this.bunnyRocket.afterglow > 0)) {
+        gfx.globalAlpha = this.bunnyRocket.active ? 0.65 : Math.max(0.2, this.bunnyRocket.afterglow / BUNNY_CARROT_ROCKET.afterglowFrames);
+        gfx.strokeStyle = this.bunnyRocket.active ? "#ff7f2a" : "#ffd95e";
+        gfx.strokeRect((px - 2) | 0, (py - 2) | 0, p.w + 4, p.h + 4);
+        gfx.globalAlpha = 1;
+      }
+
+      if (name === "DUCK" && (this.duckDive.active || this.duckDive.afterglow > 0)) {
+        gfx.globalAlpha = this.duckDive.active ? 0.65 : Math.max(0.2, this.duckDive.afterglow / DUCK_GALE_DIVE.afterglowFrames);
+        gfx.strokeStyle = this.duckDive.active ? "#7ec8ff" : "#b8f1ff";
+        gfx.strokeRect((px - 2) | 0, (py - 2) | 0, p.w + 4, p.h + 4);
+
+        if (this.duckDive.active) {
+          gfx.globalAlpha = 0.62;
+          gfx.fillStyle = "#9fe7ff";
+          const cx = (px + p.w * 0.5) | 0;
+          gfx.fillRect((cx - 4) | 0, (py + p.h - 1) | 0, 8, 8);
+          gfx.fillRect((cx - 2) | 0, (py + p.h + 7) | 0, 4, 8);
+          gfx.globalAlpha = 0.48;
+          gfx.fillStyle = "#dff8ff";
+          gfx.fillRect((cx - 1) | 0, (py + p.h + 1) | 0, 2, 14);
+        }
+        gfx.globalAlpha = 1;
+      }
+
+      if (name === "DUCK" && this.duckDive.flash > 0) {
+        const start = this.duckDive.flashKind === 1;
+        const maxT = start ? DUCK_GALE_DIVE.startFlashFrames : DUCK_GALE_DIVE.impactFlashFrames;
+        const baseR = start ? DUCK_GALE_DIVE.startRadius : DUCK_GALE_DIVE.impactRadius;
+        const t = this.duckDive.flash / Math.max(1, maxT);
+        const r = Math.max(6, (baseR * (2.1 - t * 0.8)) | 0);
+        const fx = (this.duckDive.flashX - this.cameraX) | 0;
+        const fy = (this.duckDive.flashY - this.cameraY) | 0;
+        gfx.globalAlpha = Math.max(0.28, t * (start ? 0.72 : 0.88));
+        gfx.fillStyle = start ? "#b8f1ff" : "#7ec8ff";
+        gfx.beginPath();
+        gfx.arc(fx, fy, r, 0, 6.283);
+        gfx.fill();
+        gfx.globalAlpha = Math.max(0.22, t * 0.64);
+        gfx.fillStyle = start ? "#e9fdff" : "#dff8ff";
+        gfx.beginPath();
+        gfx.arc(fx, fy, Math.max(3, (r * 0.52) | 0), 0, 6.283);
+        gfx.fill();
+        gfx.globalAlpha = Math.max(0.18, t * 0.52);
+        gfx.fillStyle = "#ffffff";
+        gfx.fillRect((fx - 1) | 0, (fy - (r + 2)) | 0, 2, 4);
+        gfx.fillRect((fx - 1) | 0, (fy + r - 2) | 0, 2, 4);
+        gfx.fillRect((fx - (r + 2)) | 0, (fy - 1) | 0, 4, 2);
+        gfx.fillRect((fx + r - 2) | 0, (fy - 1) | 0, 4, 2);
+        gfx.globalAlpha = 1;
+      }
     }
 
     render() {
@@ -3370,7 +4974,8 @@
           }
         }
         else if (id === 13) this.drawSprite(SPRITES.relicCrossSmall, px, py, 1);
-        else if (id === 14) this.drawSprite(SPRITES.shinyBatRelic, px, py, 1);
+        else if (id === 14) this.drawSprite(SPRITES.shinyFairyRelic, px, py, 1);
+        else if (id === 15) this.drawSprite(SPRITES.relicCrossSmall, px, py, 1);
         else if (id === 2 || id === 5) this.drawSprite(this.collectibleSprite(id), px, py, 1);
         else if (id === 6) this.drawSprite(this.oneUpSpriteForTheme(theme), px, py, 1);
         else if (id === 7) this.drawSprite((t & 1) ? SPRITES.lavaTileA : SPRITES.lavaTileB, px, py, 1);
@@ -3379,6 +4984,8 @@
         else if (id === 11) this.drawSprite(SPRITES.helpBlockTopUsed, px, py, 1);
         else if (id === 9) this.drawSprite(SPRITES.helpBlockBottomUsed, px, py, 1);
       }
+
+      this.drawStormMechanicsOverlay(theme);
 
       if (this.goal) {
         const baseX = (this.goal.x - this.cameraX) | 0;
@@ -3417,7 +5024,9 @@
         } else if (item.tileId === 13) {
           this.drawSprite(SPRITES.relicCrossSmall, item.x - this.cameraX, item.y - this.cameraY, 1);
         } else if (item.tileId === 14) {
-          this.drawSprite(SPRITES.shinyBatRelic, item.x - this.cameraX, item.y - this.cameraY, 1);
+          this.drawSprite(SPRITES.shinyFairyRelic, item.x - this.cameraX, item.y - this.cameraY, 1);
+        } else if (item.tileId === 15) {
+          this.drawSprite(SPRITES.relicCrossSmall, item.x - this.cameraX, item.y - this.cameraY, 1);
         } else {
           this.drawSprite(this.collectibleSprite(item.tileId), item.x - this.cameraX, item.y - this.cameraY, 1);
         }
@@ -3456,6 +5065,15 @@
         if (e.dead) continue;
         const spr = this.enemySpriteFor(e, theme);
         this.drawSprite(spr, e.x - this.cameraX, e.y - this.cameraY, e.type === 5 ? 2.5 : (e.type === 7 ? 1.5 : 1));
+        if (e.type === 8 && e.workerState === "SHIELD_UP") {
+          const ex = (e.x - this.cameraX) | 0;
+          const ey = (e.y - this.cameraY) | 0;
+          gfx.globalAlpha = 0.6;
+          gfx.fillStyle = "#8ef6ff";
+          if (e.dir >= 0) gfx.fillRect(ex + e.w - 2, ey + 2, 2, 6);
+          else gfx.fillRect(ex, ey + 2, 2, 6);
+          gfx.globalAlpha = 1;
+        }
         if (theme === "SPACE" && e.type) this.drawSpaceThruster(e);
       }
 
@@ -3490,6 +5108,68 @@
       this.drawEnemyShatter();
       this.drawPlayerShatter();
 
+      if (this.ninjaShadow.trail.length) {
+        for (let i = 0; i < this.ninjaShadow.trail.length; i++) {
+          const ghost = this.ninjaShadow.trail[i];
+          gfx.globalAlpha = Math.max(0.12, (ghost.t / ghost.life) * 0.45);
+          gfx.fillStyle = "#7f6cff";
+          gfx.fillRect((ghost.x - this.cameraX) | 0, (ghost.y - this.cameraY) | 0, ghost.w, ghost.h);
+          gfx.fillStyle = "#b9f8ff";
+          gfx.fillRect(((ghost.x - this.cameraX) + 2) | 0, ((ghost.y - this.cameraY) + 2) | 0, Math.max(2, ghost.w - 4), Math.max(2, ghost.h - 4));
+        }
+        gfx.globalAlpha = 1;
+      }
+
+      if (this.batCompanion.trail.length) {
+        for (let i = 0; i < this.batCompanion.trail.length; i++) {
+          const trail = this.batCompanion.trail[i];
+          const alpha = Math.max(0.12, trail.life ? (trail.t / trail.life) * 0.5 : 0.3);
+          const tx = (trail.x - this.cameraX) | 0;
+          const ty = (trail.y - this.cameraY) | 0;
+          gfx.globalAlpha = alpha;
+          gfx.fillStyle = "#9af7ff";
+          gfx.beginPath();
+          gfx.arc(tx, ty, Math.max(1, trail.size), 0, 6.283);
+          gfx.fill();
+          gfx.globalAlpha = alpha * 0.65;
+          gfx.fillStyle = "#ffe5ff";
+          gfx.beginPath();
+          gfx.arc(tx, ty, Math.max(1, trail.size - 1), 0, 6.283);
+          gfx.fill();
+        }
+        gfx.globalAlpha = 1;
+      }
+
+      if (this.bunnyRocket.trail.length) {
+        for (let i = 0; i < this.bunnyRocket.trail.length; i++) {
+          const ghost = this.bunnyRocket.trail[i];
+          gfx.globalAlpha = Math.max(0.12, (ghost.t / ghost.life) * 0.5);
+          gfx.fillStyle = "#ff8c34";
+          gfx.fillRect((ghost.x - this.cameraX) | 0, (ghost.y - this.cameraY) | 0, ghost.w, ghost.h);
+          gfx.fillStyle = "#ffd95e";
+          gfx.fillRect(((ghost.x - this.cameraX) + 2) | 0, ((ghost.y - this.cameraY) + 2) | 0, Math.max(2, ghost.w - 4), Math.max(2, ghost.h - 4));
+        }
+        gfx.globalAlpha = 1;
+      }
+
+      if (this.bunnyRocket.burstFlash > 0) {
+        const t = this.bunnyRocket.burstFlash / BUNNY_CARROT_ROCKET.burstFlashFrames;
+        const r = (BUNNY_CARROT_ROCKET.burstRadius * (1.55 - t * 0.45)) | 0;
+        const bx = (this.bunnyRocket.burstX - this.cameraX) | 0;
+        const by = (this.bunnyRocket.burstY - this.cameraY) | 0;
+        gfx.globalAlpha = Math.max(0.18, t * 0.65);
+        gfx.fillStyle = "#ff8c34";
+        gfx.beginPath();
+        gfx.arc(bx, by, Math.max(6, r), 0, 6.283);
+        gfx.fill();
+        gfx.globalAlpha = Math.max(0.16, t * 0.45);
+        gfx.fillStyle = "#ffd95e";
+        gfx.beginPath();
+        gfx.arc(bx, by, Math.max(3, (r * 0.55) | 0), 0, 6.283);
+        gfx.fill();
+        gfx.globalAlpha = 1;
+      }
+
       const p = this.player;
       const px = p.x - this.cameraX;
       const py = p.y - this.cameraY;
@@ -3511,15 +5191,32 @@
       if (this.batCompanion.active) {
         const bx = this.batCompanion.x - this.cameraX;
         const by = this.batCompanion.y - this.cameraY;
-        this.drawSprite(SPRITES.shinyBatCompanion, bx - 5, by - 5, 1);
+        this.drawSprite(SPRITES.shinyFairyCompanion, bx - 5, by - 5, 1);
         if (this.batCompanion.shimmer < 6) {
           gfx.globalAlpha = 0.45;
-          gfx.strokeStyle = "#ffe38a";
+          gfx.strokeStyle = "#9af7ff";
           gfx.beginPath();
           gfx.arc(bx | 0, by | 0, 8, 0, 6.283);
           gfx.stroke();
           gfx.globalAlpha = 1;
         }
+      }
+
+      if (this.batCompanion.burstT > 0 && this.batCompanion.burstLife > 0) {
+        const p = 1 - (this.batCompanion.burstT / this.batCompanion.burstLife);
+        const bx = (this.batCompanion.burstX - this.cameraX) | 0;
+        const by = (this.batCompanion.burstY - this.cameraY) | 0;
+        for (let i = 0; i < 3; i++) {
+          const ringP = Math.max(0, p - i * 0.12);
+          if (ringP <= 0) continue;
+          const r = 4 + ringP * (8 + i * 7);
+          gfx.globalAlpha = Math.max(0.12, (1 - ringP) * 0.55);
+          gfx.strokeStyle = i === 1 ? "#ffe5ff" : "#9af7ff";
+          gfx.beginPath();
+          gfx.arc(bx, by, r, 0, 6.283);
+          gfx.stroke();
+        }
+        gfx.globalAlpha = 1;
       }
 
       for (let i = 0; i < this.checkpointRain.length; i++) {
@@ -3607,6 +5304,22 @@
             ? ("Q " + ((this.rangerGrapple.cooldown / 60) | 0) + "s")
             : "Q READY";
         gfx.fillText(grappleText, 258, 11);
+      } else if (charName === "BUNNY") {
+        const hasCharges = this.bunnyRocket.charges > 0;
+        const rechargeSecs = Math.max(1, ((this.bunnyRocket.rechargeTimer / 60) | 0));
+        const rocketText = this.bunnyRocket.active
+          ? "Q ROCKET"
+          : hasCharges
+            ? ("Q x" + this.bunnyRocket.charges)
+            : ("Q x0 " + rechargeSecs + "s");
+        gfx.fillText(rocketText, 258, 11);
+      } else if (charName === "DUCK") {
+        const diveText = this.duckDive.active
+          ? "Q DIVE"
+          : this.duckDive.cooldown > 0
+            ? ("Q " + ((this.duckDive.cooldown / 60) | 0) + "s")
+            : (this.player && this.player.onGround ? "Q AIR" : "Q READY");
+        gfx.fillText(diveText, 258, 11);
       } else if (charName === "PALADIN") {
         const dashText = this.paladinDash.active
           ? "Q AEGIS"
@@ -3614,6 +5327,19 @@
             ? ("Q " + ((this.paladinDash.cooldown / 60) | 0) + "s")
             : "Q READY";
         gfx.fillText(dashText, 258, 11);
+      } else if (charName === "NINJA") {
+        const overdriveReady = this.ninjaShadow.cooldown > 0 && !this.ninjaShadow.overdriveUsed && this.score >= NINJA_SHADOW_STEP.overdriveCoinCost;
+        const overdriveBlocked = this.ninjaShadow.cooldown > 0 && !this.ninjaShadow.overdriveUsed && this.score < NINJA_SHADOW_STEP.overdriveCoinCost;
+        const shadowText = this.ninjaShadow.active
+          ? "Q SHADOW"
+          : overdriveReady
+            ? ("Q -" + NINJA_SHADOW_STEP.overdriveCoinCost + "C")
+            : overdriveBlocked
+              ? ("Q NEED " + NINJA_SHADOW_STEP.overdriveCoinCost)
+              : this.ninjaShadow.cooldown > 0
+            ? ("Q " + ((this.ninjaShadow.cooldown / 60) | 0) + "s")
+            : "Q READY";
+        gfx.fillText(shadowText, 258, 11);
       } else if (charName === "SKELETON") {
         const phase2Eligible = this.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
         const phase2Charged = !!this.skeletonBurst.phase2Charged;
@@ -3626,7 +5352,12 @@
         gfx.fillText(burstText, 258, 11);
         gfx.fillText("COIN " + this.score + "/" + ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold, 6, 23);
       }
+      if (this.hasConductorCoreActive()) {
+        const secs = Math.max(1, ((this.conductorCore.timer / 60) | 0));
+        gfx.fillText("CORE " + secs + "s", 258, 23);
+      }
       if (this.audio.muted) gfx.fillText("MUTE", CANVAS_W - 34, 11);
+      if (this.immortalMode) gfx.fillText("IMMORTAL", 6, 35);
 
       if (CHARACTERS[this.characterIndex].name === "ROBOT" && (this.robotPulse.phase2Notice > 0 || (this.robotPulse.timer > 0 && this.robotPulse.phase2Active))) {
         gfx.fillStyle = "#000b";
@@ -3647,6 +5378,13 @@
         gfx.fillRect(106, 16, 108, 16);
         gfx.fillStyle = "#fff";
         gfx.fillText("BLOOD PHASE 2", 114, 27);
+      }
+
+      if (this.hasConductorCoreActive() || this.conductorCore.notice > 0) {
+        gfx.fillStyle = "#000b";
+        gfx.fillRect(100, 34, 120, 16);
+        gfx.fillStyle = "#9fe7ff";
+        gfx.fillText(this.hasConductorCoreActive() ? "CONDUCTOR CORE" : "CORE COOLING", 108, 45);
       }
 
       if (this.robotPulse.timer > 0 || this.robotPulse.ringT > 0) {

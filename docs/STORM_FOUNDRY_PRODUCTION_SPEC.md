@@ -35,6 +35,14 @@ Scope: Level `STORM FOUNDRY` (`sequence: 10.3`, theme `STORMFOUNDRY`) and reusab
   - Goal: sustained pressure + final mastery checks.
   - Threat density: high.
 
+Current authored Storm marker density (initial pass, by segment):
+- Segment 1: 11 markers (`a`, `Ax2`, `=x6`, `Jx2`)
+- Segment 2: 13 markers (`b`, `~`, `Ax2`, `=x6`, `Jx3`)
+- Segment 3: 17 markers (`c`, `~`, `Ax3`, `=x9`, `Jx3`)
+- Segment 4: 19 markers (`d`, `~x2`, `Ax3`, `=x9`, `Jx4`)
+- Segment 5: 23 markers (`e`, `~x2`, `Ax4`, `=x12`, `Jx4`)
+- Segment 6: 24 markers (`f`, `~x2`, `Ax4`, `=x12`, `Jx5`)
+
 ### 1.3 Checkpoints + Light Zones
 - Checkpoint count: **5**.
 - Checkpoint x positions:
@@ -325,6 +333,16 @@ All timings are in frames at 60 FPS.
 - Act3 -> Act4: +18% elite pressure.
 - Act4 -> Act5: +22% sustained hazard uptime and reduced recovery windows.
 
+### 10.2 Phase 5 Tuning Profile (Pass 2)
+- Applied per-act multiplier profile in `game.html` (`stormActTuning`) for rails/jets:
+  - Act1 (`actIndex 0`): `prewarn 1.18x`, `on 0.84x`, `cooldown 1.18x`, `jet wait 1.18x`, `jet burst 0.90x`, `defer +8`.
+  - Act2 (`actIndex 1`): `prewarn 1.10x`, `on 0.92x`, `cooldown 1.10x`, `jet wait 1.12x`, `jet burst 0.95x`, `defer +5`.
+  - Act3 (`actIndex 2`): baseline `1.00x`.
+  - Act4 (`actIndex 3`): `prewarn 0.96x`, `on 1.06x`, `cooldown 0.96x`, `jet wait 0.95x`, `jet burst 1.04x`, `defer -1`.
+  - Act5 (`actIndex 4`): `prewarn 0.92x`, `on 1.10x`, `cooldown 0.90x`, `jet wait 0.90x`, `jet burst 1.08x`, `defer -3`.
+- Surge elite aggression during `ACTIVE` remains `1.20x`.
+- Goal of this pass: widen first-clear forgiveness in Acts 1-2 while preserving pressure curve in Acts 4-5 toward the **10-18** death budget target.
+
 ---
 
 ## 11) Overlap Priority/Limits (Critical Edge Cases)
@@ -377,10 +395,10 @@ Hard limits:
 
 ## 13) Implementation Phases (Recommended)
 
-- Phase 1: marker grammar + parser + data structures (`=`, `A`, `J`, `~`, link ids).
-- Phase 2: rail/node/jet state machines + telegraph VFX/audio.
-- Phase 3: surge scheduler + overlap limiter + checkpoint safety gating.
-- Phase 4: shielded worker enemy + Conductor Core relic.
-- Phase 5: tuning pass against balancing targets and death budget.
+- Phase 1: marker grammar + parser + data structures (`=`, `A`, `J`, `~`, link ids). **Status: implemented in `game.html` loader/parser pass.**
+- Phase 2: rail/node/jet state machines + telegraph VFX/audio. **Status: implemented in `game.html` runtime update/render paths (active with current initial marker pass authored in `levels.js` Storm 6x generator).**
+- Phase 3: surge scheduler + overlap limiter + checkpoint safety gating. **Status: implemented (core) in `game.html`: surge state machine, lethal-channel overlap cap/defer, respawn safety lockout radius + deterministic hazard resets.**
+- Phase 4: shielded worker enemy + Conductor Core relic. **Status: implemented in `game.html` (marker parse + enemy FSM/counterplay + relic immunity/magnet effect) with authored placements in `levels.js` Storm 6x generator (`K` + `M`).**
+- Phase 5: tuning pass against balancing targets and death budget. **Status: in progress (pass 2) — calibrated per-act hazard multipliers applied in `game.html` (`stormActTuning`) with explicit Act1/2 forgiveness and Act4/5 pressure profile; surge elite aggression remains `1.20x`.**
 
 This spec is designed to be directly mapped into `levels.js` marker data and `game.html` runtime systems.
