@@ -28,7 +28,7 @@ Related production specs:
 - `O` = big coin (+10)
 - `U` = 1UP
 - `T` = relic cross (+20)
-- `X` = shiny bat relic (activates bat companion)
+- `X` = shiny fairy relic (activates fairy companion)
 - `H` = help block bottom (unused)
 - `Q` = help block top (unused)
 
@@ -43,6 +43,8 @@ Related production specs:
 - `R` = giant vampire (`type:5`)
 - `N` = bone wisp (`type:6`)
 - `G` = crypt harbinger (`type:7`)
+- `K` = shielded worker (`type:8`)
+- `!` = Frankenstein brute (`type:9`)
 - `P` = section portal
 - `D` = dimensional portal
 
@@ -59,6 +61,8 @@ Related production specs:
 
 ### Ground
 - `type 0` (marker `E`): walker. Patrols ground, turns at ledges/walls.
+- `type 8` (marker `K`): shielded worker with patrol/shield/exposed/recover state cycle.
+- `type 9` (marker `!`): Frankenstein brute (3x character height), slam-charges after windup, vulnerable to head stomp only during recover.
 
 ### Air (non-space behavior)
 - `type 1` (marker `V`): bat-like flier, horizontal sweep + sine bob.

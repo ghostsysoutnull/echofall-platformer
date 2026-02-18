@@ -151,6 +151,20 @@
     frontBlockKnockbackX: 1.8,
     frontBlockKnockbackY: -2.0
   };
+  const FRANKENSTEIN = {
+    patrolSpeed: 0.56,
+    windupSpeed: 0.16,
+    slamSpeed: 1.95,
+    recoverSpeed: 0.22,
+    triggerRange: 58,
+    verticalAwareness: 22,
+    windupFrames: 30,
+    slamFrames: 24,
+    recoverFrames: 46,
+    headStompRatio: 0.30,
+    knockbackX: 2.6,
+    knockbackY: -2.7
+  };
   const CONDUCTOR_CORE = {
     durationFrames: 360,
     cooldownFrames: 480,
@@ -1313,6 +1327,25 @@
         });
       };
 
+      const spawnFrankenstein = (tileX, tileY) => {
+        this.enemies.push({
+          type: 9,
+          x: tileX * TILE_SIZE,
+          y: tileY * TILE_SIZE,
+          vx: 0,
+          vy: 0,
+          w: 10,
+          h: 30,
+          dir: (tileX & 1) ? 1 : -1,
+          onGround: 0,
+          dead: 0,
+          anim: 0,
+          variant: ((tileX * 9 + tileY * 7 + 29) & 1),
+          frankState: "MARCH",
+          frankTimer: 0
+        });
+      };
+
       for (let y = 0; y < this.tileRows; y++) {
         for (let x = 0; x < this.tileCols; x++) {
           const ch = this.tileGrid[y][x];
@@ -1348,6 +1381,9 @@
             this.tileGrid[y][x] = ".";
           } else if (ch === "K") {
             spawnShieldedWorker(x, y);
+            this.tileGrid[y][x] = ".";
+          } else if (ch === "!") {
+            spawnFrankenstein(x, y);
             this.tileGrid[y][x] = ".";
           } else if (ch === "M") {
             this.tileGrid[y][x] = "M";
@@ -3412,6 +3448,59 @@
 
     }
 
+    updateFrankensteinEnemy(e, p, gr, speedMul) {
+      if (!e.frankState) {
+        e.frankState = "MARCH";
+        e.frankTimer = 0;
+      }
+
+      const absDx = Math.abs((p.x + p.w * 0.5) - (e.x + e.w * 0.5));
+      const absDy = Math.abs((p.y + p.h * 0.5) - (e.y + e.h * 0.5));
+
+      if (e.frankState === "MARCH" && absDx <= FRANKENSTEIN.triggerRange && absDy <= FRANKENSTEIN.verticalAwareness) {
+        e.frankState = "WINDUP";
+        e.frankTimer = FRANKENSTEIN.windupFrames;
+        e.dir = (p.x + p.w * 0.5) >= (e.x + e.w * 0.5) ? 1 : -1;
+        this.audio.tone(150, 0.06, 0.00, "triangle", 0.035);
+      }
+
+      let moveSpeed = FRANKENSTEIN.patrolSpeed;
+      if (e.frankState === "WINDUP") moveSpeed = FRANKENSTEIN.windupSpeed;
+      else if (e.frankState === "SLAM") moveSpeed = FRANKENSTEIN.slamSpeed;
+      else if (e.frankState === "RECOVER") moveSpeed = FRANKENSTEIN.recoverSpeed;
+
+      e.vx = e.dir * moveSpeed * speedMul;
+      e.vy += gr;
+      if (e.vy > 8.5) e.vy = 8.5;
+      this.moveAndCollide(e);
+
+      if (e.onGround) {
+        const ax = e.x + (e.dir > 0 ? e.w + 1 : -1);
+        const tx = (ax / TILE_SIZE) | 0;
+        const ty = ((e.y + e.h + 1) / TILE_SIZE) | 0;
+        if (!this.isSolid(this.tileIdAt(tx, ty))) e.dir *= -1;
+      }
+
+      if (e.frankState === "WINDUP") {
+        e.frankTimer = Math.max(0, (e.frankTimer | 0) - 1);
+        if (e.frankTimer <= 0) {
+          e.frankState = "SLAM";
+          e.frankTimer = FRANKENSTEIN.slamFrames;
+          this.audio.tone(100, 0.08, 0.00, "sawtooth", 0.05);
+          this.audio.tone(76, 0.10, 0.02, "triangle", 0.045);
+        }
+      } else if (e.frankState === "SLAM") {
+        e.frankTimer = Math.max(0, (e.frankTimer | 0) - 1);
+        if (e.frankTimer <= 0) {
+          e.frankState = "RECOVER";
+          e.frankTimer = FRANKENSTEIN.recoverFrames;
+        }
+      } else if (e.frankState === "RECOVER") {
+        e.frankTimer = Math.max(0, (e.frankTimer | 0) - 1);
+        if (e.frankTimer <= 0) e.frankState = "MARCH";
+      }
+    }
+
     enemySpriteFor(enemy, theme) {
       const f = ((enemy.anim >> 3) & 1);
       const variant = enemy.variant | 0;
@@ -3454,6 +3543,12 @@
         return (variant & 1)
           ? (runFrame ? SPRITES.enemyWalkerAltRun : SPRITES.enemyWalkerAltIdle)
           : (runFrame ? SPRITES.enemyWalkerRun : SPRITES.enemyWalkerIdle);
+      }
+      if (enemy.type === 9) {
+        if (enemy.frankState === "WINDUP") return SPRITES.enemyFrankensteinWindup;
+        if (enemy.frankState === "SLAM") return SPRITES.enemyFrankensteinSlam;
+        const runFrame = ((enemy.anim >> 4) & 1);
+        return runFrame ? SPRITES.enemyFrankensteinMarch : SPRITES.enemyFrankensteinIdle;
       }
       if (theme === "CASTLE" || theme === "GOTHIC") return (variant & 1) ? (f ? SPRITES.enemyCastleGhostOrbB : SPRITES.enemyCastleGhostOrbA) : (f ? SPRITES.enemyCastleGhostFlapB : SPRITES.enemyCastleGhostFlapA);
       return (variant & 1) ? (f ? SPRITES.enemyGhostOrbB : SPRITES.enemyGhostOrbA) : (f ? SPRITES.enemyGhostFlapB : SPRITES.enemyGhostFlapA);
@@ -4180,6 +4275,8 @@
                 e.workerState = "PATROL";
                 e.workerStateTimer = SHIELDED_WORKER.patrolFramesMin + ((this.rand01() * (SHIELDED_WORKER.patrolFramesMax - SHIELDED_WORKER.patrolFramesMin + 1)) | 0);
               }
+            } else if (e.type === 9) {
+              this.updateFrankensteinEnemy(e, p, gr, stormSurgeAggroMul);
             } else {
               const loopT = e.anim * 0.12 + e.phase;
               const drift = Math.sin(e.anim * 0.03 + e.phase) * 10;
@@ -4262,6 +4359,8 @@
               e.workerState = "PATROL";
               e.workerStateTimer = SHIELDED_WORKER.patrolFramesMin + ((this.rand01() * (SHIELDED_WORKER.patrolFramesMax - SHIELDED_WORKER.patrolFramesMin + 1)) | 0);
             }
+          } else if (e.type === 9) {
+            this.updateFrankensteinEnemy(e, p, gr, stormSurgeAggroMul);
           } else {
             const loopT = e.anim * 0.09 + e.phase;
             e.x = e.baseX + Math.cos(loopT) * 12;
@@ -4343,9 +4442,11 @@
         if (this.respawnGrace <= 0 && !ninjaShadowing && rectsOverlap(p, e)) {
           const giantVampire = e.type === 5;
           const shieldedWorker = e.type === 8;
+          const frankenstein = e.type === 9;
+          const frankenRecover = frankenstein && e.frankState === "RECOVER";
           const shieldUp = shieldedWorker && e.workerState === "SHIELD_UP";
           const exposed = shieldedWorker && e.workerState === "EXPOSED";
-          const stompedFromAbove = p.vy > 0 && p.y + p.h - 2 < e.y + e.h * 0.55;
+          const stompedFromAbove = p.vy > 0 && p.y + p.h - 2 < e.y + e.h * (frankenstein ? FRANKENSTEIN.headStompRatio : 0.55);
           const playerCenterX = p.x + p.w * 0.5;
           const enemyCenterX = e.x + e.w * 0.5;
           const frontHit = shieldedWorker && ((e.dir >= 0 && playerCenterX >= enemyCenterX) || (e.dir < 0 && playerCenterX <= enemyCenterX));
@@ -4379,7 +4480,7 @@
             e.dead = 1;
             this.spawnCoinDrops(e.x + 2, e.y + 2);
             this.audio.tone(180, 0.08);
-          } else if (stompedFromAbove && (!shieldedWorker || exposed)) {
+          } else if (stompedFromAbove && (!shieldedWorker || exposed) && (!frankenstein || frankenRecover)) {
             if (shieldedWorker && e.workerStateTimer > (SHIELDED_WORKER.exposedFrames - SHIELDED_WORKER.perfectWindowFrames)) {
               this.addScore(10);
               this.audio.tone(1120, 0.04, 0.00, "triangle", 0.03);
@@ -4390,6 +4491,11 @@
             p.vy = JUMP_VY * 0.6;
             this.spawnCoinDrops(e.x + 2, e.y + 2);
             this.audio.tone(e.type ? 260 : 220, 0.08);
+          } else if (frankenstein) {
+            p.vx = (p.x < e.x ? -1 : 1) * FRANKENSTEIN.knockbackX;
+            p.vy = FRANKENSTEIN.knockbackY;
+            this.audio.tone(130, 0.05, 0.00, "square", 0.04);
+            this.startEnemyDeath(0);
           } else {
             this.startEnemyDeath(0);
           }
