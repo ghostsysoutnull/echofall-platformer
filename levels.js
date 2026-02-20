@@ -285,8 +285,8 @@ const GAME_LEVELS = [
   },
 
   {
-    name: "JUNGLE 4X",
-    sequence: 2.3,
+    name: "JUNGLE: RUIN ASCENT",
+    sequence: 3.5,
     theme: "JUNGLE",
     backgroundActors: [
       { type: "ruinsSilhouette", theme: "JUNGLE", x: 86, y: 64, vx: 0.06, parallax: 0.09, bobAmp: 0.3, bobSpeed: 0.006, w: 24, h: 14, scale: 1 },

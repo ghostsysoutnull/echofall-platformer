@@ -1,4 +1,4 @@
-# Jungle — 4x Production Spec (v1)
+# Jungle: Ruin Ascent — Production Spec (v1)
 
 Status: Authoritative hand-authored expansion spec for Jungle from 1x (96) to 4x (384).
 Scope: New level variant based on existing `JUNGLE` theme and already-supported runtime markers/mechanics.
@@ -140,7 +140,7 @@ This 4x Jungle should reuse proven patterns already present in the project:
 
 ## 8) Implementation Plan
 
-- Phase A: Add new level entry (`JUNGLE 4X`) with checkpoints/light zones and static 384 grid. **Status: implemented in `levels.js` as initial scaffold shell.**
+- Phase A: Add new level entry (`JUNGLE: RUIN ASCENT`) with checkpoints/light zones and static 384 grid. **Status: implemented in `levels.js` as initial scaffold shell.**
 - Phase B: Hand-author Segment 1 and Segment 2, validate traversal. **Status: implemented (first-pass enrichment in `levels.js`; tuning pass pending).**
 - Phase C: Hand-author Segment 3 and Segment 4, validate pacing/route rewards. **Status: implemented (first-pass enrichment in `levels.js`; tuning pass pending).**
 - Phase D: Tune enemy and pickup density to hit timing/death targets. **Status: implemented (first-pass pacing/density tuning in `levels.js`; playtest polish pending).**
