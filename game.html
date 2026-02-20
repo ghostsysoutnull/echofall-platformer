@@ -1726,7 +1726,13 @@
         if (portal.type === "section") {
           const destinationIndex = this.pickRandomSectionPortalIndex(i);
           const destination = this.portals[destinationIndex] || portal;
-          const tx = Number.isFinite(destination.x) ? (destination.x + 1) : (portal.x + 1);
+          let tx = Number.isFinite(destination.x) ? (destination.x + 1) : (portal.x + 1);
+          if (Number.isFinite(destination.x) && Number.isFinite(destination.w)) {
+            const rightExit = destination.x + destination.w + 2;
+            const leftExit = destination.x - p.w - 2;
+            tx = rightExit;
+            if (tx + p.w >= this.tileCols * TILE_SIZE) tx = leftExit;
+          }
           const ty = Number.isFinite(destination.y) ? destination.y : p.y;
           const sectionIndex = clamp((((tx / TILE_SIZE) / 96) | 0) + 1, 1, 6);
           p.x = clamp(tx, 0, this.tileCols * TILE_SIZE - p.w - 0.001);
