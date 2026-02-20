@@ -136,6 +136,15 @@ const SKELETON_BLOOD_BURST = {
   phaseTwoPierce: 4,
   phaseTwoRechargeFrames: 210
 };
+const GLITCHRUNNER_PHASE = {
+  dashFrames: 10,
+  cooldownFrames: 84,
+  dashSpeed: 5.1,
+  afterglowFrames: 14,
+  trailSpawnEvery: 2,
+  echoRechargeFrames: 360,
+  echoFlashFrames: 24
+};
 const SHIELDED_WORKER = {
   shieldUpFrames: 90,
   exposedFrames: 45,
@@ -253,6 +262,7 @@ const CHARACTERS = [
   { name: "ROBOT",    anim: ["playerRobotIdle","playerRobotRun"], jumpMul: 1.00, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
   { name: "DUCK",     anim: ["playerDuckIdle","playerDuckRun"],jumpMul: 1.00, w: 20, h: 10, doubleJumps: 0, duckFlight: 26 },
   { name: "PALADIN",  anim: ["playerPaladinIdle","playerPaladinRun"], jumpMul: 0.98, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
+  { name: "GLITCHRUNNER", anim: ["playerGlitchRunnerIdle","playerGlitchRunnerRun"], jumpMul: 0.95, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
   { name: "SKELETON", anim: null,        jumpMul: 1.00, w: 10, h: 20, doubleJumps: 0, duckFlight: 0  }
 ];
 
@@ -281,6 +291,7 @@ export {
   NINJA_SHADOW_STEP,
   BUNNY_CARROT_ROCKET,
   SKELETON_BLOOD_BURST,
+  GLITCHRUNNER_PHASE,
   SHIELDED_WORKER,
   FRANKENSTEIN,
   CONDUCTOR_CORE,

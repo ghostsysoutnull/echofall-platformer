@@ -34,6 +34,7 @@ import {
   NINJA_SHADOW_STEP,
   BUNNY_CARROT_ROCKET,
   SKELETON_BLOOD_BURST,
+  GLITCHRUNNER_PHASE,
   SHIELDED_WORKER,
   FRANKENSTEIN,
   CONDUCTOR_CORE,
@@ -80,6 +81,7 @@ class Game {
     this.characterIndex = 0;
     this.paladinUnlocked = 0;
     this.skeletonUnlocked = 0;
+    this.glitchrunnerUnlocked = 0;
 
     this.starSeed = 1337;
     this.starField = this.makeStars();
@@ -115,6 +117,7 @@ class Game {
     this.duckDive = { active: 0, cooldown: 0, timer: 0, afterglow: 0, flash: 0, flashX: 0, flashY: 0, flashKind: 0 };
     this.bunnyRocket = { active: 0, timer: 0, afterglow: 0, dir: 1, trail: [], trailTick: 0, charges: BUNNY_CARROT_ROCKET.maxCharges, rechargeTimer: 0, burstUsed: 0, burstFlash: 0, burstX: 0, burstY: 0 };
     this.ninjaShadow = { active: 0, cooldown: 0, timer: 0, afterglow: 0, dir: 1, trail: [], trailTick: 0, overdriveUsed: 0 };
+    this.glitchPhase = { active: 0, cooldown: 0, timer: 0, afterglow: 0, dir: 1, trail: [], trailTick: 0, echoReady: 1, echoCooldown: 0, echoPulse: 0, echoX: 0, echoY: 0 };
     this.skeletonBurst = { cooldown: 0, flash: 0, phase2Notice: 0, phase2ReadyLatch: 0, lastPhase2: 0, phase2Charged: 0, phase2ChargeFrames: 0 };
     this.skeletonBurstShots = [];
     this.batCompanion = { active: 0, timer: 0, angle: 0, x: 0, y: 0, vx: 0, vy: 0, shimmer: 0, trail: [], trailTick: 0, coinDropTimer: 0, burstT: 0, burstLife: 0, burstX: 0, burstY: 0, pushSfxCooldown: 0, returningFrames: 0 };
@@ -672,7 +675,7 @@ class Game {
       const tx1 = tx0 + TILE_SIZE;
       const ty1 = ty0 + TILE_SIZE;
       if (px0 < tx1 && px1 > tx0 && py0 < ty1 && py1 > ty0) {
-        this.startLavaDeath(0);
+        if (!this.tryConsumeGlitchrunnerEchoShield(tx0 + TILE_SIZE * 0.5, ty0 + TILE_SIZE * 0.5)) this.startLavaDeath(0);
         return;
       }
     }
@@ -688,7 +691,7 @@ class Game {
       const hw = TILE_SIZE - 4;
       const hh = TILE_SIZE * 3;
       if (px0 < hx + hw && px1 > hx && py0 < hy + hh && py1 > hy) {
-        this.startLavaDeath(0);
+        if (!this.tryConsumeGlitchrunnerEchoShield(hx + hw * 0.5, hy + hh * 0.5)) this.startLavaDeath(0);
         return;
       }
     }
@@ -840,6 +843,7 @@ class Game {
           } else {
             const nextTheme = LEVEL_THEMES[this.levelIndex + 1];
             if (nextTheme === "BONECRYPT") this.skeletonUnlocked = 1;
+            if (nextTheme === "SIMBREACH") this.glitchrunnerUnlocked = 1;
             this.loadLevel(this.levelIndex + 1);
           }
         }
@@ -911,12 +915,17 @@ class Game {
     this.ninjaShadow.afterglow = 0;
     this.ninjaShadow.trail = [];
     this.ninjaShadow.overdriveUsed = 0;
+    this.glitchPhase.active = 0;
+    this.glitchPhase.timer = 0;
+    this.glitchPhase.afterglow = 0;
+    this.glitchPhase.trail = [];
     this.skeletonBurst.flash = 0;
   }
 
   isCharacterUnlocked(index) {
     const name = CHARACTERS[index] ? CHARACTERS[index].name : "";
     if (name === "PALADIN") return !!this.paladinUnlocked;
+    if (name === "GLITCHRUNNER") return !!this.glitchrunnerUnlocked;
     if (name === "SKELETON") return !!this.skeletonUnlocked;
     return true;
   }
@@ -944,6 +953,7 @@ class Game {
     this.audio.playTheme(levelTheme);
 
     let paladinUnlockTriggered = 0;
+    let glitchrunnerUnlockTriggered = 0;
     let skeletonUnlockTriggered = 0;
     if (levelTheme === "GOTHIC" && !this.paladinUnlocked) {
       this.paladinUnlocked = 1;
@@ -956,6 +966,12 @@ class Game {
       const skeletonIndex = CHARACTERS.findIndex(c => c.name === "SKELETON");
       if (skeletonIndex >= 0) this.characterIndex = skeletonIndex;
       skeletonUnlockTriggered = 1;
+    }
+    if (levelTheme === "SIMBREACH" && !this.glitchrunnerUnlocked) {
+      this.glitchrunnerUnlocked = 1;
+      const glitchrunnerIndex = CHARACTERS.findIndex(c => c.name === "GLITCHRUNNER");
+      if (glitchrunnerIndex >= 0) this.characterIndex = glitchrunnerIndex;
+      glitchrunnerUnlockTriggered = 1;
     }
 
     this.tileGrid = LEVELS[this.levelIndex].map(r => r.split(""));
@@ -1012,6 +1028,15 @@ class Game {
     this.ninjaShadow.trail = [];
     this.ninjaShadow.trailTick = 0;
     this.ninjaShadow.overdriveUsed = 0;
+    this.glitchPhase.active = 0;
+    this.glitchPhase.cooldown = 0;
+    this.glitchPhase.timer = 0;
+    this.glitchPhase.afterglow = 0;
+    this.glitchPhase.trail = [];
+    this.glitchPhase.trailTick = 0;
+    this.glitchPhase.echoReady = 1;
+    this.glitchPhase.echoCooldown = 0;
+    this.glitchPhase.echoPulse = 0;
     this.skeletonBurst.cooldown = 0;
     this.skeletonBurst.flash = 0;
     this.skeletonBurst.phase2Notice = 0;
@@ -1320,6 +1345,10 @@ class Game {
       this.teleportNotice = "PALADIN UNLOCKED: AEGIS DASH";
       this.teleportNoticeTimer = 150;
     }
+    if (glitchrunnerUnlockTriggered) {
+      this.teleportNotice = "GLITCHRUNNER UNLOCKED: PHASE DASH";
+      this.teleportNoticeTimer = 150;
+    }
     if (skeletonUnlockTriggered) {
       this.teleportNotice = "SKELETON UNLOCKED: BLOOD BURST";
       this.teleportNoticeTimer = 150;
@@ -1614,6 +1643,14 @@ class Game {
     this.ninjaShadow.trail = [];
     this.ninjaShadow.trailTick = 0;
     this.ninjaShadow.overdriveUsed = 0;
+    this.glitchPhase.active = 0;
+    this.glitchPhase.timer = 0;
+    this.glitchPhase.afterglow = 0;
+    this.glitchPhase.trail = [];
+    this.glitchPhase.trailTick = 0;
+    this.glitchPhase.echoReady = 1;
+    this.glitchPhase.echoCooldown = 0;
+    this.glitchPhase.echoPulse = 0;
     this.bunnyRocket.active = 0;
     this.bunnyRocket.timer = 0;
     this.bunnyRocket.afterglow = 0;
@@ -2079,6 +2116,7 @@ class Game {
       this.score = 0;
       this.nextExtraLifeScore = 100;
       this.paladinUnlocked = 0;
+      this.glitchrunnerUnlocked = 0;
       this.skeletonUnlocked = 0;
       this.characterIndex = 0;
       this.loadLevel(0);
@@ -2258,6 +2296,11 @@ class Game {
   win() {
     this.audio.tone(980, 0.10);
     const nextIndex = this.levelIndex + 1;
+    if (nextIndex < LEVELS.length && LEVEL_THEMES[nextIndex] === "SIMBREACH" && !this.glitchrunnerUnlocked) {
+      this.glitchrunnerUnlocked = 1;
+      this.teleportNotice = "GLITCHRUNNER UNLOCKED: PHASE DASH";
+      this.teleportNoticeTimer = 150;
+    }
     if (nextIndex < LEVELS.length && LEVEL_THEMES[nextIndex] === "BONECRYPT" && !this.skeletonUnlocked) {
       this.skeletonUnlocked = 1;
       this.teleportNotice = "SKELETON UNLOCKED: BLOOD BURST";
@@ -2550,7 +2593,102 @@ class Game {
     else if (name === "RANGER") this.tryActivateRangerGrapple();
     else if (name === "PALADIN") this.tryActivatePaladinAegisDash();
     else if (name === "NINJA") this.tryActivateNinjaShadowStep();
+    else if (name === "GLITCHRUNNER") this.tryActivateGlitchrunnerPhaseDash();
     else if (name === "SKELETON") this.tryActivateSkeletonBloodBurst();
+  }
+
+  tryActivateGlitchrunnerPhaseDash() {
+    if (this.deathTimer > 0 || !this.player) return;
+    if (CHARACTERS[this.characterIndex].name !== "GLITCHRUNNER") return;
+    if (this.glitchPhase.active || this.glitchPhase.cooldown > 0) return;
+
+    const inputDir = (this.keyDown.ArrowRight || this.keyDown.KeyD ? 1 : 0) - (this.keyDown.ArrowLeft || this.keyDown.KeyA ? 1 : 0);
+    const dir = inputDir || (this.player.face >= 0 ? 1 : -1) || 1;
+
+    this.glitchPhase.active = 1;
+    this.glitchPhase.timer = GLITCHRUNNER_PHASE.dashFrames;
+    this.glitchPhase.cooldown = GLITCHRUNNER_PHASE.cooldownFrames;
+    this.glitchPhase.afterglow = GLITCHRUNNER_PHASE.afterglowFrames;
+    this.glitchPhase.dir = dir;
+    this.glitchPhase.trail = [];
+    this.glitchPhase.trailTick = 0;
+
+    this.player.face = dir;
+    this.player.vx = dir * GLITCHRUNNER_PHASE.dashSpeed;
+    this.player.vy = Math.min(this.player.vy, -0.45);
+    this.player.duckFlying = 0;
+
+    this.audio.tone(620, 0.03, 0.00, "triangle", 0.05);
+    this.audio.tone(880, 0.04, 0.03, "sine", 0.04);
+    this.audio.tone(1120, 0.03, 0.06, "triangle", 0.035);
+  }
+
+  updateGlitchrunnerPhase(name) {
+    if (this.glitchPhase.cooldown > 0) this.glitchPhase.cooldown--;
+    if (this.glitchPhase.afterglow > 0) this.glitchPhase.afterglow--;
+    if (this.glitchPhase.echoPulse > 0) this.glitchPhase.echoPulse--;
+
+    if (!this.glitchPhase.echoReady) {
+      if (this.glitchPhase.echoCooldown > 0) this.glitchPhase.echoCooldown--;
+      if (this.glitchPhase.echoCooldown <= 0) {
+        this.glitchPhase.echoReady = 1;
+        this.teleportNotice = "ECHO SHIELD RESTORED";
+        this.teleportNoticeTimer = 70;
+        this.audio.tone(980, 0.03, 0.00, "sine", 0.03);
+      }
+    }
+
+    if (name !== "GLITCHRUNNER" || !this.player) {
+      this.glitchPhase.active = 0;
+      this.glitchPhase.timer = 0;
+    } else if (this.glitchPhase.active) {
+      const p = this.player;
+      p.face = this.glitchPhase.dir;
+      p.vx = this.glitchPhase.dir * GLITCHRUNNER_PHASE.dashSpeed;
+      p.vy = Math.min(p.vy, 0.25);
+
+      this.glitchPhase.trailTick++;
+      if ((this.glitchPhase.trailTick % GLITCHRUNNER_PHASE.trailSpawnEvery) === 0) {
+        this.glitchPhase.trail.push({
+          x: p.x,
+          y: p.y,
+          w: p.w,
+          h: p.h,
+          t: GLITCHRUNNER_PHASE.afterglowFrames,
+          life: GLITCHRUNNER_PHASE.afterglowFrames
+        });
+      }
+
+      if (this.glitchPhase.timer > 0) this.glitchPhase.timer--;
+      if (this.glitchPhase.timer <= 0) this.glitchPhase.active = 0;
+    }
+
+    for (let i = 0; i < this.glitchPhase.trail.length; i++) {
+      const ghost = this.glitchPhase.trail[i];
+      if (ghost.t-- <= 0) ghost.dead = 1;
+    }
+    this.glitchPhase.trail = this.glitchPhase.trail.filter(g => !g.dead);
+  }
+
+  tryConsumeGlitchrunnerEchoShield(sourceX, sourceY) {
+    if (!this.player || this.deathTimer > 0) return 0;
+    if (CHARACTERS[this.characterIndex].name !== "GLITCHRUNNER") return 0;
+    if (!this.glitchPhase.echoReady) return 0;
+
+    this.glitchPhase.echoReady = 0;
+    this.glitchPhase.echoCooldown = GLITCHRUNNER_PHASE.echoRechargeFrames;
+    this.glitchPhase.echoPulse = GLITCHRUNNER_PHASE.echoFlashFrames;
+    this.glitchPhase.echoX = Number.isFinite(sourceX) ? sourceX : (this.player.x + this.player.w * 0.5);
+    this.glitchPhase.echoY = Number.isFinite(sourceY) ? sourceY : (this.player.y + this.player.h * 0.5);
+    this.respawnGrace = Math.max(this.respawnGrace, 20);
+    this.player.vy = Math.min(this.player.vy, -2.2);
+    this.player.vx *= -0.45;
+
+    this.teleportNotice = "ECHO SHIELD SAVED YOU";
+    this.teleportNoticeTimer = 65;
+    this.audio.tone(760, 0.04, 0.00, "triangle", 0.045);
+    this.audio.tone(1040, 0.05, 0.03, "sine", 0.04);
+    return 1;
   }
 
   activateBatCompanion() {
@@ -3437,7 +3575,10 @@ class Game {
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         const id = this.tileIdAt(x, y);
-        if (id === 7 && !this.paladinDash.active) return this.startLavaDeath(0);
+        if (id === 7 && !this.paladinDash.active) {
+          if (!this.tryConsumeGlitchrunnerEchoShield(x * TILE_SIZE + TILE_SIZE * 0.5, y * TILE_SIZE + TILE_SIZE * 0.5)) return this.startLavaDeath(0);
+          continue;
+        }
         if (id === 2 || id === 5 || id === 6 || id === 13 || id === 14 || id === 15) {
           this.setTile(x, y, ".");
           this.collectTileReward(id, x * TILE_SIZE + TILE_SIZE * 0.5, y * TILE_SIZE + TILE_SIZE * 0.5);
@@ -3709,6 +3850,7 @@ class Game {
     const duckDiving = (name === "DUCK" && this.duckDive.active);
     const bunnyRocketing = (name === "BUNNY" && this.bunnyRocket.active);
     const ninjaShadowing = (name === "NINJA" && this.ninjaShadow.active);
+    const glitchPhasing = (name === "GLITCHRUNNER" && this.glitchPhase.active);
     this.updateSkeletonCrouch(name, D);
     this.updateHolyZones();
     this.updateStormMechanics(levelTheme);
@@ -3724,6 +3866,9 @@ class Game {
     } else if (ninjaShadowing) {
       p.vx = this.ninjaShadow.dir * NINJA_SHADOW_STEP.dashSpeed;
       p.face = this.ninjaShadow.dir;
+    } else if (glitchPhasing) {
+      p.vx = this.glitchPhase.dir * GLITCHRUNNER_PHASE.dashSpeed;
+      p.face = this.glitchPhase.dir;
     } else if (paladinDashing) {
       p.vx = (p.face >= 0 ? 1 : -1) * PALADIN_AEGIS.dashSpeed;
     } else if (!rangerGrappling && dir) {
@@ -3763,7 +3908,7 @@ class Game {
     }
 
     // Jump consume (same logic, clearer names)
-    if (p.jumpBuf && !paladinDashing && !ninjaShadowing && !bunnyRocketing && !duckDiving) {
+    if (p.jumpBuf && !paladinDashing && !ninjaShadowing && !bunnyRocketing && !duckDiving && !glitchPhasing) {
       const isDuck = (name === "DUCK");
       const isNinja = (name === "NINJA");
 
@@ -3800,10 +3945,11 @@ class Game {
     this.updateDuckGaleDive(name);
     this.updateBunnyCarrotRocket(name);
     this.updateNinjaShadowStep(name);
+    this.updateGlitchrunnerPhase(name);
     this.updateSkeletonBloodBurst(name);
 
     // Gravity + jump cut
-    p.vy += gr * (duckDiving ? 0.15 : (bunnyRocketing ? 0.2 : (ninjaShadowing ? 0.25 : (paladinDashing ? 0.15 : (p.duckFlying ? 0.25 : 1)))));
+    p.vy += gr * (duckDiving ? 0.15 : (bunnyRocketing ? 0.2 : (ninjaShadowing ? 0.25 : (glitchPhasing ? 0.2 : (paladinDashing ? 0.15 : (p.duckFlying ? 0.25 : 1))))));
     if (p.vy > 8.5) p.vy = 8.5;
     if (!paladinDashing && !ninjaShadowing && !bunnyRocketing && !duckDiving && !JH && p.vy < 0) p.vy *= 0.55;
 
@@ -4209,7 +4355,11 @@ class Game {
         continue;
       }
 
-      if (this.respawnGrace <= 0 && !ninjaShadowing && rectsOverlap(p, e)) {
+      if (this.respawnGrace <= 0 && glitchPhasing && rectsOverlap(p, e)) {
+        continue;
+      }
+
+      if (this.respawnGrace <= 0 && !ninjaShadowing && !glitchPhasing && rectsOverlap(p, e)) {
         const giantVampire = e.type === 5;
         const shieldedWorker = e.type === 8;
         const frankenstein = e.type === 9;
@@ -4265,9 +4415,9 @@ class Game {
           p.vx = (p.x < e.x ? -1 : 1) * FRANKENSTEIN.knockbackX;
           p.vy = FRANKENSTEIN.knockbackY;
           this.audio.tone(130, 0.05, 0.00, "square", 0.04);
-          this.startEnemyDeath(0);
+          if (!this.tryConsumeGlitchrunnerEchoShield(e.x + e.w * 0.5, e.y + e.h * 0.5)) this.startEnemyDeath(0);
         } else {
-          this.startEnemyDeath(0);
+          if (!this.tryConsumeGlitchrunnerEchoShield(e.x + e.w * 0.5, e.y + e.h * 0.5)) this.startEnemyDeath(0);
         }
       }
 
@@ -4563,6 +4713,31 @@ class Game {
       gfx.globalAlpha = 1;
     }
 
+    if (name === "GLITCHRUNNER" && (this.glitchPhase.active || this.glitchPhase.afterglow > 0)) {
+      gfx.globalAlpha = this.glitchPhase.active ? 0.62 : Math.max(0.2, this.glitchPhase.afterglow / GLITCHRUNNER_PHASE.afterglowFrames);
+      gfx.strokeStyle = this.glitchPhase.active ? "#57e8ff" : "#9a7cff";
+      gfx.strokeRect((px - 2) | 0, (py - 2) | 0, p.w + 4, p.h + 4);
+      gfx.globalAlpha = 1;
+    }
+
+    if (name === "GLITCHRUNNER" && this.glitchPhase.echoPulse > 0) {
+      const t = this.glitchPhase.echoPulse / GLITCHRUNNER_PHASE.echoFlashFrames;
+      const fx = (this.glitchPhase.echoX - this.cameraX) | 0;
+      const fy = (this.glitchPhase.echoY - this.cameraY) | 0;
+      const r = Math.max(6, (22 * (1.8 - t * 0.7)) | 0);
+      gfx.globalAlpha = Math.max(0.2, t * 0.72);
+      gfx.fillStyle = "#57e8ff";
+      gfx.beginPath();
+      gfx.arc(fx, fy, r, 0, 6.283);
+      gfx.fill();
+      gfx.globalAlpha = Math.max(0.16, t * 0.48);
+      gfx.fillStyle = "#9a7cff";
+      gfx.beginPath();
+      gfx.arc(fx, fy, Math.max(3, (r * 0.52) | 0), 0, 6.283);
+      gfx.fill();
+      gfx.globalAlpha = 1;
+    }
+
     if (name === "BUNNY" && (this.bunnyRocket.active || this.bunnyRocket.afterglow > 0)) {
       gfx.globalAlpha = this.bunnyRocket.active ? 0.65 : Math.max(0.2, this.bunnyRocket.afterglow / BUNNY_CARROT_ROCKET.afterglowFrames);
       gfx.strokeStyle = this.bunnyRocket.active ? "#ff7f2a" : "#ffd95e";
@@ -4636,6 +4811,7 @@ class Game {
       PALETTE,
       ROBOT_MAGNET_PULSE,
       NINJA_SHADOW_STEP,
+      GLITCHRUNNER_PHASE,
       RANGER_GRAPPLE,
       RELIC_PICKUP_FX,
       getThemeForLevel

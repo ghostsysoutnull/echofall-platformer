@@ -7,6 +7,7 @@ function drawHudAndNotices(game, gfx, deps) {
     PALETTE,
     ROBOT_MAGNET_PULSE,
     NINJA_SHADOW_STEP,
+    GLITCHRUNNER_PHASE,
     RANGER_GRAPPLE,
     RELIC_PICKUP_FX,
     getThemeForLevel
@@ -134,6 +135,14 @@ function drawHudAndNotices(game, gfx, deps) {
         ? ("Q " + ((game.ninjaShadow.cooldown / 60) | 0) + "s")
         : "Q READY";
     gfx.fillText(shadowText, 258, 11);
+  } else if (charName === "GLITCHRUNNER") {
+    const phaseText = game.glitchPhase.active
+      ? "Q PHASE"
+      : game.glitchPhase.cooldown > 0
+        ? ("Q " + ((game.glitchPhase.cooldown / 60) | 0) + "s")
+        : "Q READY";
+    gfx.fillText(phaseText, 258, 11);
+    gfx.fillText(game.glitchPhase.echoReady ? "ECHO READY" : ("ECHO " + Math.max(1, ((game.glitchPhase.echoCooldown / 60) | 0)) + "s"), 6, 23);
   } else if (charName === "SKELETON") {
     const phase2Eligible = game.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
     const phase2Charged = !!game.skeletonBurst.phase2Charged;
@@ -172,6 +181,13 @@ function drawHudAndNotices(game, gfx, deps) {
     gfx.fillRect(106, 16, 108, 16);
     gfx.fillStyle = "#fff";
     gfx.fillText("BLOOD PHASE 2", 114, 27);
+  }
+
+  if (CHARACTERS[game.characterIndex].name === "GLITCHRUNNER" && (game.glitchPhase.active || game.glitchPhase.echoPulse > 0)) {
+    gfx.fillStyle = "#000b";
+    gfx.fillRect(98, 16, 126, 16);
+    gfx.fillStyle = "#9fe7ff";
+    gfx.fillText(game.glitchPhase.active ? "PHASE DASH ACTIVE" : "ECHO SHIELD TRIGGER", 104, 27);
   }
 
   if (game.hasConductorCoreActive() || game.conductorCore.notice > 0) {

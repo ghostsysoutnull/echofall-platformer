@@ -15,6 +15,18 @@ function drawPlayerAndEffects(game, gfx, deps) {
     gfx.globalAlpha = 1;
   }
 
+  if (game.glitchPhase.trail.length) {
+    for (let i = 0; i < game.glitchPhase.trail.length; i++) {
+      const ghost = game.glitchPhase.trail[i];
+      gfx.globalAlpha = Math.max(0.12, (ghost.t / ghost.life) * 0.48);
+      gfx.fillStyle = "#57e8ff";
+      gfx.fillRect((ghost.x - game.cameraX) | 0, (ghost.y - game.cameraY) | 0, ghost.w, ghost.h);
+      gfx.fillStyle = "#9a7cff";
+      gfx.fillRect(((ghost.x - game.cameraX) + 2) | 0, ((ghost.y - game.cameraY) + 2) | 0, Math.max(2, ghost.w - 4), Math.max(2, ghost.h - 4));
+    }
+    gfx.globalAlpha = 1;
+  }
+
   if (game.batCompanion.trail.length) {
     for (let i = 0; i < game.batCompanion.trail.length; i++) {
       const trail = game.batCompanion.trail[i];
