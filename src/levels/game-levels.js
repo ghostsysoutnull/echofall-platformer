@@ -1,4 +1,4 @@
-import { setGridChar, buildStormFoundry6xGrid } from "./builders.js";
+import { setGridChar, buildStormFoundry6xGrid, buildSimulationBreach4xGrid } from "./builders.js";
 
 const GAME_LEVELS = [
   {
@@ -497,6 +497,31 @@ const GAME_LEVELS = [
       "................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................",
       "###########..#######.....####....#####....######....####....#####....######....####....####################..#######.....####....#####....######....####....#####....######....####....####################..#######.....####....#####....######....####....#####....######....####....####################..#######.....####....#####....######....####....#####....######....####....####################..#######.....####....#####....######....####....#####....######....####....####################..#######.....####....#####....######....####....#####....######....####....#########"
     ]
+  },
+
+  {
+    name: "SIMULATION BREACH",
+    sequence: 9.7,
+    theme: "SIMBREACH",
+    backgroundActors: [
+      { type: "geoWireCube", theme: "SIMBREACH", x: 86, y: 30, vx: 0.10, parallax: 0.16, bobAmp: 1.0, bobSpeed: 0.020, w: 16, h: 16, scale: 1 },
+      { type: "geoGridPlane", theme: "SIMBREACH", x: 206, y: 62, vx: -0.06, parallax: 0.10, bobAmp: 0.5, bobSpeed: 0.010, w: 24, h: 12, scale: 1 },
+      { type: "drone", theme: "SIMBREACH", x: 296, y: 44, vx: 0.16, parallax: 0.24, bobAmp: 1.2, bobSpeed: 0.028, w: 14, h: 8, scale: 1 },
+      { type: "geoChromaprism", theme: "SIMBREACH", x: 412, y: 40, vx: -0.08, parallax: 0.18, bobAmp: 1.1, bobSpeed: 0.018, w: 14, h: 14, scale: 1 },
+      { type: "geoFluxLens", theme: "SIMBREACH", x: 520, y: 48, vx: 0.07, parallax: 0.20, bobAmp: 0.9, bobSpeed: 0.017, w: 18, h: 10, scale: 1 }
+    ],
+    checkpoints: [
+      { xTile: 96, label: "Act 2: Signal Drop" },
+      { xTile: 192, label: "Act 3: Glass Corridor" },
+      { xTile: 288, label: "Act 4: Core Access" }
+    ],
+    lightZones: [
+      { xTile: 56, widthTiles: 18 },
+      { xTile: 148, widthTiles: 18 },
+      { xTile: 240, widthTiles: 18 },
+      { xTile: 332, widthTiles: 18 }
+    ],
+    grid: buildSimulationBreach4xGrid()
   },
 
   {

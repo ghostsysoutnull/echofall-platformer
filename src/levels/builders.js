@@ -19,6 +19,36 @@ const STORM_FOUNDRY_SEGMENT = [
   "###########..#######.....####....#####....######....####....#####....######....####....#########"
 ];
 
+const SIMBREACH_BASE_ROW = ".".repeat(96);
+const simBreachRow = (markers) => {
+  let row = SIMBREACH_BASE_ROW;
+  for (let i = 0; i < markers.length; i++) {
+    row = setGridChar(row, markers[i][0], markers[i][1]);
+  }
+  return row;
+};
+
+const SIMBREACH_SEGMENT = [
+  SIMBREACH_BASE_ROW,
+  SIMBREACH_BASE_ROW,
+  simBreachRow([[17, "V"], [39, "W"], [61, "Y"]]),
+  simBreachRow([[12, "B"], [13, "B"], [14, "B"], [30, "B"], [31, "B"], [32, "B"], [48, "B"], [49, "B"], [50, "B"]]),
+  SIMBREACH_BASE_ROW,
+  simBreachRow([[8, "o"], [21, "O"], [36, "o"], [51, "U"], [67, "X"]]),
+  simBreachRow([[18, "B"], [19, "B"], [20, "B"], [39, "B"], [40, "B"], [41, "B"], [60, "B"], [61, "B"], [62, "B"]]),
+  simBreachRow([[35, "W"], [66, "V"]]),
+  simBreachRow([[26, "E"], [53, "E"]]),
+  simBreachRow([[18, "o"], [40, "o"], [63, "o"]]),
+  simBreachRow([[5, "S"], [27, "B"], [28, "B"], [29, "B"], [48, "B"], [49, "B"], [50, "B"], [67, "B"], [68, "B"], [69, "B"]]),
+  SIMBREACH_BASE_ROW,
+  simBreachRow([[11, "B"], [12, "B"], [13, "B"], [32, "B"], [33, "B"], [34, "B"], [51, "B"], [52, "B"], [53, "B"], [72, "B"], [73, "B"], [74, "B"]]),
+  simBreachRow([[1, "H"]]),
+  simBreachRow([[22, "o"], [45, "O"], [68, "o"]]),
+  SIMBREACH_BASE_ROW,
+  SIMBREACH_BASE_ROW,
+  "###########..#######.....####....#####....######....####....#####....######....####....#########"
+];
+
 function setGridChar(row, index, value) {
   if (index < 0 || index >= row.length) return row;
   return row.slice(0, index) + value + row.slice(index + 1);
@@ -179,4 +209,50 @@ function buildStormFoundry6xGrid() {
   return out;
 }
 
-export { setGridChar, buildStormFoundry6xGrid };
+function buildSimulationBreach4xGrid() {
+  const rows = SIMBREACH_SEGMENT.map(row => row.repeat(4));
+  const out = rows.map(row => row.replace(/S/g, ".").replace(/F/g, ".").replace(/H/g, "."));
+  const segmentWidth = SIMBREACH_SEGMENT[0].length;
+
+  const place = (segment, markers) => {
+    const offset = segment * segmentWidth;
+    for (let i = 0; i < markers.length; i++) {
+      const marker = markers[i];
+      out[marker.y] = setGridChar(out[marker.y], offset + marker.x, marker.ch);
+    }
+  };
+
+  place(0, [
+    { x: 26, y: 5, ch: "U" },
+    { x: 60, y: 7, ch: "V" },
+    { x: 34, y: 8, ch: "E" }
+  ]);
+
+  place(1, [
+    { x: 18, y: 5, ch: "O" },
+    { x: 64, y: 5, ch: "U" },
+    { x: 60, y: 8, ch: "E" },
+    { x: 74, y: 11, ch: "P" }
+  ]);
+
+  place(2, [
+    { x: 20, y: 2, ch: "V" },
+    { x: 46, y: 5, ch: "O" },
+    { x: 70, y: 8, ch: "E" },
+    { x: 34, y: 12, ch: "X" }
+  ]);
+
+  place(3, [
+    { x: 22, y: 5, ch: "T" },
+    { x: 80, y: 8, ch: "E" },
+    { x: 48, y: 11, ch: "D" },
+    { x: 76, y: 14, ch: "O" }
+  ]);
+
+  out[10] = setGridChar(out[10], 6, "S");
+  out[13] = setGridChar(out[13], 2, "H");
+  out[13] = setGridChar(out[13], out[13].length - 10, "F");
+  return out;
+}
+
+export { setGridChar, buildStormFoundry6xGrid, buildSimulationBreach4xGrid };
