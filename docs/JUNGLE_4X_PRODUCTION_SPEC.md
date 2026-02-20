@@ -142,7 +142,7 @@ This 4x Jungle should reuse proven patterns already present in the project:
 
 - Phase A: Add new level entry (`JUNGLE 4X`) with checkpoints/light zones and static 384 grid. **Status: implemented in `levels.js` as initial scaffold shell.**
 - Phase B: Hand-author Segment 1 and Segment 2, validate traversal. **Status: implemented (first-pass enrichment in `levels.js`; tuning pass pending).**
-- Phase C: Hand-author Segment 3 and Segment 4, validate pacing/route rewards.
-- Phase D: Tune enemy and pickup density to hit timing/death targets.
+- Phase C: Hand-author Segment 3 and Segment 4, validate pacing/route rewards. **Status: implemented (first-pass enrichment in `levels.js`; tuning pass pending).**
+- Phase D: Tune enemy and pickup density to hit timing/death targets. **Status: implemented (first-pass pacing/density tuning in `levels.js`; playtest polish pending).**
 
 This spec is designed for direct hand-authoring in `levels.js` with existing engine behavior only.

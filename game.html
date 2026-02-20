@@ -382,6 +382,7 @@
       this.respawnGrace = 0;
       this.portals = [];
       this.portalCooldown = 0;
+      this.portalOverlapLock = 0;
       this.geometryMusicSection = -1;
       this.geometryMusicNotice = 0;
       this.geometryMusicLabel = "";
@@ -1295,6 +1296,7 @@
       this.respawnGrace = 0;
       this.portals = [];
       this.portalCooldown = 0;
+      this.portalOverlapLock = 0;
       this.geometryMusicSection = -1;
       this.geometryMusicNotice = 0;
       this.geometryMusicLabel = "";
@@ -1702,10 +1704,21 @@
     }
 
     updatePortals() {
-      if (this.portalCooldown > 0) this.portalCooldown--;
-      if (!this.portals.length || this.portalCooldown > 0 || !this.player) return;
-
+      if (!this.portals.length || !this.player) return;
       const p = this.player;
+
+      if (this.portalOverlapLock) {
+        for (let i = 0; i < this.portals.length; i++) {
+          if (rectsOverlap(p, this.portals[i])) return;
+        }
+        this.portalOverlapLock = 0;
+      }
+
+      if (this.portalCooldown > 0) {
+        this.portalCooldown--;
+        return;
+      }
+
       for (let i = 0; i < this.portals.length; i++) {
         const portal = this.portals[i];
         if (!rectsOverlap(p, portal)) continue;
@@ -1722,6 +1735,7 @@
           p.vy = -1.2;
           p.wrapGrace = 20;
           this.portalCooldown = 32;
+          this.portalOverlapLock = 1;
           const shifted = this.maybePortalCharacterShift();
           this.teleportNotice = "PORTAL -> SECTION " + sectionIndex + (shifted ? " | FORM SHIFT" : "");
           this.teleportNoticeTimer = 90;
