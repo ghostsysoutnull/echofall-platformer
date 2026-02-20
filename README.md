@@ -13,8 +13,11 @@ Quick index for this workspace.
 
 ## Core Files
 
-- `game.html` — main game loop, rendering, input, gameplay logic
-- `levels.js` — level data, order, themes, and level validation utilities
+- `game.html` — browser entry page that loads the modular runtime
+- `src/main.js` — main game loop, rendering, input, and gameplay logic
+- `src/levels/game-levels.js` — authored level data entries
+- `src/levels/derived.js` — derived level arrays (`LEVELS`, names, themes, checkpoints)
+- `src/sprites/sprite-data.js` — sprite definitions (`SPRITES`)
 - `audio/audio-engine.js` — audio coordinator (master/mute, SFX bus, theme track crossfades)
 - `audio/sfx.js` — gameplay SFX patterns (quack, flag raise, extra life)
 - `audio/tracks.js` — procedural per-theme background music builders

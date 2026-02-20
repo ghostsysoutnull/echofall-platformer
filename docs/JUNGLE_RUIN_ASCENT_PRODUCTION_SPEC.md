@@ -54,7 +54,7 @@ Constraint: **No procedural generation** for this level. Final grid is explicitl
 
 ## 3) Allowed Marker Set (Existing Runtime Only)
 
-Use only markers already supported in `game.html`:
+Use only markers already supported in `src/main.js`:
 - Terrain/pickups: `. # B o O U T X C L H Q`
 - Runtime markers: `S F E V W Y Z R N G P D`
 
@@ -99,7 +99,7 @@ This 4x Jungle should reuse proven patterns already present in the project:
 ## 6) Authoring Blueprint (Manual, Non-Procedural)
 
 ### 6.1 Grid Build Method
-- Author full 18-row x 384-char static strings in `levels.js`.
+- Author full 18-row x 384-char static strings in `src/levels/game-levels.js`.
 - Build each row by explicit 4-part composition during editing:
   - `rowS1 + rowS2 + rowS3 + rowS4`
 - Final committed content remains literal static rows (no generator function).
@@ -140,9 +140,9 @@ This 4x Jungle should reuse proven patterns already present in the project:
 
 ## 8) Implementation Plan
 
-- Phase A: Add new level entry (`JUNGLE: RUIN ASCENT`) with checkpoints/light zones and static 384 grid. **Status: implemented in `levels.js` as initial scaffold shell.**
-- Phase B: Hand-author Segment 1 and Segment 2, validate traversal. **Status: implemented (first-pass enrichment in `levels.js`; tuning pass pending).**
-- Phase C: Hand-author Segment 3 and Segment 4, validate pacing/route rewards. **Status: implemented (first-pass enrichment in `levels.js`; tuning pass pending).**
-- Phase D: Tune enemy and pickup density to hit timing/death targets. **Status: implemented (first-pass pacing/density tuning in `levels.js`; playtest polish pending).**
+- Phase A: Add new level entry (`JUNGLE: RUIN ASCENT`) with checkpoints/light zones and static 384 grid. **Status: implemented in `src/levels/game-levels.js` as initial scaffold shell.**
+- Phase B: Hand-author Segment 1 and Segment 2, validate traversal. **Status: implemented (first-pass enrichment in `src/levels/game-levels.js`; tuning pass pending).**
+- Phase C: Hand-author Segment 3 and Segment 4, validate pacing/route rewards. **Status: implemented (first-pass enrichment in `src/levels/game-levels.js`; tuning pass pending).**
+- Phase D: Tune enemy and pickup density to hit timing/death targets. **Status: implemented (first-pass pacing/density tuning in `src/levels/game-levels.js`; playtest polish pending).**
 
-This spec is designed for direct hand-authoring in `levels.js` with existing engine behavior only.
+This spec is designed for direct hand-authoring in `src/levels/game-levels.js` with existing engine behavior only.

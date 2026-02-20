@@ -4,7 +4,7 @@ This is a quick guide for creating/updating pixel sprites in this project and ha
 
 ## 1) How sprites are stored
 
-Sprites live in `sprites.js` inside the `SPRITES` object.
+Sprites live in `src/sprites/sprite-data.js` inside the `SPRITES` object.
 
 - Each sprite is an array of strings.
 - Each string is one row of pixels.
@@ -38,7 +38,7 @@ The help block is a **2-tile block**:
 - Top used: `helpBlockTopUsed`
 - Bottom used: `helpBlockBottomUsed`
 
-Current references in `game.html`:
+Current runtime references are in `src/main.js`:
 
 - Sprite definitions: around lines with `helpBlockTopUnusedA`, `helpBlockTopUnusedB`, `helpBlockBottomUnusedA`, `helpBlockBottomUnusedB`, `helpBlockTopUsed`, `helpBlockBottomUsed`
 - Tile IDs: `H/h/Q/q` in `tileIdAt(...)`
@@ -108,7 +108,7 @@ When the player is killed by an enemy, the game now uses a sprite-shatter explos
 - Behavior: the sprite is split into chunks, pieces burst outward, then fade.
 - Scope: enemy-kill deaths only. Tile/lava deaths keep original immediate behavior.
 
-### Tunables in `game.html`
+### Tunables in `src/main.js`
 
 The effect is controlled by `ENEMY_DEATH_SHATTER` near the top constants block:
 

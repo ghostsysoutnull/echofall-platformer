@@ -8,7 +8,7 @@ This document is a source-of-truth style overview of all current levels and leve
 - special items, portals, and effects
 - per-level inventories
 
-All values here are based on current `levels.js`, `game.html`, and `sprites.js`.
+All values here are based on current `src/levels/*`, `src/main.js`, and `src/sprites/*`.
 
 Related production specs:
 - `STORMFOUNDRY` 6x: `docs/STORM_FOUNDRY_PRODUCTION_SPEC.md`

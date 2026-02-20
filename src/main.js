@@ -62,8 +62,8 @@ gfx.imageSmoothingEnabled = false;
 if (!PALETTE || !SPRITES) throw new Error("sprites module failed to load");
 
 // =========================
-// Levels (loaded from levels.js)
-// LEVELS and LEVEL_NAMES are derived in levels.js from the sorted GAME_LEVELS array
+// Levels (loaded from src/levels modules)
+// LEVELS and LEVEL_NAMES are derived in src/levels/derived.js from sorted GAME_LEVELS
 // =========================
 
 // =========================

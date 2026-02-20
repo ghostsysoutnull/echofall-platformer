@@ -334,7 +334,7 @@ All timings are in frames at 60 FPS.
 - Act4 -> Act5: +22% sustained hazard uptime and reduced recovery windows.
 
 ### 10.2 Phase 5 Tuning Profile (Pass 2)
-- Applied per-act multiplier profile in `game.html` (`stormActTuning`) for rails/jets:
+- Applied per-act multiplier profile in `src/main.js` (`stormActTuning`) for rails/jets:
   - Act1 (`actIndex 0`): `prewarn 1.18x`, `on 0.84x`, `cooldown 1.18x`, `jet wait 1.18x`, `jet burst 0.90x`, `defer +8`.
   - Act2 (`actIndex 1`): `prewarn 1.10x`, `on 0.92x`, `cooldown 1.10x`, `jet wait 1.12x`, `jet burst 0.95x`, `defer +5`.
   - Act3 (`actIndex 2`): baseline `1.00x`.
@@ -395,10 +395,10 @@ Hard limits:
 
 ## 13) Implementation Phases (Recommended)
 
-- Phase 1: marker grammar + parser + data structures (`=`, `A`, `J`, `~`, link ids). **Status: implemented in `game.html` loader/parser pass.**
-- Phase 2: rail/node/jet state machines + telegraph VFX/audio. **Status: implemented in `game.html` runtime update/render paths (active with current initial marker pass authored in `levels.js` Storm 6x generator).**
-- Phase 3: surge scheduler + overlap limiter + checkpoint safety gating. **Status: implemented (core) in `game.html`: surge state machine, lethal-channel overlap cap/defer, respawn safety lockout radius + deterministic hazard resets.**
-- Phase 4: shielded worker enemy + Conductor Core relic. **Status: implemented in `game.html` (marker parse + enemy FSM/counterplay + relic immunity/magnet effect) with authored placements in `levels.js` Storm 6x generator (`K` + `M`).**
-- Phase 5: tuning pass against balancing targets and death budget. **Status: in progress (pass 2) — calibrated per-act hazard multipliers applied in `game.html` (`stormActTuning`) with explicit Act1/2 forgiveness and Act4/5 pressure profile; surge elite aggression remains `1.20x`.**
+- Phase 1: marker grammar + parser + data structures (`=`, `A`, `J`, `~`, link ids). **Status: implemented in `src/main.js` loader/parser pass.**
+- Phase 2: rail/node/jet state machines + telegraph VFX/audio. **Status: implemented in `src/main.js` runtime update/render paths (active with current initial marker pass authored in `src/levels/builders.js` Storm 6x generator).**
+- Phase 3: surge scheduler + overlap limiter + checkpoint safety gating. **Status: implemented (core) in `src/main.js`: surge state machine, lethal-channel overlap cap/defer, respawn safety lockout radius + deterministic hazard resets.**
+- Phase 4: shielded worker enemy + Conductor Core relic. **Status: implemented in `src/main.js` (marker parse + enemy FSM/counterplay + relic immunity/magnet effect) with authored placements in `src/levels/builders.js` Storm 6x generator (`K` + `M`).**
+- Phase 5: tuning pass against balancing targets and death budget. **Status: in progress (pass 2) — calibrated per-act hazard multipliers applied in `src/main.js` (`stormActTuning`) with explicit Act1/2 forgiveness and Act4/5 pressure profile; surge elite aggression remains `1.20x`.**
 
-This spec is designed to be directly mapped into `levels.js` marker data and `game.html` runtime systems.
+This spec is designed to be directly mapped into `src/levels/*` marker data and `src/main.js` runtime systems.
