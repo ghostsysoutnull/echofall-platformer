@@ -230,7 +230,11 @@ function buildSimulationBreach4xGrid() {
 
   place(1, [
     { x: 18, y: 5, ch: "O" },
+    { x: 41, y: 5, ch: "O" },
     { x: 64, y: 5, ch: "U" },
+    { x: 74, y: 5, ch: "O" },
+    { x: 33, y: 8, ch: "E" },
+    { x: 44, y: 8, ch: "E" },
     { x: 60, y: 8, ch: "E" },
     { x: 74, y: 11, ch: "P" }
   ]);

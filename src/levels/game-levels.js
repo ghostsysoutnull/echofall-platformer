@@ -511,7 +511,7 @@ const GAME_LEVELS = [
       { type: "geoFluxLens", theme: "SIMBREACH", x: 520, y: 48, vx: 0.07, parallax: 0.20, bobAmp: 0.9, bobSpeed: 0.017, w: 18, h: 10, scale: 1 }
     ],
     checkpoints: [
-      { xTile: 96, label: "Act 2: Signal Drop" },
+      { xTile: 96, label: "Act 2: Ghostline Corridor" },
       { xTile: 192, label: "Act 3: Glass Corridor" },
       { xTile: 288, label: "Act 4: Core Access" }
     ],
