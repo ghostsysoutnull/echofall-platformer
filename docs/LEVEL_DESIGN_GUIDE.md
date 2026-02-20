@@ -430,3 +430,50 @@ Copy and fill to generate a new level:
 
 (96 chars per row, 18 total. Row 17 is locked. Rows 0–16 are editable.)
 
+---
+
+## SECTION 6: BIOME EXPANSION PLAYBOOK (1x -> Extended)
+
+Use this when expanding a proven 1x biome into a longer hand-authored variant (for example, `96 -> 384` width).
+
+### 6.1 Core Approach
+- Keep expansion **hand-authored first**; do not start with procedural generation.
+- Reuse existing runtime markers/mechanics before introducing anything new.
+- Preserve one clear safe route, then layer optional risk/reward side lanes.
+
+### 6.2 Segment-First Layout
+- Divide the extended level into fixed-size acts (for `384`, use 4 segments of 96).
+- Give each segment a role:
+  - Segment 1: onboarding / baseline rhythm
+  - Segment 2: verticality and route variety
+  - Segment 3: mixed overlap pressure
+  - Segment 4: finale pressure + clean finish runway
+
+### 6.3 Marker Budgeting (More Important Than Raw Length)
+- Tune per-segment marker counts, not just total level length.
+- Increase encounter density gradually from segment to segment.
+- Keep collectible growth intentional (coins and big coins should support route decisions, not clutter).
+
+### 6.4 Fairness + Readability Rules
+- Avoid blind mandatory drops into body-collision enemies.
+- Keep mandatory jumps readable with setup space.
+- Restrict strict execution to optional lanes; mandatory path remains fair.
+
+### 6.5 Validation Workflow
+- After each pass, verify:
+  - exact row count and uniform width
+  - exactly one `S` and one `F`
+  - checkpoints/light-zones monotonic and aligned to segment boundaries
+  - no parser/runtime marker regressions
+- Use small iterative edits and frequent checks; avoid giant one-shot rewrites.
+
+### 6.6 Naming + Campaign Placement
+- Treat expanded biomes as mastery remixes, not direct replacements.
+- Give the expanded variant a distinct name to set expectations.
+- Place it after at least one biome contrast in sequence order to avoid theme fatigue.
+
+### 6.7 Documentation Discipline
+- Keep the production spec status in sync with implementation phases.
+- Update all links/references when level names or spec files change.
+- Record final segment budgets and playtest targets for future expansions.
+
