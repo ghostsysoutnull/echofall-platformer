@@ -316,7 +316,17 @@ function buildShadowrunnerArcology5xGrid() {
     { x: 16, y: 2, ch: "V" },
     { x: 42, y: 5, ch: "T" },
     { x: 56, y: 8, ch: "E" },
+    { x: 18, y: 11, ch: "P" },
     { x: 28, y: 11, ch: "D" },
+    { x: 40, y: 11, ch: "P" },
+    { x: 12, y: 6, ch: "C" },
+    { x: 13, y: 6, ch: "C" },
+    { x: 14, y: 6, ch: "C" },
+    { x: 70, y: 6, ch: "C" },
+    { x: 71, y: 6, ch: "C" },
+    { x: 72, y: 6, ch: "C" },
+    { x: 10, y: 8, ch: "O" },
+    { x: 74, y: 8, ch: "O" },
     { x: 74, y: 14, ch: "O" }
   ]);
 

@@ -163,6 +163,7 @@ class Game {
     this.teleportNotice = "";
     this.teleportNoticeTimer = 0;
     this.pendingTeleportNotice = "";
+    this.shadowrunHintStage = 0;
     this.immortalMode = 0;
 
     this.boneCryptWeather = { rain: [], lightning: 0, lightningCooldown: 0, cloudDriftNear: 0, cloudDriftFar: 0 };
@@ -1166,6 +1167,7 @@ class Game {
     this.geometryMusicLabel = "";
     this.teleportNotice = "";
     this.teleportNoticeTimer = 0;
+    this.shadowrunHintStage = 0;
     this.stormMechanics = this.createStormMechanicsState();
 
     let spawnX = 10, spawnY = 10;
@@ -4112,6 +4114,28 @@ class Game {
     }
   }
 
+  updateShadowrunHints() {
+    if (getThemeForLevel(this.levelIndex) !== "SHADOWRUN") return;
+    if (!this.player || this.shadowrunHintStage >= 2) return;
+
+    const levelWidth = Math.max(1, this.tileCols * TILE_SIZE);
+    const playerProgress = (this.player.x + this.player.w * 0.5) / levelWidth;
+    if (this.teleportNoticeTimer > 30) return;
+
+    if (this.shadowrunHintStage === 0 && playerProgress >= 0.74) {
+      this.teleportNotice = "DATA CACHE: RISK POCKETS UP AHEAD";
+      this.teleportNoticeTimer = 120;
+      this.shadowrunHintStage = 1;
+      return;
+    }
+
+    if (this.shadowrunHintStage === 1 && playerProgress >= 0.86) {
+      this.teleportNotice = "EXFIL FORK: CHOOSE EITHER P PORTAL";
+      this.teleportNoticeTimer = 120;
+      this.shadowrunHintStage = 2;
+    }
+  }
+
   step() {
     if (this.levelNameBanner) this.levelNameBanner--;
     if (this.helpTimer > 0) this.helpTimer--;
@@ -4135,6 +4159,7 @@ class Game {
     p.anim++;
     this.updateGeometryDreamMusic();
     this.updateBoneCryptWeather();
+    this.updateShadowrunHints();
 
     const L = this.keyDown.ArrowLeft || this.keyDown.KeyA;
     const R = this.keyDown.ArrowRight || this.keyDown.KeyD;

@@ -8,8 +8,8 @@
 - **Background set: billboards/trams/server spires/antenna forests/patrol drones/ad towers:** **Partial** (drones + cyber geometry + antenna vibes present; billboard/tram/spire/ad-tower set is TODO)
 - **Weather FX: acid drizzle + EM flicker + data-surge flashes:** **Partial** (drizzle/interference active; explicit surge event pass TODO)
 - **Act mechanics aligned to skill identity:** **Implemented (design intent)**
-- **Two portal forks in exfil flow:** **Partial** (portal routing exists; explicit dual-fork authored path TODO)
-- **Two optional high-risk data cache side pockets:** **TODO**
+- **Two portal forks in exfil flow:** **Implemented**
+- **Two optional high-risk data cache side pockets:** **Implemented**
 - **Difficulty ramps via mechanic overlap, not HP spam:** **Implemented (design rule)**
 
 ## 1) Level Identity
@@ -57,7 +57,7 @@ Primary target character is **SHADOWRUNNER**.
 ## 6) Portals & Routing
 - Section portals (`P`) are intentional route pivots.
 - Dimensional portal (`D`) appears in late segment as high-variance option.
-- Exfil should present **two portal fork decisions** before final push (current implementation has portal routing; authored dual-fork layout pass pending).
+- Exfil presents **two portal fork decisions** before final push.
 - Portal usage should create strategic tradeoffs:
   - Faster act progression vs. higher combat volatility.
   - Optional reroutes for score optimization.
@@ -115,11 +115,11 @@ Primary target character is **SHADOWRUNNER**.
 - [ ] `Digit8` debug jump reaches level and auto-selects SHADOWRUNNER as intended.
 - [ ] Checkpoint respawns never overlap immediate lethal collision.
 - [ ] Portals do not self-loop unexpectedly.
-- [ ] Exfil includes two explicit portal fork choices.
+- [x] Exfil includes two explicit portal fork choices.
 - [ ] No unreadable overlap between weather FX and hazards.
 - [ ] Audio theme switches correctly on level load.
 - [ ] Character remains playable with non-SHADOWRUNNER picks.
-- [ ] Two optional high-risk data cache side pockets are reachable but dangerous.
+- [x] Two optional high-risk data cache side pockets are reachable but dangerous.
 
 ## 14) Future Iteration Ideas
 - Add optional “Data Cache” side pockets with risk/reward.
