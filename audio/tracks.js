@@ -20,7 +20,7 @@
     GEOMETRYDREAM_S4: "GEOMETRYDREAM_S4",
     GEOMETRYDREAM_S5: "GEOMETRYDREAM_S5",
     GEOMETRYDREAM_S6: "GEOMETRYDREAM_S6",
-    SHADOWRUN: "GEOMETRYDREAM_S4",
+    SHADOWRUN: "SHADOWRUN",
     NITE: "NITE",
     SPACE: "SPACE_01"
   };
@@ -179,6 +179,7 @@
       if (key === "GEOMETRYDREAM_S4") return this.GEOMETRYDREAM_S4(ctx, bus, aux, helpers);
       if (key === "GEOMETRYDREAM_S5") return this.GEOMETRYDREAM_S5(ctx, bus, aux, helpers);
       if (key === "GEOMETRYDREAM_S6") return this.GEOMETRYDREAM_S6(ctx, bus, aux, helpers);
+      if (key === "SHADOWRUN") return this.SHADOWRUN(ctx, bus, aux, helpers);
       if (key === "NITE") return this.NITE(ctx, bus, aux, helpers);
       return this.SPACE_01(ctx, bus, aux, helpers);
     },
@@ -842,6 +843,98 @@
     GEOMETRYDREAM_S4: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 3),
     GEOMETRYDREAM_S5: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 4),
     GEOMETRYDREAM_S6: (ctx, bus, aux, helpers) => buildGeometryDreamTrack(ctx, bus, aux, helpers, 5),
+
+    SHADOWRUN: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      const bassGain = ctx.createGain();
+      bassGain.gain.value = 0.30;
+      const bassLp = ctx.createBiquadFilter();
+      bassLp.type = "lowpass";
+      bassLp.frequency.value = 520;
+      bassLp.Q.value = 1.1;
+      bassGain.connect(bassLp);
+      bassLp.connect(bus);
+
+      const bass = ctx.createOscillator();
+      bass.type = "sawtooth";
+      bass.frequency.value = 55;
+      const sub = ctx.createOscillator();
+      sub.type = "triangle";
+      sub.frequency.value = 27.5;
+      bass.connect(bassGain);
+      sub.connect(bassGain);
+      bass.start();
+      sub.start();
+
+      const sideLfo = ctx.createOscillator();
+      sideLfo.type = "sine";
+      sideLfo.frequency.value = 0.18;
+      const sideAmt = ctx.createGain();
+      sideAmt.gain.value = 0.08;
+      sideLfo.connect(sideAmt);
+      sideAmt.connect(bassGain.gain);
+      sideLfo.start();
+
+      const glitchNoise = makeNoiseSource(ctx, 1.0, 0.24);
+      const glitchHp = ctx.createBiquadFilter();
+      glitchHp.type = "highpass";
+      glitchHp.frequency.value = 1400;
+      const glitchBp = ctx.createBiquadFilter();
+      glitchBp.type = "bandpass";
+      glitchBp.frequency.value = 2300;
+      glitchBp.Q.value = 2.2;
+      const glitchGain = ctx.createGain();
+      glitchGain.gain.value = 0.07;
+      glitchNoise.connect(glitchHp);
+      glitchHp.connect(glitchBp);
+      glitchBp.connect(glitchGain);
+      glitchGain.connect(bus);
+      if (aux && aux.delay) glitchGain.connect(aux.delay);
+      glitchNoise.start();
+
+      nodes.push(bassGain, bassLp, bass, sub, sideLfo, sideAmt, glitchNoise, glitchHp, glitchBp, glitchGain);
+
+      const exploreArp = setInterval(() => {
+        const tones = [220, 261.63, 329.63, 392, 493.88, 523.25];
+        const f = tones[(Math.random() * tones.length) | 0] * (Math.random() < 0.4 ? 0.5 : 1);
+        nodes.push(...ping({ freq: f, type: "triangle", peak: 0.075, dur: 0.14, lpHz: 2800, toDelay: Math.random() < 0.32, bus, aux }));
+      }, 460);
+      timers.push(exploreArp);
+
+      const alertStab = setInterval(() => {
+        if (Math.random() < 0.58) {
+          const now = ctx.currentTime;
+          const stab = ctx.createOscillator();
+          stab.type = "sawtooth";
+          stab.frequency.setValueAtTime(680 + Math.random() * 320, now);
+          stab.frequency.exponentialRampToValueAtTime(160 + Math.random() * 70, now + 0.20);
+
+          const stabGain = ctx.createGain();
+          stabGain.gain.setValueAtTime(0.0001, now);
+          stabGain.gain.exponentialRampToValueAtTime(0.050, now + 0.03);
+          stabGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.30);
+
+          const stabHp = ctx.createBiquadFilter();
+          stabHp.type = "highpass";
+          stabHp.frequency.value = 220;
+
+          stab.connect(stabHp);
+          stabHp.connect(stabGain);
+          stabGain.connect(bus);
+          if (aux && aux.delay) stabGain.connect(aux.delay);
+
+          stab.start(now);
+          stab.stop(now + 0.32);
+          nodes.push(stab, stabGain, stabHp);
+        }
+      }, 980);
+      timers.push(alertStab);
+
+      return { nodes, timers };
+    },
 
     NITE: (ctx, bus, aux, helpers) => {
       const ping = helpers && helpers.ping ? helpers.ping : (() => []);

@@ -529,11 +529,16 @@ const GAME_LEVELS = [
     sequence: 9.85,
     theme: "SHADOWRUN",
     backgroundActors: [
+      { type: "holoBillboard", theme: "SHADOWRUN", x: 54, y: 44, vx: 0.04, parallax: 0.10, bobAmp: 0.3, bobSpeed: 0.010, w: 22, h: 20, scale: 1 },
+      { type: "cableTram", theme: "SHADOWRUN", x: 132, y: 34, vx: -0.08, parallax: 0.18, bobAmp: 1.0, bobSpeed: 0.018, w: 20, h: 10, scale: 1 },
+      { type: "serverSpire", theme: "SHADOWRUN", x: 188, y: 56, vx: 0.03, parallax: 0.08, bobAmp: 0.2, bobSpeed: 0.006, w: 12, h: 24, scale: 1 },
       { type: "cargoDrone", theme: "SHADOWRUN", x: 78, y: 40, vx: 0.10, parallax: 0.16, bobAmp: 0.8, bobSpeed: 0.018, w: 16, h: 10, scale: 1 },
       { type: "antennaDrone", theme: "SHADOWRUN", x: 202, y: 56, vx: -0.07, parallax: 0.12, bobAmp: 1.0, bobSpeed: 0.022, w: 14, h: 8, scale: 1 },
+      { type: "adTower", theme: "SHADOWRUN", x: 274, y: 42, vx: 0.02, parallax: 0.09, bobAmp: 0.4, bobSpeed: 0.010, w: 10, h: 22, scale: 1 },
       { type: "geoWireCube", theme: "SHADOWRUN", x: 310, y: 34, vx: 0.08, parallax: 0.18, bobAmp: 1.2, bobSpeed: 0.019, w: 16, h: 16, scale: 1 },
       { type: "geoFluxLens", theme: "SHADOWRUN", x: 420, y: 46, vx: -0.05, parallax: 0.20, bobAmp: 1.1, bobSpeed: 0.020, w: 18, h: 10, scale: 1 },
-      { type: "geoChromaprism", theme: "SHADOWRUN", x: 530, y: 38, vx: 0.06, parallax: 0.22, bobAmp: 0.9, bobSpeed: 0.016, w: 14, h: 14, scale: 1 }
+      { type: "geoChromaprism", theme: "SHADOWRUN", x: 530, y: 38, vx: 0.06, parallax: 0.22, bobAmp: 0.9, bobSpeed: 0.016, w: 14, h: 14, scale: 1 },
+      { type: "antennaForest", theme: "SHADOWRUN", x: 470, y: 60, vx: -0.04, parallax: 0.11, bobAmp: 0.5, bobSpeed: 0.012, w: 14, h: 20, scale: 1 }
     ],
     checkpoints: [
       { xTile: 96, label: "Act 1: Breach Entry" },

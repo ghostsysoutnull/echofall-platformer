@@ -1965,6 +1965,49 @@ class Game {
       this.drawSprite(SPRITES.bgDroneSmall, sx, sy, actor.scale || 1);
     } else if (actor.type === "cargoDrone" || actor.type === "antennaDrone") {
       this.drawSprite(SPRITES.bgDroneSmall, sx, sy, actor.scale || 1);
+    } else if (actor.type === "holoBillboard") {
+      const frameFlick = ((this.player.anim + ((actor.phase || 0) * 23)) & 10) === 0;
+      gfx.fillStyle = "#142138";
+      gfx.fillRect(sx | 0, sy | 0, 22, 12);
+      gfx.fillStyle = frameFlick ? "#ffd95e" : "#7dff3b";
+      gfx.fillRect((sx + 2) | 0, (sy + 2) | 0, 18, 8);
+      gfx.fillStyle = "#09111e";
+      gfx.fillRect((sx + 10) | 0, (sy + 12) | 0, 2, 8);
+    } else if (actor.type === "cableTram") {
+      const tramBob = Math.sin((actor.phase || 0) * 0.6) * 2;
+      gfx.strokeStyle = "#2e405f";
+      gfx.beginPath();
+      gfx.moveTo((sx - 6) | 0, (sy - 10) | 0);
+      gfx.lineTo((sx + 26) | 0, (sy - 10) | 0);
+      gfx.stroke();
+      gfx.fillStyle = "#202f49";
+      gfx.fillRect((sx + 4) | 0, (sy + tramBob) | 0, 14, 8);
+      gfx.fillStyle = "#9fe7ff";
+      gfx.fillRect((sx + 7) | 0, (sy + 2 + tramBob) | 0, 8, 3);
+    } else if (actor.type === "serverSpire") {
+      const pulse = ((Math.sin((actor.phase || 0) * 0.5 + this.player.anim * 0.04) + 1) * 0.5);
+      gfx.fillStyle = "#1b2436";
+      gfx.fillRect(sx | 0, sy | 0, 12, 24);
+      gfx.fillStyle = pulse > 0.5 ? "#7dff3b" : "#ffd95e";
+      gfx.fillRect((sx + 4) | 0, (sy + 3) | 0, 4, 2);
+      gfx.fillRect((sx + 4) | 0, (sy + 9) | 0, 4, 2);
+      gfx.fillRect((sx + 4) | 0, (sy + 15) | 0, 4, 2);
+    } else if (actor.type === "adTower") {
+      gfx.fillStyle = "#161f30";
+      gfx.fillRect(sx | 0, sy | 0, 10, 22);
+      gfx.fillStyle = glowRamp > 0.5 ? "#ff5ef6" : "#9fe7ff";
+      gfx.fillRect((sx + 1) | 0, (sy + 2) | 0, 8, 5);
+      gfx.fillRect((sx + 1) | 0, (sy + 10) | 0, 8, 5);
+      gfx.fillRect((sx + 1) | 0, (sy + 18) | 0, 8, 3);
+    } else if (actor.type === "antennaForest") {
+      gfx.fillStyle = "#22304a";
+      gfx.fillRect((sx + 1) | 0, sy | 0, 2, 16);
+      gfx.fillRect((sx + 6) | 0, (sy - 3) | 0, 2, 19);
+      gfx.fillRect((sx + 11) | 0, (sy + 2) | 0, 2, 14);
+      gfx.fillStyle = "#7dff3b";
+      gfx.fillRect((sx + 2) | 0, (sy - 2) | 0, 1, 1);
+      gfx.fillRect((sx + 7) | 0, (sy - 5) | 0, 1, 1);
+      gfx.fillRect((sx + 12) | 0, sy | 0, 1, 1);
     } else if (actor.type === "lantern") {
       this.drawSprite(SPRITES.bgLanternSmall, sx, sy, actor.scale || 1);
     } else if (actor.type === "emberWisp") {

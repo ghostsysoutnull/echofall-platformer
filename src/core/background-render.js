@@ -190,6 +190,7 @@ function drawBackground(game, gfx, deps) {
   } else if (theme === "SHADOWRUN") {
     gfx.fillStyle="#060910"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
     const p1=((camx*0.15)|0)%CANVAS_W, p2=((camx*0.30)|0)%CANVAS_W;
+    const surgeFlash = ((game.player.anim + ((camx * 0.07) | 0)) % 210) < 3;
     gfx.strokeStyle="#7dff3b20";
     for (let y=16;y<102;y+=12){ gfx.beginPath(); gfx.moveTo(0,y); gfx.lineTo(CANVAS_W,y); gfx.stroke(); }
     gfx.fillStyle="#121a2d";
@@ -202,6 +203,15 @@ function drawBackground(game, gfx, deps) {
     for (let i=0;i<18;i++){let x=((i*23-(camx*0.52))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,86,7,104);} 
     gfx.fillStyle="#9fe7ff20";
     for (let i=0;i<40;i++){let x=((i*11-(camx*0.95))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; const y=(i*13 + ((game.player.anim*2)|0))%CANVAS_H; gfx.fillRect(x,y,1,6);} 
+    if (surgeFlash) {
+      gfx.globalAlpha = 0.12;
+      gfx.fillStyle = "#9fe7ff";
+      gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      gfx.globalAlpha = 0.18;
+      gfx.fillStyle = "#ff5ef6";
+      for (let y = 8; y < CANVAS_H; y += 22) gfx.fillRect(0, y, CANVAS_W, 2);
+      gfx.globalAlpha = 1;
+    }
   } else if (theme === "NITE") {
     gfx.fillStyle="#0b0f2a"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
     gfx.fillStyle="#a8c7ff";

@@ -3,10 +3,10 @@
 ## 0) Compatibility Matrix (Requested Vision)
 - **Single long infiltration run, 5 acts, ~5x width:** **Implemented**
 - **Urban arcology datavault at night + acid rain fantasy:** **Implemented**
-- **Dark synthwave + broken-glitch pulses (explore vs alert layers):** **Partial** (mapped to synth-heavy proxy track; bespoke score pending)
+- **Dark synthwave + broken-glitch pulses (explore vs alert layers):** **Implemented**
 - **Visual palette charcoal + neon amber/lime + occasional magenta scans:** **Implemented**
-- **Background set: billboards/trams/server spires/antenna forests/patrol drones/ad towers:** **Partial** (drones + cyber geometry + antenna vibes present; billboard/tram/spire/ad-tower set is TODO)
-- **Weather FX: acid drizzle + EM flicker + data-surge flashes:** **Partial** (drizzle/interference active; explicit surge event pass TODO)
+- **Background set: billboards/trams/server spires/antenna forests/patrol drones/ad towers:** **Implemented**
+- **Weather FX: acid drizzle + EM flicker + data-surge flashes:** **Implemented**
 - **Act mechanics aligned to skill identity:** **Implemented (design intent)**
 - **Two portal forks in exfil flow:** **Implemented**
 - **Two optional high-risk data cache side pockets:** **Implemented**
@@ -76,7 +76,7 @@ Primary target character is **SHADOWRUNNER**.
 ## 8) Visual Direction
 - **Palette Mood:** dark navy base, amber/lime SHADOWRUNNER accents.
 - **Background Actors (target stack):** hologram billboards, cable trams, server spires, rooftop antenna forests, patrol drones, rotating ad towers.
-- **Current Actor Set:** cargo drones, antenna drones, geometric cyber artifacts.
+- **Current Actor Set:** hologram billboards, cable trams, server spires, rooftop antenna forests, patrol drones, rotating ad towers, geometric cyber artifacts.
 - **Depth Behavior:** mixed parallax speeds to imply high-rise scale and traffic layers.
 - **Readability Priority:** gameplay foreground contrast must remain stronger than decorative glow.
 
@@ -88,7 +88,8 @@ Primary target character is **SHADOWRUNNER**.
 
 ## 10) Music Direction
 - Target music direction: dark synthwave + broken-glitch pulses with low-bass exploration bed and high-arp alert escalations.
-- Current implementation: mapped to a synth-heavy proxy profile (GeometryDream S4 style) until bespoke SHADOWRUN composition is authored.
+- Current implementation: bespoke SHADOWRUN profile with low-bass exploration bed, glitch texture layer, and alert stabs.
+- Implementation note (2026-02-21): fixed SHADOWRUN delay-send routing (`aux.delay`) so level music initializes reliably, and bumped `audio/tracks.js` cache key in `game.html`.
 - Music should communicate:
   - infiltration tension in traversal,
   - urgency escalation in dense arenas,
