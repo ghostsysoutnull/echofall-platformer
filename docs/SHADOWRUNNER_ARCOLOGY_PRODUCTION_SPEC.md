@@ -1,5 +1,17 @@
 # SHADOWRUNNER ARCLOGY — PRODUCTION SPEC
 
+## 0) Compatibility Matrix (Requested Vision)
+- **Single long infiltration run, 5 acts, ~5x width:** **Implemented**
+- **Urban arcology datavault at night + acid rain fantasy:** **Implemented**
+- **Dark synthwave + broken-glitch pulses (explore vs alert layers):** **Partial** (mapped to synth-heavy proxy track; bespoke score pending)
+- **Visual palette charcoal + neon amber/lime + occasional magenta scans:** **Implemented**
+- **Background set: billboards/trams/server spires/antenna forests/patrol drones/ad towers:** **Partial** (drones + cyber geometry + antenna vibes present; billboard/tram/spire/ad-tower set is TODO)
+- **Weather FX: acid drizzle + EM flicker + data-surge flashes:** **Partial** (drizzle/interference active; explicit surge event pass TODO)
+- **Act mechanics aligned to skill identity:** **Implemented (design intent)**
+- **Two portal forks in exfil flow:** **Partial** (portal routing exists; explicit dual-fork authored path TODO)
+- **Two optional high-risk data cache side pockets:** **TODO**
+- **Difficulty ramps via mechanic overlap, not HP spam:** **Implemented (design rule)**
+
 ## 1) Level Identity
 - **Level Name:** SHADOWRUNNER ARCLOGY
 - **Theme Key:** `SHADOWRUN`
@@ -10,7 +22,7 @@
   - Neon cyber-noir atmosphere with environmental interference.
 
 ## 2) Player Fantasy
-The player is infiltrating a corporate arcology datavault during a hostile weather event. The level should feel like tactical breach-and-exfil under surveillance pressure, where smart ability timing matters more than raw jump difficulty.
+The player is infiltrating a corporate arcology datavault at night during acid rain. The level should feel like tactical breach-and-exfil under surveillance pressure, where combat is less brute platforming and more timing, routing, and burst-hacking windows.
 
 ## 3) Length & Structure
 - **Total Length:** 5 segments (builder: `buildShadowrunnerArcology5xGrid()`)
@@ -26,9 +38,11 @@ The player is infiltrating a corporate arcology datavault during a hostile weath
 Primary target character is **SHADOWRUNNER**.
 - Primary skill rhythm expects active use of:
   - `Q` = burst pressure opener.
-  - `W` = line punish / lane clear.
-  - `E` = close-control / orbit denial.
+  - `W` = line punish / lane clear (Zero-Day timing windows).
+  - `E` = close-control / orbit denial (Rootkit area control).
 - Secondary characters remain viable, but encounter spacing should reward SHADOWRUNNER timing windows.
+
+> Note: Earlier concept drafts referenced `Q/1/2`; current live control scheme is `Q/W/E`.
 
 ## 5) Checkpoints & Recovery
 - Checkpoints:
@@ -43,6 +57,7 @@ Primary target character is **SHADOWRUNNER**.
 ## 6) Portals & Routing
 - Section portals (`P`) are intentional route pivots.
 - Dimensional portal (`D`) appears in late segment as high-variance option.
+- Exfil should present **two portal fork decisions** before final push (current implementation has portal routing; authored dual-fork layout pass pending).
 - Portal usage should create strategic tradeoffs:
   - Faster act progression vs. higher combat volatility.
   - Optional reroutes for score optimization.
@@ -60,17 +75,20 @@ Primary target character is **SHADOWRUNNER**.
 
 ## 8) Visual Direction
 - **Palette Mood:** dark navy base, amber/lime SHADOWRUNNER accents.
-- **Background Actors:** cargo drones, antenna drones, geometric cyber artifacts.
+- **Background Actors (target stack):** hologram billboards, cable trams, server spires, rooftop antenna forests, patrol drones, rotating ad towers.
+- **Current Actor Set:** cargo drones, antenna drones, geometric cyber artifacts.
 - **Depth Behavior:** mixed parallax speeds to imply high-rise scale and traffic layers.
 - **Readability Priority:** gameplay foreground contrast must remain stronger than decorative glow.
 
 ## 9) Weather & Ambient Effects
-- **Primary Effect:** neon rain/interference streaks.
-- **Secondary Effect:** subtle scanline-like horizon bands.
+- **Primary Effect:** acid drizzle with neon edge highlights.
+- **Secondary Effect:** intermittent EM interference flicker + subtle scanline horizon bands.
+- **Tertiary Event:** lightning-like data surge flashes (digital, not natural storm).
 - **Cadence:** continuous but low-alpha; never obscure hazards, portals, or enemy silhouettes.
 
 ## 10) Music Direction
-- Theme mapped to a synth-heavy profile (current hook: GeometryDream S4 style).
+- Target music direction: dark synthwave + broken-glitch pulses with low-bass exploration bed and high-arp alert escalations.
+- Current implementation: mapped to a synth-heavy proxy profile (GeometryDream S4 style) until bespoke SHADOWRUN composition is authored.
 - Music should communicate:
   - infiltration tension in traversal,
   - urgency escalation in dense arenas,
@@ -90,15 +108,18 @@ Primary target character is **SHADOWRUNNER**.
 - Expected deaths first blind run: medium-high (3–8).
 - Portal usage target: at least one optional portal decision per run.
 - Skill expression target: each SHADOWRUNNER skill should feel mandatory in at least one act.
+- Optional side-objective target: two high-risk data cache pockets for score runners.
 
 ## 13) QA Checklist
 - [ ] Level appears in level order and can be reached via normal progression.
 - [ ] `Digit8` debug jump reaches level and auto-selects SHADOWRUNNER as intended.
 - [ ] Checkpoint respawns never overlap immediate lethal collision.
 - [ ] Portals do not self-loop unexpectedly.
+- [ ] Exfil includes two explicit portal fork choices.
 - [ ] No unreadable overlap between weather FX and hazards.
 - [ ] Audio theme switches correctly on level load.
 - [ ] Character remains playable with non-SHADOWRUNNER picks.
+- [ ] Two optional high-risk data cache side pockets are reachable but dangerous.
 
 ## 14) Future Iteration Ideas
 - Add optional “Data Cache” side pockets with risk/reward.
