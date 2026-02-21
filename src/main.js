@@ -809,7 +809,7 @@ class Game {
   }
 
   bindInput() {
-    const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","Digit1","Digit2","Digit7","Digit9","Digit0"]);
+    const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","Digit1","Digit2","Digit7","Digit8","Digit9","Digit0"]);
     const autoUnpauseKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyQ","Digit1","Digit2"]);
 
     addEventListener("keydown", (e) => {
@@ -834,6 +834,17 @@ class Game {
           this.teleportNoticeTimer = 70;
           this.audio.tone(840, 0.03, 0.00, "triangle", 0.03);
           this.audio.tone(1040, 0.04, 0.02, "sine", 0.03);
+        }
+        if (e.code === "Digit8") {
+          const idx = LEVEL_THEMES.findIndex(t => t === "SHADOWRUN");
+          if (idx >= 0) {
+            this.shadowrunnerUnlocked = 1;
+            const shadowrunnerIndex = CHARACTERS.findIndex(c => c.name === "SHADOWRUNNER");
+            if (shadowrunnerIndex >= 0) this.characterIndex = shadowrunnerIndex;
+            this.loadLevel(idx);
+            this.teleportNotice = "DEBUG: SHADOWRUNNER ARCLOGY";
+            this.teleportNoticeTimer = 90;
+          }
         }
         if (e.code === "KeyW") {
           this.cycleCharacterForward();
@@ -861,6 +872,7 @@ class Game {
             if (nextTheme === "BONECRYPT") this.skeletonUnlocked = 1;
             if (nextTheme === "SIMBREACH") this.glitchrunnerUnlocked = 1;
             if (nextTheme === "SIMBREACH") this.shadowrunnerUnlocked = 1;
+            if (nextTheme === "SHADOWRUN") this.shadowrunnerUnlocked = 1;
             this.loadLevel(this.levelIndex + 1);
           }
         }
@@ -1008,6 +1020,12 @@ class Game {
     }
     if (levelTheme === "SIMBREACH" && !this.shadowrunnerUnlocked) {
       this.shadowrunnerUnlocked = 1;
+      shadowrunnerUnlockTriggered = 1;
+    }
+    if (levelTheme === "SHADOWRUN" && !this.shadowrunnerUnlocked) {
+      this.shadowrunnerUnlocked = 1;
+      const shadowrunnerIndex = CHARACTERS.findIndex(c => c.name === "SHADOWRUNNER");
+      if (shadowrunnerIndex >= 0) this.characterIndex = shadowrunnerIndex;
       shadowrunnerUnlockTriggered = 1;
     }
 

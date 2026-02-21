@@ -260,4 +260,70 @@ function buildSimulationBreach4xGrid() {
   return out;
 }
 
-export { setGridChar, buildStormFoundry6xGrid, buildSimulationBreach4xGrid };
+function buildShadowrunnerArcology5xGrid() {
+  const rows = SIMBREACH_SEGMENT.map(row => row.repeat(5));
+  const out = rows.map(row => row.replace(/S/g, ".").replace(/F/g, ".").replace(/H/g, "."));
+  const segmentWidth = SIMBREACH_SEGMENT[0].length;
+
+  const place = (segment, markers) => {
+    const offset = segment * segmentWidth;
+    for (let i = 0; i < markers.length; i++) {
+      const marker = markers[i];
+      out[marker.y] = setGridChar(out[marker.y], offset + marker.x, marker.ch);
+    }
+  };
+
+  place(0, [
+    { x: 22, y: 5, ch: "U" },
+    { x: 44, y: 5, ch: "o" },
+    { x: 62, y: 8, ch: "E" },
+    { x: 76, y: 11, ch: "P" }
+  ]);
+
+  place(1, [
+    { x: 18, y: 3, ch: "C" },
+    { x: 19, y: 3, ch: "C" },
+    { x: 20, y: 3, ch: "C" },
+    { x: 46, y: 6, ch: "C" },
+    { x: 47, y: 6, ch: "C" },
+    { x: 48, y: 6, ch: "C" },
+    { x: 36, y: 8, ch: "E" },
+    { x: 70, y: 8, ch: "E" },
+    { x: 22, y: 11, ch: "P" }
+  ]);
+
+  place(2, [
+    { x: 16, y: 2, ch: "V" },
+    { x: 32, y: 2, ch: "W" },
+    { x: 52, y: 2, ch: "Y" },
+    { x: 22, y: 5, ch: "O" },
+    { x: 40, y: 5, ch: "O" },
+    { x: 58, y: 5, ch: "U" },
+    { x: 70, y: 8, ch: "E" },
+    { x: 28, y: 11, ch: "P" },
+    { x: 76, y: 12, ch: "X" }
+  ]);
+
+  place(3, [
+    { x: 18, y: 4, ch: "K" },
+    { x: 50, y: 8, ch: "!" },
+    { x: 66, y: 9, ch: "M" },
+    { x: 26, y: 11, ch: "P" },
+    { x: 68, y: 14, ch: "o" }
+  ]);
+
+  place(4, [
+    { x: 16, y: 2, ch: "V" },
+    { x: 42, y: 5, ch: "T" },
+    { x: 56, y: 8, ch: "E" },
+    { x: 28, y: 11, ch: "D" },
+    { x: 74, y: 14, ch: "O" }
+  ]);
+
+  out[10] = setGridChar(out[10], 6, "S");
+  out[13] = setGridChar(out[13], 2, "H");
+  out[13] = setGridChar(out[13], out[13].length - 10, "F");
+  return out;
+}
+
+export { setGridChar, buildStormFoundry6xGrid, buildSimulationBreach4xGrid, buildShadowrunnerArcology5xGrid };

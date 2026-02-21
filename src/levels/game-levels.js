@@ -1,4 +1,4 @@
-import { setGridChar, buildStormFoundry6xGrid, buildSimulationBreach4xGrid } from "./builders.js";
+import { setGridChar, buildStormFoundry6xGrid, buildSimulationBreach4xGrid, buildShadowrunnerArcology5xGrid } from "./builders.js";
 
 const GAME_LEVELS = [
   {
@@ -522,6 +522,34 @@ const GAME_LEVELS = [
       { xTile: 332, widthTiles: 18 }
     ],
     grid: buildSimulationBreach4xGrid()
+  },
+
+  {
+    name: "SHADOWRUNNER ARCLOGY",
+    sequence: 9.85,
+    theme: "SHADOWRUN",
+    backgroundActors: [
+      { type: "cargoDrone", theme: "SHADOWRUN", x: 78, y: 40, vx: 0.10, parallax: 0.16, bobAmp: 0.8, bobSpeed: 0.018, w: 16, h: 10, scale: 1 },
+      { type: "antennaDrone", theme: "SHADOWRUN", x: 202, y: 56, vx: -0.07, parallax: 0.12, bobAmp: 1.0, bobSpeed: 0.022, w: 14, h: 8, scale: 1 },
+      { type: "geoWireCube", theme: "SHADOWRUN", x: 310, y: 34, vx: 0.08, parallax: 0.18, bobAmp: 1.2, bobSpeed: 0.019, w: 16, h: 16, scale: 1 },
+      { type: "geoFluxLens", theme: "SHADOWRUN", x: 420, y: 46, vx: -0.05, parallax: 0.20, bobAmp: 1.1, bobSpeed: 0.020, w: 18, h: 10, scale: 1 },
+      { type: "geoChromaprism", theme: "SHADOWRUN", x: 530, y: 38, vx: 0.06, parallax: 0.22, bobAmp: 0.9, bobSpeed: 0.016, w: 14, h: 14, scale: 1 }
+    ],
+    checkpoints: [
+      { xTile: 96, label: "Act 1: Breach Entry" },
+      { xTile: 192, label: "Act 2: Firewall Lanes" },
+      { xTile: 288, label: "Act 3: Drone Nest" },
+      { xTile: 384, label: "Act 4: Black ICE Courtyard" },
+      { xTile: 470, label: "Act 5: Core Exfil" }
+    ],
+    lightZones: [
+      { xTile: 46, widthTiles: 20 },
+      { xTile: 142, widthTiles: 20 },
+      { xTile: 238, widthTiles: 20 },
+      { xTile: 334, widthTiles: 20 },
+      { xTile: 430, widthTiles: 20 }
+    ],
+    grid: buildShadowrunnerArcology5xGrid()
   },
 
   {

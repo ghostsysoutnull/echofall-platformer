@@ -187,6 +187,21 @@ function drawBackground(game, gfx, deps) {
     for (let i=0;i<20;i++){let x=((i*17-(camx*0.76))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,8,2,24);} 
     gfx.fillStyle="#9a7cff2a";
     for (let i=0;i<16;i++){let x=((i*23-(camx*0.58))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,88,7,102);} 
+  } else if (theme === "SHADOWRUN") {
+    gfx.fillStyle="#060910"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+    const p1=((camx*0.15)|0)%CANVAS_W, p2=((camx*0.30)|0)%CANVAS_W;
+    gfx.strokeStyle="#7dff3b20";
+    for (let y=16;y<102;y+=12){ gfx.beginPath(); gfx.moveTo(0,y); gfx.lineTo(CANVAS_W,y); gfx.stroke(); }
+    gfx.fillStyle="#121a2d";
+    for (let i=-1;i<3;i++){const x=i*CANVAS_W-p1; gfx.fillRect(x,120,248,70); gfx.fillRect(x+86,104,266,86);} 
+    gfx.fillStyle="#0b1122";
+    for (let i=-1;i<3;i++){const x=i*CANVAS_W-p2; gfx.fillRect(x,132,300,58); gfx.fillRect(x+70,116,286,74);} 
+    gfx.fillStyle="#ffd95e24";
+    for (let i=0;i<18;i++){let x=((i*19-(camx*0.72))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,10,2,24);} 
+    gfx.fillStyle="#7dff3b22";
+    for (let i=0;i<18;i++){let x=((i*23-(camx*0.52))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,86,7,104);} 
+    gfx.fillStyle="#9fe7ff20";
+    for (let i=0;i<40;i++){let x=((i*11-(camx*0.95))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; const y=(i*13 + ((game.player.anim*2)|0))%CANVAS_H; gfx.fillRect(x,y,1,6);} 
   } else if (theme === "NITE") {
     gfx.fillStyle="#0b0f2a"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
     gfx.fillStyle="#a8c7ff";

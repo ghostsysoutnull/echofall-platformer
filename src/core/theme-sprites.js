@@ -11,6 +11,7 @@ function collectibleSpriteForTheme(theme, tileId, SPRITES) {
   if (theme === "BONECRYPT") return tileId === 2 ? SPRITES.coinBone : SPRITES.coinBoneBig;
   if (theme === "GEOMETRYDREAM") return tileId === 2 ? SPRITES.coinGeometryDream : SPRITES.coinGeometryDreamBig;
   if (theme === "SIMBREACH") return tileId === 2 ? SPRITES.coinGeometryDream : SPRITES.coinGeometryDreamBig;
+  if (theme === "SHADOWRUN") return tileId === 2 ? SPRITES.coinGeometryDream : SPRITES.coinGeometryDreamBig;
   if (tileId === 2) return theme === "JUNGLE" ? SPRITES.coinJungle : theme === "FACTORY" ? SPRITES.coinFactory : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGem : SPRITES.coinDay;
   return theme === "JUNGLE" ? SPRITES.coinJungleBig : theme === "FACTORY" ? SPRITES.coinFactoryBig : (theme === "ICE" || theme === "SPACE") ? SPRITES.coinGemBig : SPRITES.coinDayBig;
 }
@@ -30,6 +31,7 @@ function oneUpSpriteForTheme(theme, SPRITES) {
   if (theme === "BONECRYPT") return SPRITES.oneUpHorror;
   if (theme === "GEOMETRYDREAM") return SPRITES.oneUpGeometryDream;
   if (theme === "SIMBREACH") return SPRITES.oneUpGeometryDream;
+  if (theme === "SHADOWRUN") return SPRITES.oneUpGeometryDream;
   if (theme === "NITE") return SPRITES.oneUpNite;
   if (theme === "SPACE") return SPRITES.oneUpSpace;
   return SPRITES.oneUpDay;
@@ -49,6 +51,7 @@ function tileSpriteForTheme(theme, tileId, SPRITES) {
       theme === "HORROR" ? SPRITES.tileHorrorA :
       theme === "BONECRYPT" ? SPRITES.tileHorrorA :
         theme === "SIMBREACH" ? SPRITES.tileNiteA :
+      theme === "SHADOWRUN" ? SPRITES.tileNiteA :
       theme === "SPACE" ? SPRITES.tileSpaceA :
       theme === "NITE" ? SPRITES.tileNiteA : SPRITES.tileDayA;
   }
@@ -65,6 +68,7 @@ function tileSpriteForTheme(theme, tileId, SPRITES) {
       theme === "HORROR" ? SPRITES.tileHorrorB :
       theme === "BONECRYPT" ? SPRITES.tileHorrorB :
         theme === "SIMBREACH" ? SPRITES.tileNiteB :
+      theme === "SHADOWRUN" ? SPRITES.tileNiteB :
       theme === "SPACE" ? SPRITES.tileSpaceB :
       theme === "NITE" ? SPRITES.tileNiteB : SPRITES.tileDayB;
   }

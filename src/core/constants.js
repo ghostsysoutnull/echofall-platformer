@@ -261,6 +261,7 @@ const PHYSICS_BY_THEME = {
   GOTHIC:  { gravity: 0.33, groundFriction: 0.83, airFriction: 0.95 },
   GEOMETRYDREAM:{ gravity: 0.32, groundFriction: 0.84, airFriction: 0.96 },
   SIMBREACH:{ gravity: 0.33, groundFriction: 0.83, airFriction: 0.96 },
+  SHADOWRUN:{ gravity: 0.33, groundFriction: 0.82, airFriction: 0.96 },
   NITE:    { gravity: 0.35, groundFriction: 0.80, airFriction: 0.94 },
   SPACE:   { gravity: 0.28, groundFriction: 0.84, airFriction: 0.96 }
 };
