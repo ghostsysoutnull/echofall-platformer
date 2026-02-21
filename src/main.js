@@ -1567,7 +1567,21 @@ class Game {
 
       if (portal.type === "section") {
         const destinationIndex = this.pickRandomSectionPortalIndex(i);
-        const destination = this.portals[destinationIndex] || portal;
+        let destination = this.portals[destinationIndex] || portal;
+        if (destination === portal && Number.isFinite(portal.tx)) {
+          const sectionWidthTiles = 96;
+          const maxTx = Math.max(8, this.tileCols - 12);
+          const forwardTx = portal.tx + sectionWidthTiles;
+          const backTx = portal.tx - sectionWidthTiles;
+          const fallbackTx = forwardTx <= maxTx
+            ? forwardTx
+            : (backTx >= 8 ? backTx : clamp(portal.tx + 24, 8, maxTx));
+          destination = {
+            x: fallbackTx * TILE_SIZE,
+            y: this.findCheckpointSpawnY(fallbackTx),
+            w: portal.w
+          };
+        }
         let tx = Number.isFinite(destination.x) ? (destination.x + 1) : (portal.x + 1);
         if (Number.isFinite(destination.x) && Number.isFinite(destination.w)) {
           const rightExit = destination.x + destination.w + 2;

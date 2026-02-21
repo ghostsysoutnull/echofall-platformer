@@ -243,6 +243,7 @@ function buildSimulationBreach4xGrid() {
     { x: 20, y: 2, ch: "V" },
     { x: 46, y: 5, ch: "O" },
     { x: 70, y: 8, ch: "E" },
+    { x: 24, y: 11, ch: "P" },
     { x: 34, y: 12, ch: "X" }
   ]);
 
