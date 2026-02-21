@@ -35,6 +35,7 @@ import {
   BUNNY_CARROT_ROCKET,
   SKELETON_BLOOD_BURST,
   GLITCHRUNNER_PHASE,
+  HACKER_SKILLS,
   SHIELDED_WORKER,
   FRANKENSTEIN,
   CONDUCTOR_CORE,
@@ -82,6 +83,7 @@ class Game {
     this.paladinUnlocked = 0;
     this.skeletonUnlocked = 0;
     this.glitchrunnerUnlocked = 0;
+    this.shadowrunnerUnlocked = 0;
 
     this.starSeed = 1337;
     this.starField = this.makeStars();
@@ -118,6 +120,12 @@ class Game {
     this.bunnyRocket = { active: 0, timer: 0, afterglow: 0, dir: 1, trail: [], trailTick: 0, charges: BUNNY_CARROT_ROCKET.maxCharges, rechargeTimer: 0, burstUsed: 0, burstFlash: 0, burstX: 0, burstY: 0 };
     this.ninjaShadow = { active: 0, cooldown: 0, timer: 0, afterglow: 0, dir: 1, trail: [], trailTick: 0, overdriveUsed: 0 };
     this.glitchPhase = { active: 0, cooldown: 0, timer: 0, afterglow: 0, dir: 1, trail: [], trailTick: 0, echoReady: 1, echoCooldown: 0, echoPulse: 0, echoX: 0, echoY: 0 };
+    this.hackerSkill = {
+      globalLock: 0,
+      fork: { cooldown: 0, packets: [] },
+      spike: { cooldown: 0, flash: 0, x0: 0, x1: 0, y0: 0, y1: 0 },
+      swarm: { cooldown: 0, active: 0, timer: 0, angle: 0, x: 0, y: 0 }
+    };
     this.skeletonBurst = { cooldown: 0, flash: 0, phase2Notice: 0, phase2ReadyLatch: 0, lastPhase2: 0, phase2Charged: 0, phase2ChargeFrames: 0 };
     this.skeletonBurstShots = [];
     this.batCompanion = { active: 0, timer: 0, angle: 0, x: 0, y: 0, vx: 0, vy: 0, shimmer: 0, trail: [], trailTick: 0, coinDropTimer: 0, burstT: 0, burstLife: 0, burstX: 0, burstY: 0, pushSfxCooldown: 0, returningFrames: 0 };
@@ -801,10 +809,16 @@ class Game {
   }
 
   bindInput() {
-    const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","Digit7","Digit9","Digit0"]);
+    const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","Digit1","Digit2","Digit7","Digit9","Digit0"]);
+    const autoUnpauseKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyQ","Digit1","Digit2"]);
 
     addEventListener("keydown", (e) => {
       if (preventKeys.has(e.code)) e.preventDefault();
+
+      if (this.isPaused && autoUnpauseKeys.has(e.code)) {
+        this.isPaused = 0;
+        this.audio.tone(620, 0.04);
+      }
 
       if (!this.keyDown[e.code]) {
         if (e.code === "Space" || e.code === "ArrowUp") this.jumpBuffer = JUMP_BUFFER_FRAMES;
@@ -832,6 +846,8 @@ class Game {
           this.audio.tone(this.immortalMode ? 980 : 420, 0.05, 0.00, "triangle", 0.04);
         }
         if (e.code === "KeyQ") this.tryActivateCharacterSkill();
+        if (e.code === "Digit1") this.tryActivateCharacterAltSkill1();
+        if (e.code === "Digit2") this.tryActivateCharacterAltSkill2();
         if (e.code === "KeyP") {
           this.isPaused ^= 1;
           this.audio.tone(this.isPaused ? 360 : 620, 0.05);
@@ -844,6 +860,7 @@ class Game {
             const nextTheme = LEVEL_THEMES[this.levelIndex + 1];
             if (nextTheme === "BONECRYPT") this.skeletonUnlocked = 1;
             if (nextTheme === "SIMBREACH") this.glitchrunnerUnlocked = 1;
+            if (nextTheme === "SIMBREACH") this.shadowrunnerUnlocked = 1;
             this.loadLevel(this.levelIndex + 1);
           }
         }
@@ -916,9 +933,22 @@ class Game {
     this.ninjaShadow.trail = [];
     this.ninjaShadow.overdriveUsed = 0;
     this.glitchPhase.active = 0;
+    this.glitchPhase.cooldown = 0;
     this.glitchPhase.timer = 0;
     this.glitchPhase.afterglow = 0;
     this.glitchPhase.trail = [];
+    this.glitchPhase.trailTick = 0;
+    this.glitchPhase.echoReady = 1;
+    this.glitchPhase.echoCooldown = 0;
+    this.glitchPhase.echoPulse = 0;
+    this.hackerSkill.globalLock = 0;
+    this.hackerSkill.fork.cooldown = 0;
+    this.hackerSkill.fork.packets = [];
+    this.hackerSkill.spike.cooldown = 0;
+    this.hackerSkill.spike.flash = 0;
+    this.hackerSkill.swarm.cooldown = 0;
+    this.hackerSkill.swarm.active = 0;
+    this.hackerSkill.swarm.timer = 0;
     this.skeletonBurst.flash = 0;
   }
 
@@ -926,6 +956,7 @@ class Game {
     const name = CHARACTERS[index] ? CHARACTERS[index].name : "";
     if (name === "PALADIN") return !!this.paladinUnlocked;
     if (name === "GLITCHRUNNER") return !!this.glitchrunnerUnlocked;
+    if (name === "SHADOWRUNNER") return !!this.shadowrunnerUnlocked;
     if (name === "SKELETON") return !!this.skeletonUnlocked;
     return true;
   }
@@ -948,12 +979,14 @@ class Game {
 
   loadLevel(index) {
     this.levelIndex = index;
+    this.isPaused = 0;
     this.rngState = 1234567 + (this.levelIndex + 1) * 99991;
     const levelTheme = getThemeForLevel(this.levelIndex);
     this.audio.playTheme(levelTheme);
 
     let paladinUnlockTriggered = 0;
     let glitchrunnerUnlockTriggered = 0;
+    let shadowrunnerUnlockTriggered = 0;
     let skeletonUnlockTriggered = 0;
     if (levelTheme === "GOTHIC" && !this.paladinUnlocked) {
       this.paladinUnlocked = 1;
@@ -972,6 +1005,10 @@ class Game {
       const glitchrunnerIndex = CHARACTERS.findIndex(c => c.name === "GLITCHRUNNER");
       if (glitchrunnerIndex >= 0) this.characterIndex = glitchrunnerIndex;
       glitchrunnerUnlockTriggered = 1;
+    }
+    if (levelTheme === "SIMBREACH" && !this.shadowrunnerUnlocked) {
+      this.shadowrunnerUnlocked = 1;
+      shadowrunnerUnlockTriggered = 1;
     }
 
     this.tileGrid = LEVELS[this.levelIndex].map(r => r.split(""));
@@ -1037,6 +1074,15 @@ class Game {
     this.glitchPhase.echoReady = 1;
     this.glitchPhase.echoCooldown = 0;
     this.glitchPhase.echoPulse = 0;
+    this.hackerSkill.globalLock = 0;
+    this.hackerSkill.fork.cooldown = 0;
+    this.hackerSkill.fork.packets = [];
+    this.hackerSkill.spike.cooldown = 0;
+    this.hackerSkill.spike.flash = 0;
+    this.hackerSkill.swarm.cooldown = 0;
+    this.hackerSkill.swarm.active = 0;
+    this.hackerSkill.swarm.timer = 0;
+    this.hackerSkill.swarm.angle = 0;
     this.skeletonBurst.cooldown = 0;
     this.skeletonBurst.flash = 0;
     this.skeletonBurst.phase2Notice = 0;
@@ -1349,6 +1395,10 @@ class Game {
       this.teleportNotice = "GLITCHRUNNER UNLOCKED: PHASE DASH";
       this.teleportNoticeTimer = 150;
     }
+    if (shadowrunnerUnlockTriggered) {
+      this.teleportNotice = "SHADOWRUNNER UNLOCKED: HACKER SKILLS";
+      this.teleportNoticeTimer = 150;
+    }
     if (skeletonUnlockTriggered) {
       this.teleportNotice = "SKELETON UNLOCKED: BLOOD BURST";
       this.teleportNoticeTimer = 150;
@@ -1651,6 +1701,15 @@ class Game {
     this.glitchPhase.echoReady = 1;
     this.glitchPhase.echoCooldown = 0;
     this.glitchPhase.echoPulse = 0;
+    this.hackerSkill.globalLock = 0;
+    this.hackerSkill.fork.cooldown = 0;
+    this.hackerSkill.fork.packets = [];
+    this.hackerSkill.spike.cooldown = 0;
+    this.hackerSkill.spike.flash = 0;
+    this.hackerSkill.swarm.cooldown = 0;
+    this.hackerSkill.swarm.active = 0;
+    this.hackerSkill.swarm.timer = 0;
+    this.hackerSkill.swarm.angle = 0;
     this.bunnyRocket.active = 0;
     this.bunnyRocket.timer = 0;
     this.bunnyRocket.afterglow = 0;
@@ -2117,6 +2176,7 @@ class Game {
       this.nextExtraLifeScore = 100;
       this.paladinUnlocked = 0;
       this.glitchrunnerUnlocked = 0;
+      this.shadowrunnerUnlocked = 0;
       this.skeletonUnlocked = 0;
       this.characterIndex = 0;
       this.loadLevel(0);
@@ -2299,6 +2359,11 @@ class Game {
     if (nextIndex < LEVELS.length && LEVEL_THEMES[nextIndex] === "SIMBREACH" && !this.glitchrunnerUnlocked) {
       this.glitchrunnerUnlocked = 1;
       this.teleportNotice = "GLITCHRUNNER UNLOCKED: PHASE DASH";
+      this.teleportNoticeTimer = 150;
+    }
+    if (nextIndex < LEVELS.length && LEVEL_THEMES[nextIndex] === "SIMBREACH" && !this.shadowrunnerUnlocked) {
+      this.shadowrunnerUnlocked = 1;
+      this.teleportNotice = "SHADOWRUNNER UNLOCKED: HACKER SKILLS";
       this.teleportNoticeTimer = 150;
     }
     if (nextIndex < LEVELS.length && LEVEL_THEMES[nextIndex] === "BONECRYPT" && !this.skeletonUnlocked) {
@@ -2594,7 +2659,18 @@ class Game {
     else if (name === "PALADIN") this.tryActivatePaladinAegisDash();
     else if (name === "NINJA") this.tryActivateNinjaShadowStep();
     else if (name === "GLITCHRUNNER") this.tryActivateGlitchrunnerPhaseDash();
+    else if (name === "SHADOWRUNNER") this.tryActivateGlitchrunnerForkBomb();
     else if (name === "SKELETON") this.tryActivateSkeletonBloodBurst();
+  }
+
+  tryActivateCharacterAltSkill1() {
+    if (!this.player || this.deathTimer > 0) return;
+    if (CHARACTERS[this.characterIndex].name === "SHADOWRUNNER") this.tryActivateGlitchrunnerZeroDaySpike();
+  }
+
+  tryActivateCharacterAltSkill2() {
+    if (!this.player || this.deathTimer > 0) return;
+    if (CHARACTERS[this.characterIndex].name === "SHADOWRUNNER") this.tryActivateGlitchrunnerRootkitSwarm();
   }
 
   tryActivateGlitchrunnerPhaseDash() {
@@ -2602,92 +2678,276 @@ class Game {
     if (CHARACTERS[this.characterIndex].name !== "GLITCHRUNNER") return;
     if (this.glitchPhase.active || this.glitchPhase.cooldown > 0) return;
 
-    const inputDir = (this.keyDown.ArrowRight || this.keyDown.KeyD ? 1 : 0) - (this.keyDown.ArrowLeft || this.keyDown.KeyA ? 1 : 0);
-    const dir = inputDir || (this.player.face >= 0 ? 1 : -1) || 1;
-
     this.glitchPhase.active = 1;
     this.glitchPhase.timer = GLITCHRUNNER_PHASE.dashFrames;
     this.glitchPhase.cooldown = GLITCHRUNNER_PHASE.cooldownFrames;
     this.glitchPhase.afterglow = GLITCHRUNNER_PHASE.afterglowFrames;
-    this.glitchPhase.dir = dir;
-    this.glitchPhase.trail = [];
-    this.glitchPhase.trailTick = 0;
+    this.glitchPhase.dir = this.player.face >= 0 ? 1 : -1;
+    this.player.vy = Math.min(this.player.vy, -0.8);
+    this.player.onGround = 0;
 
-    this.player.face = dir;
-    this.player.vx = dir * GLITCHRUNNER_PHASE.dashSpeed;
-    this.player.vy = Math.min(this.player.vy, -0.45);
-    this.player.duckFlying = 0;
+    this.audio.tone(760, 0.03, 0.00, "triangle", 0.04);
+    this.audio.tone(980, 0.04, 0.03, "sine", 0.035);
+  }
+
+  tryActivateGlitchrunnerForkBomb() {
+    if (this.deathTimer > 0 || !this.player) return;
+    if (CHARACTERS[this.characterIndex].name !== "SHADOWRUNNER") return;
+    if (this.hackerSkill.globalLock > 0) return;
+    if (this.hackerSkill.fork.cooldown > 0) return;
+
+    const p = this.player;
+    const cfg = HACKER_SKILLS.forkBomb;
+    const cx = p.x + p.w * 0.5;
+    const cy = p.y + p.h * 0.45;
+    const dir = p.face >= 0 ? 1 : -1;
+
+    this.hackerSkill.fork.cooldown = cfg.cooldownFrames;
+    this.hackerSkill.globalLock = HACKER_SKILLS.globalLockFrames;
+
+    for (let i = 0; i < cfg.packetCount; i++) {
+      const spread = (i - (cfg.packetCount - 1) * 0.5) * 0.22;
+      this.hackerSkill.fork.packets.push({
+        x: cx,
+        y: cy,
+        vx: dir * (cfg.speed * 0.75),
+        vy: spread,
+        t: cfg.lifeFrames,
+        chains: cfg.chainCount,
+        targetId: -1,
+        dead: 0
+      });
+    }
 
     this.audio.tone(620, 0.03, 0.00, "triangle", 0.05);
     this.audio.tone(880, 0.04, 0.03, "sine", 0.04);
     this.audio.tone(1120, 0.03, 0.06, "triangle", 0.035);
   }
 
+  tryActivateGlitchrunnerZeroDaySpike() {
+    if (this.deathTimer > 0 || !this.player) return;
+    if (CHARACTERS[this.characterIndex].name !== "SHADOWRUNNER") return;
+    if (this.hackerSkill.globalLock > 0) return;
+    if (this.hackerSkill.spike.cooldown > 0) return;
+
+    const cfg = HACKER_SKILLS.zeroDaySpike;
+    const p = this.player;
+    const dir = p.face >= 0 ? 1 : -1;
+    const cx = p.x + p.w * 0.5;
+    const cy = p.y + p.h * 0.5;
+    const range = cfg.rangeTiles * TILE_SIZE;
+
+    const x0 = dir > 0 ? cx : (cx - range);
+    const x1 = dir > 0 ? (cx + range) : cx;
+    const y0 = cy - cfg.height * 0.5;
+    const y1 = cy + cfg.height * 0.5;
+
+    this.hackerSkill.spike.cooldown = cfg.cooldownFrames;
+    this.hackerSkill.globalLock = HACKER_SKILLS.globalLockFrames;
+    this.hackerSkill.spike.flash = cfg.flashFrames;
+    this.hackerSkill.spike.x0 = x0;
+    this.hackerSkill.spike.x1 = x1;
+    this.hackerSkill.spike.y0 = y0;
+    this.hackerSkill.spike.y1 = y1;
+
+    for (let i = 0; i < this.enemies.length; i++) {
+      const enemy = this.enemies[i];
+      if (!enemy || enemy.dead) continue;
+      const ex = enemy.x + enemy.w * 0.5;
+      const ey = enemy.y + enemy.h * 0.5;
+      if (ex >= x0 && ex <= x1 && ey >= y0 && ey <= y1) {
+        this.handleSpecialEnemyDefeat(enemy);
+        enemy.dead = 1;
+        this.spawnEnemyShatter(enemy, getThemeForLevel(this.levelIndex));
+        this.spawnCoinDrops(enemy.x + 2, enemy.y + 2);
+      }
+    }
+
+    this.audio.tone(540, 0.03, 0.00, "square", 0.05);
+    this.audio.tone(740, 0.04, 0.03, "triangle", 0.04);
+    this.audio.tone(980, 0.03, 0.05, "sine", 0.035);
+  }
+
+  tryActivateGlitchrunnerRootkitSwarm() {
+    if (this.deathTimer > 0 || !this.player) return;
+    if (CHARACTERS[this.characterIndex].name !== "SHADOWRUNNER") return;
+    if (this.hackerSkill.globalLock > 0) return;
+    if (this.hackerSkill.swarm.active) return;
+    if (this.hackerSkill.swarm.cooldown > 0) return;
+
+    const cfg = HACKER_SKILLS.rootkitSwarm;
+    this.hackerSkill.swarm.active = 1;
+    this.hackerSkill.swarm.timer = cfg.durationFrames;
+    this.hackerSkill.swarm.cooldown = cfg.cooldownFrames;
+    this.hackerSkill.swarm.angle = 0;
+    this.hackerSkill.globalLock = HACKER_SKILLS.globalLockFrames;
+
+    this.audio.tone(500, 0.03, 0.00, "triangle", 0.04);
+    this.audio.tone(690, 0.04, 0.03, "sine", 0.04);
+    this.audio.tone(910, 0.04, 0.06, "triangle", 0.03);
+  }
+
   updateGlitchrunnerPhase(name) {
     if (this.glitchPhase.cooldown > 0) this.glitchPhase.cooldown--;
     if (this.glitchPhase.afterglow > 0) this.glitchPhase.afterglow--;
+    if (this.glitchPhase.echoCooldown > 0) this.glitchPhase.echoCooldown--;
+    else this.glitchPhase.echoReady = 1;
     if (this.glitchPhase.echoPulse > 0) this.glitchPhase.echoPulse--;
 
-    if (!this.glitchPhase.echoReady) {
-      if (this.glitchPhase.echoCooldown > 0) this.glitchPhase.echoCooldown--;
-      if (this.glitchPhase.echoCooldown <= 0) {
-        this.glitchPhase.echoReady = 1;
-        this.teleportNotice = "ECHO SHIELD RESTORED";
-        this.teleportNoticeTimer = 70;
-        this.audio.tone(980, 0.03, 0.00, "sine", 0.03);
-      }
-    }
+    if (name === "GLITCHRUNNER" && this.player) {
+      if (this.glitchPhase.active) {
+        if (this.glitchPhase.trailTick <= 0) {
+          const p = this.player;
+          this.glitchPhase.trail.push({
+            x: p.x,
+            y: p.y,
+            w: p.w,
+            h: p.h,
+            t: GLITCHRUNNER_PHASE.afterglowFrames,
+            life: GLITCHRUNNER_PHASE.afterglowFrames
+          });
+          this.glitchPhase.trailTick = GLITCHRUNNER_PHASE.trailSpawnEvery;
+        } else {
+          this.glitchPhase.trailTick--;
+        }
 
-    if (name !== "GLITCHRUNNER" || !this.player) {
+        this.glitchPhase.timer--;
+        if (this.glitchPhase.timer <= 0) {
+          this.glitchPhase.active = 0;
+          this.glitchPhase.timer = 0;
+        }
+      }
+
+      for (let i = 0; i < this.glitchPhase.trail.length; i++) {
+        this.glitchPhase.trail[i].t--;
+      }
+      this.glitchPhase.trail = this.glitchPhase.trail.filter(g => g.t > 0);
+    } else {
       this.glitchPhase.active = 0;
       this.glitchPhase.timer = 0;
-    } else if (this.glitchPhase.active) {
-      const p = this.player;
-      p.face = this.glitchPhase.dir;
-      p.vx = this.glitchPhase.dir * GLITCHRUNNER_PHASE.dashSpeed;
-      p.vy = Math.min(p.vy, 0.25);
+      this.glitchPhase.trailTick = 0;
+      this.glitchPhase.trail = [];
+    }
 
-      this.glitchPhase.trailTick++;
-      if ((this.glitchPhase.trailTick % GLITCHRUNNER_PHASE.trailSpawnEvery) === 0) {
-        this.glitchPhase.trail.push({
-          x: p.x,
-          y: p.y,
-          w: p.w,
-          h: p.h,
-          t: GLITCHRUNNER_PHASE.afterglowFrames,
-          life: GLITCHRUNNER_PHASE.afterglowFrames
-        });
+    if (this.hackerSkill.globalLock > 0) this.hackerSkill.globalLock--;
+    if (this.hackerSkill.fork.cooldown > 0) this.hackerSkill.fork.cooldown--;
+    if (this.hackerSkill.spike.cooldown > 0) this.hackerSkill.spike.cooldown--;
+    if (this.hackerSkill.spike.flash > 0) this.hackerSkill.spike.flash--;
+    if (this.hackerSkill.swarm.cooldown > 0) this.hackerSkill.swarm.cooldown--;
+
+    const isShadowrunner = name === "SHADOWRUNNER" && !!this.player;
+    if (!isShadowrunner) {
+      this.hackerSkill.fork.packets = [];
+      this.hackerSkill.swarm.active = 0;
+      this.hackerSkill.swarm.timer = 0;
+      return;
+    }
+
+    const levelTheme = getThemeForLevel(this.levelIndex);
+    const forkCfg = HACKER_SKILLS.forkBomb;
+    for (let i = 0; i < this.hackerSkill.fork.packets.length; i++) {
+      const packet = this.hackerSkill.fork.packets[i];
+      if (packet.t-- <= 0) { packet.dead = 1; continue; }
+
+      let target = null;
+      let bestD = 1e9;
+      for (let j = 0; j < this.enemies.length; j++) {
+        const enemy = this.enemies[j];
+        if (!enemy || enemy.dead) continue;
+        const ex = enemy.x + enemy.w * 0.5;
+        const ey = enemy.y + enemy.h * 0.5;
+        const dist = Math.hypot(ex - packet.x, ey - packet.y);
+        if (dist < bestD) {
+          bestD = dist;
+          target = enemy;
+        }
       }
 
-      if (this.glitchPhase.timer > 0) this.glitchPhase.timer--;
-      if (this.glitchPhase.timer <= 0) this.glitchPhase.active = 0;
-    }
+      if (target) {
+        const tx = target.x + target.w * 0.5;
+        const ty = target.y + target.h * 0.5;
+        const dx = tx - packet.x;
+        const dy = ty - packet.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        packet.vx = packet.vx * forkCfg.turnDrag + (dx / dist) * forkCfg.homingAccel;
+        packet.vy = packet.vy * forkCfg.turnDrag + (dy / dist) * forkCfg.homingAccel;
+      }
 
-    for (let i = 0; i < this.glitchPhase.trail.length; i++) {
-      const ghost = this.glitchPhase.trail[i];
-      if (ghost.t-- <= 0) ghost.dead = 1;
+      const speed = Math.hypot(packet.vx, packet.vy) || 1;
+      if (speed > forkCfg.speed) {
+        const m = forkCfg.speed / speed;
+        packet.vx *= m;
+        packet.vy *= m;
+      }
+
+      packet.x += packet.vx;
+      packet.y += packet.vy;
+
+      for (let j = 0; j < this.enemies.length; j++) {
+        const enemy = this.enemies[j];
+        if (!enemy || enemy.dead) continue;
+        const ex = enemy.x + enemy.w * 0.5;
+        const ey = enemy.y + enemy.h * 0.5;
+        if (Math.hypot(ex - packet.x, ey - packet.y) <= forkCfg.hitRadius) {
+          this.handleSpecialEnemyDefeat(enemy);
+          enemy.dead = 1;
+          this.spawnEnemyShatter(enemy, levelTheme);
+          this.spawnCoinDrops(enemy.x + 2, enemy.y + 2);
+          if (packet.chains > 0) {
+            packet.chains--;
+            packet.t = Math.max(packet.t, 12);
+          } else {
+            packet.dead = 1;
+          }
+          break;
+        }
+      }
     }
-    this.glitchPhase.trail = this.glitchPhase.trail.filter(g => !g.dead);
+    this.hackerSkill.fork.packets = this.hackerSkill.fork.packets.filter(p => !p.dead);
+
+    if (this.hackerSkill.swarm.active) {
+      const swarm = this.hackerSkill.swarm;
+      const swarmCfg = HACKER_SKILLS.rootkitSwarm;
+      const p = this.player;
+      swarm.angle += swarmCfg.orbitSpeed;
+      const cx = p.x + p.w * 0.5;
+      const cy = p.y + p.h * 0.45;
+      swarm.x = cx + Math.cos(swarm.angle) * swarmCfg.orbitRadius;
+      swarm.y = cy + Math.sin(swarm.angle) * (swarmCfg.orbitRadius * 0.65);
+
+      for (let i = 0; i < this.enemies.length; i++) {
+        const enemy = this.enemies[i];
+        if (!enemy || enemy.dead) continue;
+        enemy.rootkitHitCd = Math.max(0, (enemy.rootkitHitCd | 0) - 1);
+        if (enemy.rootkitHitCd > 0) continue;
+        const ex = enemy.x + enemy.w * 0.5;
+        const ey = enemy.y + enemy.h * 0.5;
+        if (Math.hypot(ex - swarm.x, ey - swarm.y) <= swarmCfg.hitRadius + Math.min(enemy.w, enemy.h) * 0.35) {
+          enemy.rootkitHitCd = swarmCfg.hitCooldownFrames;
+          this.handleSpecialEnemyDefeat(enemy);
+          enemy.dead = 1;
+          this.spawnEnemyShatter(enemy, levelTheme);
+          this.spawnCoinDrops(enemy.x + 2, enemy.y + 2);
+        }
+      }
+
+      if (swarm.timer > 0) swarm.timer--;
+      if (swarm.timer <= 0) swarm.active = 0;
+    }
   }
 
   tryConsumeGlitchrunnerEchoShield(sourceX, sourceY) {
-    if (!this.player || this.deathTimer > 0) return 0;
+    if (!this.player) return 0;
     if (CHARACTERS[this.characterIndex].name !== "GLITCHRUNNER") return 0;
     if (!this.glitchPhase.echoReady) return 0;
-
     this.glitchPhase.echoReady = 0;
     this.glitchPhase.echoCooldown = GLITCHRUNNER_PHASE.echoRechargeFrames;
     this.glitchPhase.echoPulse = GLITCHRUNNER_PHASE.echoFlashFrames;
-    this.glitchPhase.echoX = Number.isFinite(sourceX) ? sourceX : (this.player.x + this.player.w * 0.5);
-    this.glitchPhase.echoY = Number.isFinite(sourceY) ? sourceY : (this.player.y + this.player.h * 0.5);
-    this.respawnGrace = Math.max(this.respawnGrace, 20);
-    this.player.vy = Math.min(this.player.vy, -2.2);
-    this.player.vx *= -0.45;
-
-    this.teleportNotice = "ECHO SHIELD SAVED YOU";
-    this.teleportNoticeTimer = 65;
-    this.audio.tone(760, 0.04, 0.00, "triangle", 0.045);
-    this.audio.tone(1040, 0.05, 0.03, "sine", 0.04);
+    this.glitchPhase.echoX = sourceX;
+    this.glitchPhase.echoY = sourceY;
+    this.respawnGrace = Math.max(this.respawnGrace, 22);
+    this.audio.tone(760, 0.03, 0.00, "triangle", 0.03);
+    this.audio.tone(1020, 0.04, 0.02, "sine", 0.03);
     return 1;
   }
 
@@ -3949,7 +4209,7 @@ class Game {
     this.updateSkeletonBloodBurst(name);
 
     // Gravity + jump cut
-    p.vy += gr * (duckDiving ? 0.15 : (bunnyRocketing ? 0.2 : (ninjaShadowing ? 0.25 : (glitchPhasing ? 0.2 : (paladinDashing ? 0.15 : (p.duckFlying ? 0.25 : 1))))));
+    p.vy += gr * (duckDiving ? 0.15 : bunnyRocketing ? 0.2 : ninjaShadowing ? 0.25 : glitchPhasing ? 0.2 : paladinDashing ? 0.15 : (p.duckFlying ? 0.25 : 1));
     if (p.vy > 8.5) p.vy = 8.5;
     if (!paladinDashing && !ninjaShadowing && !bunnyRocketing && !duckDiving && !JH && p.vy < 0) p.vy *= 0.55;
 
@@ -4738,6 +4998,32 @@ class Game {
       gfx.globalAlpha = 1;
     }
 
+    if (name === "SHADOWRUNNER" && (this.hackerSkill.globalLock > 0 || this.hackerSkill.swarm.active || this.hackerSkill.spike.flash > 0)) {
+      const lockPulse = (Math.sin(this.player.anim * 0.22) + 1) * 0.5;
+      gfx.globalAlpha = this.hackerSkill.swarm.active ? 0.62 : (this.hackerSkill.spike.flash > 0 ? 0.56 : (0.26 + lockPulse * 0.28));
+      gfx.strokeStyle = this.hackerSkill.swarm.active ? "#ffd95e" : "#7dff3b";
+      gfx.strokeRect((px - 2) | 0, (py - 2) | 0, p.w + 4, p.h + 4);
+      gfx.globalAlpha = 1;
+    }
+
+    if (name === "SHADOWRUNNER" && this.hackerSkill.spike.flash > 0) {
+      const t = this.hackerSkill.spike.flash / Math.max(1, HACKER_SKILLS.zeroDaySpike.flashFrames);
+      const fx = (((this.hackerSkill.spike.x0 + this.hackerSkill.spike.x1) * 0.5) - this.cameraX) | 0;
+      const fy = (((this.hackerSkill.spike.y0 + this.hackerSkill.spike.y1) * 0.5) - this.cameraY) | 0;
+      const r = Math.max(6, (22 * (1.8 - t * 0.7)) | 0);
+      gfx.globalAlpha = Math.max(0.2, t * 0.72);
+      gfx.fillStyle = "#ffd95e";
+      gfx.beginPath();
+      gfx.arc(fx, fy, r, 0, 6.283);
+      gfx.fill();
+      gfx.globalAlpha = Math.max(0.16, t * 0.48);
+      gfx.fillStyle = "#7dff3b";
+      gfx.beginPath();
+      gfx.arc(fx, fy, Math.max(3, (r * 0.52) | 0), 0, 6.283);
+      gfx.fill();
+      gfx.globalAlpha = 1;
+    }
+
     if (name === "BUNNY" && (this.bunnyRocket.active || this.bunnyRocket.afterglow > 0)) {
       gfx.globalAlpha = this.bunnyRocket.active ? 0.65 : Math.max(0.2, this.bunnyRocket.afterglow / BUNNY_CARROT_ROCKET.afterglowFrames);
       gfx.strokeStyle = this.bunnyRocket.active ? "#ff7f2a" : "#ffd95e";
@@ -4811,7 +5097,7 @@ class Game {
       PALETTE,
       ROBOT_MAGNET_PULSE,
       NINJA_SHADOW_STEP,
-      GLITCHRUNNER_PHASE,
+      HACKER_SKILLS,
       RANGER_GRAPPLE,
       RELIC_PICKUP_FX,
       getThemeForLevel
@@ -4823,17 +5109,38 @@ const game = new Game();
 
 let last = performance.now();
 let acc = 0;
+let loopErrorShown = 0;
 
 const loop = (now) => {
-  acc += Math.min(0.05, (now - last) / 1000);
-  last = now;
-  if (game.isPaused) {
+  try {
+    acc += Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (game.isPaused) {
+      acc = 0;
+    } else {
+      while (acc >= FIXED_DT) {
+        game.step();
+        acc -= FIXED_DT;
+      }
+    }
+    game.render();
+    loopErrorShown = 0;
+  } catch (err) {
     acc = 0;
-  } else {
-    while (acc >= FIXED_DT) { game.step(); acc -= FIXED_DT; }
+    if (!loopErrorShown) {
+      loopErrorShown = 1;
+      const msg = err && err.message ? err.message : String(err);
+      console.error("Game loop runtime error:", err);
+      game.teleportNotice = "RUNTIME ERROR: " + msg;
+      game.teleportNoticeTimer = 180;
+    }
+    try {
+      game.render();
+    } catch (_) {
+    }
+  } finally {
+    requestAnimationFrame(loop);
   }
-  game.render();
-  requestAnimationFrame(loop);
 };
 
 requestAnimationFrame(loop);

@@ -145,6 +145,33 @@ const GLITCHRUNNER_PHASE = {
   echoRechargeFrames: 360,
   echoFlashFrames: 24
 };
+const HACKER_SKILLS = {
+  globalLockFrames: 10,
+  forkBomb: {
+    cooldownFrames: 84,
+    packetCount: 4,
+    speed: 2.9,
+    homingAccel: 0.24,
+    turnDrag: 0.92,
+    lifeFrames: 58,
+    hitRadius: 9,
+    chainCount: 1
+  },
+  zeroDaySpike: {
+    cooldownFrames: 110,
+    rangeTiles: 13,
+    height: 16,
+    flashFrames: 16
+  },
+  rootkitSwarm: {
+    cooldownFrames: 180,
+    durationFrames: 180,
+    orbitRadius: 18,
+    orbitSpeed: 0.22,
+    hitRadius: 11,
+    hitCooldownFrames: 20
+  }
+};
 const SHIELDED_WORKER = {
   shieldUpFrames: 90,
   exposedFrames: 45,
@@ -263,6 +290,7 @@ const CHARACTERS = [
   { name: "DUCK",     anim: ["playerDuckIdle","playerDuckRun"],jumpMul: 1.00, w: 20, h: 10, doubleJumps: 0, duckFlight: 26 },
   { name: "PALADIN",  anim: ["playerPaladinIdle","playerPaladinRun"], jumpMul: 0.98, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
   { name: "GLITCHRUNNER", anim: ["playerGlitchRunnerIdle","playerGlitchRunnerRun"], jumpMul: 0.95, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
+  { name: "SHADOWRUNNER", anim: ["playerShadowRunnerIdle","playerShadowRunnerRun"], jumpMul: 0.95, w: 10, h: 10, doubleJumps: 0, duckFlight: 0  },
   { name: "SKELETON", anim: null,        jumpMul: 1.00, w: 10, h: 20, doubleJumps: 0, duckFlight: 0  }
 ];
 
@@ -292,6 +320,7 @@ export {
   BUNNY_CARROT_ROCKET,
   SKELETON_BLOOD_BURST,
   GLITCHRUNNER_PHASE,
+  HACKER_SKILLS,
   SHIELDED_WORKER,
   FRANKENSTEIN,
   CONDUCTOR_CORE,

@@ -7,7 +7,7 @@ function drawHudAndNotices(game, gfx, deps) {
     PALETTE,
     ROBOT_MAGNET_PULSE,
     NINJA_SHADOW_STEP,
-    GLITCHRUNNER_PHASE,
+    HACKER_SKILLS,
     RANGER_GRAPPLE,
     RELIC_PICKUP_FX,
     getThemeForLevel
@@ -49,7 +49,7 @@ function drawHudAndNotices(game, gfx, deps) {
     gfx.fillText("MOVE: Arrows / A,D", 24, 50);
     gfx.fillText("JUMP: Space / Up", 168, 50);
     gfx.fillText("W: Switch Character", 24, 62);
-    gfx.fillText("Q: Character Skill", 168, 62);
+    gfx.fillText("Q/1/2: Character Skills", 168, 62);
     gfx.fillText("R: Restart   N: Prev   M: Next", 96, 74);
     gfx.fillText("X: Mute   9/0: BGM -/+", 24, 86);
   }
@@ -136,13 +136,24 @@ function drawHudAndNotices(game, gfx, deps) {
         : "Q READY";
     gfx.fillText(shadowText, 258, 11);
   } else if (charName === "GLITCHRUNNER") {
-    const phaseText = game.glitchPhase.active
+    const qText = game.glitchPhase.active
       ? "Q PHASE"
       : game.glitchPhase.cooldown > 0
         ? ("Q " + ((game.glitchPhase.cooldown / 60) | 0) + "s")
         : "Q READY";
-    gfx.fillText(phaseText, 258, 11);
-    gfx.fillText(game.glitchPhase.echoReady ? "ECHO READY" : ("ECHO " + Math.max(1, ((game.glitchPhase.echoCooldown / 60) | 0)) + "s"), 6, 23);
+    const echoText = game.glitchPhase.echoReady ? "ECHO READY" : ("ECHO " + Math.max(1, ((game.glitchPhase.echoCooldown / 60) | 0)) + "s");
+    gfx.fillText(qText, 248, 11);
+    gfx.fillText(echoText, 6, 23);
+  } else if (charName === "SHADOWRUNNER") {
+    const qText = game.hackerSkill.fork.cooldown > 0 ? ("Q " + ((game.hackerSkill.fork.cooldown / 60) | 0) + "s") : "Q FORK";
+    const oneText = game.hackerSkill.spike.cooldown > 0 ? ("1 " + ((game.hackerSkill.spike.cooldown / 60) | 0) + "s") : "1 SPIKE";
+    const twoText = game.hackerSkill.swarm.active
+      ? ("2 SWARM " + Math.max(1, ((game.hackerSkill.swarm.timer / 60) | 0)) + "s")
+      : game.hackerSkill.swarm.cooldown > 0
+        ? ("2 " + ((game.hackerSkill.swarm.cooldown / 60) | 0) + "s")
+        : "2 SWARM";
+    gfx.fillText(qText, 238, 11);
+    gfx.fillText(oneText + "  " + twoText, 6, 23);
   } else if (charName === "SKELETON") {
     const phase2Eligible = game.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
     const phase2Charged = !!game.skeletonBurst.phase2Charged;
@@ -161,6 +172,12 @@ function drawHudAndNotices(game, gfx, deps) {
   }
   if (game.audio.muted) gfx.fillText("MUTE", CANVAS_W - 34, 11);
   if (game.immortalMode) gfx.fillText("IMMORTAL", 6, 35);
+  if (game.isPaused) {
+    gfx.fillStyle = "#000c";
+    gfx.fillRect(116, 16, 88, 16);
+    gfx.fillStyle = "#fff";
+    gfx.fillText("PAUSED (P)", 124, 27);
+  }
 
   if (CHARACTERS[game.characterIndex].name === "ROBOT" && (game.robotPulse.phase2Notice > 0 || (game.robotPulse.timer > 0 && game.robotPulse.phase2Active))) {
     gfx.fillStyle = "#000b";
@@ -183,11 +200,18 @@ function drawHudAndNotices(game, gfx, deps) {
     gfx.fillText("BLOOD PHASE 2", 114, 27);
   }
 
-  if (CHARACTERS[game.characterIndex].name === "GLITCHRUNNER" && (game.glitchPhase.active || game.glitchPhase.echoPulse > 0)) {
+  if (CHARACTERS[game.characterIndex].name === "GLITCHRUNNER" && (game.glitchPhase.active || game.glitchPhase.afterglow > 0)) {
     gfx.fillStyle = "#000b";
     gfx.fillRect(98, 16, 126, 16);
     gfx.fillStyle = "#9fe7ff";
-    gfx.fillText(game.glitchPhase.active ? "PHASE DASH ACTIVE" : "ECHO SHIELD TRIGGER", 104, 27);
+    gfx.fillText(game.glitchPhase.active ? "PHASE DASH ACTIVE" : "ECHO-SHIFT READY", 102, 27);
+  }
+
+  if (CHARACTERS[game.characterIndex].name === "SHADOWRUNNER" && (game.hackerSkill.globalLock > 0 || game.hackerSkill.swarm.active)) {
+    gfx.fillStyle = "#000b";
+    gfx.fillRect(98, 16, 126, 16);
+    gfx.fillStyle = "#ffd95e";
+    gfx.fillText(game.hackerSkill.swarm.active ? "ROOTKIT SWARM ACTIVE" : "PACKETBREAKER ONLINE", 102, 27);
   }
 
   if (game.hasConductorCoreActive() || game.conductorCore.notice > 0) {

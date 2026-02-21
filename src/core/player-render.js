@@ -27,6 +27,51 @@ function drawPlayerAndEffects(game, gfx, deps) {
     gfx.globalAlpha = 1;
   }
 
+  if (game.hackerSkill && game.hackerSkill.fork && game.hackerSkill.fork.packets.length) {
+    const packets = game.hackerSkill.fork.packets;
+    for (let i = 0; i < packets.length; i++) {
+      const packet = packets[i];
+      const px = (packet.x - game.cameraX) | 0;
+      const py = (packet.y - game.cameraY) | 0;
+      gfx.fillStyle = "#ffd95e";
+      gfx.fillRect(px - 1, py - 1, 3, 3);
+      gfx.fillStyle = "#7dff3b";
+      gfx.fillRect(px, py, 1, 1);
+    }
+  }
+
+  if (game.hackerSkill && game.hackerSkill.spike && game.hackerSkill.spike.flash > 0) {
+    const spike = game.hackerSkill.spike;
+    const t = spike.flash / 16;
+    const x = (Math.min(spike.x0, spike.x1) - game.cameraX) | 0;
+    const y = (spike.y0 - game.cameraY) | 0;
+    const w = Math.abs(spike.x1 - spike.x0) | 0;
+    const h = Math.max(2, (spike.y1 - spike.y0) | 0);
+    gfx.globalAlpha = Math.max(0.2, t * 0.7);
+    gfx.fillStyle = "#ffd95e";
+    gfx.fillRect(x, y, w, h);
+    gfx.globalAlpha = Math.max(0.15, t * 0.45);
+    gfx.fillStyle = "#7dff3b";
+    gfx.fillRect(x, y + ((h * 0.45) | 0), w, Math.max(1, (h * 0.2) | 0));
+    gfx.globalAlpha = 1;
+  }
+
+  if (game.hackerSkill && game.hackerSkill.swarm && game.hackerSkill.swarm.active) {
+    const sx = (game.hackerSkill.swarm.x - game.cameraX) | 0;
+    const sy = (game.hackerSkill.swarm.y - game.cameraY) | 0;
+    gfx.globalAlpha = 0.8;
+    gfx.strokeStyle = "#ffd95e";
+    gfx.beginPath();
+    gfx.arc(sx, sy, 7, 0, 6.283);
+    gfx.stroke();
+    gfx.globalAlpha = 0.5;
+    gfx.strokeStyle = "#7dff3b";
+    gfx.beginPath();
+    gfx.arc(sx, sy, 4, 0, 6.283);
+    gfx.stroke();
+    gfx.globalAlpha = 1;
+  }
+
   if (game.batCompanion.trail.length) {
     for (let i = 0; i < game.batCompanion.trail.length; i++) {
       const trail = game.batCompanion.trail[i];
