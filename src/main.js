@@ -809,8 +809,8 @@ class Game {
   }
 
   bindInput() {
-    const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","Digit1","Digit2","Digit7","Digit8","Digit9","Digit0"]);
-    const autoUnpauseKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyQ","Digit1","Digit2"]);
+    const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","Digit1","Digit2","Digit6","Digit7","Digit8","Digit9","Digit0"]);
+    const autoUnpauseKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyQ","KeyW","KeyE","Digit1","Digit2"]);
 
     addEventListener("keydown", (e) => {
       if (preventKeys.has(e.code)) e.preventDefault();
@@ -846,19 +846,23 @@ class Game {
             this.teleportNoticeTimer = 90;
           }
         }
-        if (e.code === "KeyW") {
+        if (e.code === "Digit1") {
+          this.cycleCharacterBackward();
+          this.audio.tone(620, 0.04);
+        }
+        if (e.code === "Digit2") {
           this.cycleCharacterForward();
           this.audio.tone(660, 0.04);
         }
-        if (e.code === "KeyE") {
+        if (e.code === "Digit6") {
           this.immortalMode ^= 1;
           this.teleportNotice = this.immortalMode ? "DEBUG: IMMORTAL ON" : "DEBUG: IMMORTAL OFF";
           this.teleportNoticeTimer = 90;
           this.audio.tone(this.immortalMode ? 980 : 420, 0.05, 0.00, "triangle", 0.04);
         }
         if (e.code === "KeyQ") this.tryActivateCharacterSkill();
-        if (e.code === "Digit1") this.tryActivateCharacterAltSkill1();
-        if (e.code === "Digit2") this.tryActivateCharacterAltSkill2();
+        if (e.code === "KeyW") this.tryActivateCharacterAltSkill1();
+        if (e.code === "KeyE") this.tryActivateCharacterAltSkill2();
         if (e.code === "KeyP") {
           this.isPaused ^= 1;
           this.audio.tone(this.isPaused ? 360 : 620, 0.05);
@@ -987,6 +991,14 @@ class Game {
     const currentPos = Math.max(0, unlocked.indexOf(this.characterIndex));
     const nextPos = (currentPos + 1) % unlocked.length;
     this.setCharacter(unlocked[nextPos]);
+  }
+
+  cycleCharacterBackward() {
+    const unlocked = this.getUnlockedCharacterIndices();
+    if (!unlocked.length) return;
+    const currentPos = Math.max(0, unlocked.indexOf(this.characterIndex));
+    const prevPos = (currentPos - 1 + unlocked.length) % unlocked.length;
+    this.setCharacter(unlocked[prevPos]);
   }
 
   loadLevel(index) {

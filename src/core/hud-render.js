@@ -48,10 +48,10 @@ function drawHudAndNotices(game, gfx, deps) {
     gfx.fillText("SPECIAL KEYS", 112, 36);
     gfx.fillText("MOVE: Arrows / A,D", 24, 50);
     gfx.fillText("JUMP: Space / Up", 168, 50);
-    gfx.fillText("W: Switch Character", 24, 62);
-    gfx.fillText("Q/1/2: Character Skills", 168, 62);
+    gfx.fillText("1/2: Switch Character", 24, 62);
+    gfx.fillText("Q/W/E: Character Skills", 168, 62);
     gfx.fillText("R: Restart   N: Prev   M: Next", 96, 74);
-    gfx.fillText("X: Mute   9/0: BGM -/+", 24, 86);
+    gfx.fillText("X: Mute  6: Immortal  9/0: BGM -/+", 24, 86);
   }
 
   if (game.checkpointNotice > 0 && game.activeCheckpointIndex >= 0 && game.levelCheckpoints[game.activeCheckpointIndex]) {
