@@ -14,6 +14,31 @@ Related production specs:
 - `STORMFOUNDRY` 6x: `docs/STORM_FOUNDRY_PRODUCTION_SPEC.md`
 - `JUNGLE: RUIN ASCENT` hand-authored expansion: `docs/JUNGLE_RUIN_ASCENT_PRODUCTION_SPEC.md`
 
+## Campaign sequence (2026-02-21)
+
+Canonical progression is controlled by `GAME_LEVELS[].sequence` in `src/levels/game-levels.js`.
+
+1. `DAY`
+2. `AFTERNOON`
+3. `JUNGLE`
+4. `FACTORY`
+5. `JUNGLE: RUIN ASCENT`
+6. `CASTLE`
+7. `ICE`
+8. `VOLCANO`
+9. `SKY RUINS`
+10. `NITE`
+11. `MOONLIT MATSURI`
+12. `SPACE`
+13. `CELESTIAL SHOGUNATE`
+14. `PHANTOM PROCESSION`
+15. `GOTHIC CATHEDRAL`
+16. `GEOMETRY DREAM`
+17. `SIMULATION BREACH`
+18. `SHADOWRUNNER ARCLOGY`
+19. `BONE CRYPT`
+20. `STORM FOUNDRY`
+
 ---
 
 ## 1) Global Tile / Marker Legend

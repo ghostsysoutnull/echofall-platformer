@@ -33,7 +33,7 @@ const GAME_LEVELS = [
 
   {
     name: "AFTERNOON",
-    sequence: 1.5,
+    sequence: 2,
     theme: "AFTERNOON",
     backgroundActors: [
       { type: "airplane", theme: "AFTERNOON", x: 72, y: 26, vx: 0.12, parallax: 0.24, bobAmp: 2.6, bobSpeed: 0.022, w: 18, h: 22, scale: 1 },
@@ -64,7 +64,7 @@ const GAME_LEVELS = [
 
   {
     name: "JUNGLE",
-    sequence: 2,
+    sequence: 3,
     theme: "JUNGLE",
     backgroundActors: [
       { type: "ruinsSilhouette", theme: "JUNGLE", x: 86, y: 64, vx: 0.06, parallax: 0.09, bobAmp: 0.3, bobSpeed: 0.006, w: 24, h: 14, scale: 1 },
@@ -95,7 +95,7 @@ const GAME_LEVELS = [
 
   {
     name: "JUNGLE: RUIN ASCENT",
-    sequence: 3.5,
+    sequence: 5,
     theme: "JUNGLE",
     backgroundActors: [
       { type: "ruinsSilhouette", theme: "JUNGLE", x: 86, y: 64, vx: 0.06, parallax: 0.09, bobAmp: 0.3, bobSpeed: 0.006, w: 24, h: 14, scale: 1 },
@@ -138,7 +138,7 @@ const GAME_LEVELS = [
 
   {
     name: "FACTORY",
-    sequence: 3,
+    sequence: 4,
     theme: "FACTORY",
     backgroundActors: [
       { type: "railCrates", theme: "FACTORY", x: 122, y: 34, vx: 0.05, parallax: 0.11, bobAmp: 0.5, bobSpeed: 0.008, w: 24, h: 12, scale: 1 },
@@ -169,7 +169,7 @@ const GAME_LEVELS = [
 
   {
     name: "CASTLE",
-    sequence: 4,
+    sequence: 6,
     theme: "CASTLE",
     backgroundActors: [
       { type: "drawbridgeLift", theme: "CASTLE", x: 146, y: 66, vx: 0.04, parallax: 0.09, bobAmp: 0.35, bobSpeed: 0.006, w: 24, h: 14, scale: 1 },
@@ -200,7 +200,7 @@ const GAME_LEVELS = [
 
   {
     name: "ICE",
-    sequence: 5,
+    sequence: 7,
     theme: "ICE",
     backgroundActors: [
       { type: "frostyBalloon", theme: "ICE", x: 68, y: 22, vx: 0.10, parallax: 0.17, bobAmp: 2.8, bobSpeed: 0.024, w: 18, h: 22, scale: 1 },
@@ -231,7 +231,7 @@ const GAME_LEVELS = [
 
   {
     name: "VOLCANO",
-    sequence: 6,
+    sequence: 8,
     theme: "VOLCANO",
     backgroundActors: [
       { type: "ashBlimp", theme: "VOLCANO", x: 160, y: 70, vx: 0.06, parallax: 0.10, bobAmp: 0.45, bobSpeed: 0.007, w: 24, h: 12, scale: 1 },
@@ -262,7 +262,7 @@ const GAME_LEVELS = [
 
   {
     name: "SKY RUINS",
-    sequence: 6.5,
+    sequence: 9,
     theme: "SKYRUINS",
     backgroundActors: [
       { type: "skyRuins", theme: "SKYRUINS", x: 96, y: 60, vx: 0.07, parallax: 0.10, bobAmp: 0.6, bobSpeed: 0.010, w: 24, h: 14, scale: 1 },
@@ -293,7 +293,7 @@ const GAME_LEVELS = [
 
   {
     name: "NITE",
-    sequence: 7,
+    sequence: 10,
     theme: "NITE",
     backgroundActors: [
       { type: "moonBalloon", theme: "NITE", x: 116, y: 20, vx: 0.10, parallax: 0.18, bobAmp: 2.6, bobSpeed: 0.024, w: 18, h: 22, scale: 1 },
@@ -324,7 +324,7 @@ const GAME_LEVELS = [
 
   {
     name: "MOONLIT MATSURI",
-    sequence: 7.5,
+    sequence: 11,
     theme: "JAPAN",
     backgroundActors: [
       { type: "japanPagoda", theme: "JAPAN", x: 102, y: 56, vx: 0.05, parallax: 0.10, bobAmp: 0.4, bobSpeed: 0.009, w: 24, h: 14, scale: 1 },
@@ -355,7 +355,7 @@ const GAME_LEVELS = [
 
   {
     name: "SPACE",
-    sequence: 8,
+    sequence: 12,
     theme: "SPACE",
     backgroundActors: [
       { type: "stationShuttle", theme: "SPACE", x: 230, y: 52, vx: -0.18, parallax: 0.12, bobAmp: 0.9, bobSpeed: 0.016, w: 24, h: 12, scale: 1 },
@@ -386,7 +386,7 @@ const GAME_LEVELS = [
 
   {
     name: "CELESTIAL SHOGUNATE",
-    sequence: 8.5,
+    sequence: 13,
     theme: "JAPAN",
     backgroundActors: [
       { type: "japanPagoda", theme: "JAPAN", x: 68, y: 58, vx: 0.04, parallax: 0.09, bobAmp: 0.3, bobSpeed: 0.008, w: 24, h: 14, scale: 1 },
@@ -422,7 +422,7 @@ const GAME_LEVELS = [
 
   {
     name: "PHANTOM PROCESSION",
-    sequence: 9,
+    sequence: 14,
     theme: "HORROR",
     backgroundActors: [
       { type: "hauntedMansion", theme: "HORROR", x: 72, y: 56, vx: 0.04, parallax: 0.09, bobAmp: 0.4, bobSpeed: 0.008, w: 24, h: 14, scale: 1 },
@@ -459,7 +459,7 @@ const GAME_LEVELS = [
 
   {
     name: "GEOMETRY DREAM",
-    sequence: 9.5,
+    sequence: 16,
     theme: "GEOMETRYDREAM",
     backgroundActors: [
       { type: "geoWireCube", theme: "GEOMETRYDREAM", x: 84, y: 28, vx: 0.10, parallax: 0.16, bobAmp: 1.1, bobSpeed: 0.020, w: 16, h: 16, scale: 1 },
@@ -501,7 +501,7 @@ const GAME_LEVELS = [
 
   {
     name: "SIMULATION BREACH",
-    sequence: 9.7,
+    sequence: 17,
     theme: "SIMBREACH",
     backgroundActors: [
       { type: "geoWireCube", theme: "SIMBREACH", x: 86, y: 30, vx: 0.10, parallax: 0.16, bobAmp: 1.0, bobSpeed: 0.020, w: 16, h: 16, scale: 1 },
@@ -526,7 +526,7 @@ const GAME_LEVELS = [
 
   {
     name: "SHADOWRUNNER ARCLOGY",
-    sequence: 9.85,
+    sequence: 18,
     theme: "SHADOWRUN",
     backgroundActors: [
       { type: "holoBillboard", theme: "SHADOWRUN", x: 54, y: 44, vx: 0.04, parallax: 0.10, bobAmp: 0.3, bobSpeed: 0.010, w: 22, h: 20, scale: 1 },
@@ -559,7 +559,7 @@ const GAME_LEVELS = [
 
   {
     name: "GOTHIC CATHEDRAL",
-    sequence: 10,
+    sequence: 15,
     theme: "GOTHIC",
     backgroundActors: [
       { type: "cathedralSpire", theme: "GOTHIC", x: 68, y: 56, vx: 0.03, parallax: 0.10, bobAmp: 0.3, bobSpeed: 0.008, w: 18, h: 18, scale: 1 },
@@ -605,7 +605,7 @@ const GAME_LEVELS = [
 
   {
     name: "STORM FOUNDRY",
-    sequence: 10.3,
+    sequence: 20,
     theme: "STORMFOUNDRY",
     backgroundActors: [
       { type: "teslaPylon", theme: "STORMFOUNDRY", x: 72, y: 64, vx: 0.06, parallax: 0.11, bobAmp: 0.4, bobSpeed: 0.012, w: 12, h: 18, scale: 1 },
@@ -634,7 +634,7 @@ const GAME_LEVELS = [
 
   {
     name: "BONE CRYPT",
-    sequence: 10.6,
+    sequence: 19,
     theme: "BONECRYPT",
     backgroundActors: [
       { type: "hauntedMansion", theme: "BONECRYPT", x: 78, y: 56, vx: 0.04, parallax: 0.10, bobAmp: 0.4, bobSpeed: 0.010, w: 18, h: 18, scale: 1 },

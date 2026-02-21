@@ -16,6 +16,7 @@
 - **Level Name:** SHADOWRUNNER ARCLOGY
 - **Theme Key:** `SHADOWRUN`
 - **Sequence Intent:** Late-game specialist stage focused on SHADOWRUNNER mastery.
+- **Campaign Placement (current):** After `SIMULATION BREACH`, before `BONE CRYPT`.
 - **Design Pillars:**
   - Cooldown sequencing over brute platforming.
   - Route pressure via portals and enemy lane control.
