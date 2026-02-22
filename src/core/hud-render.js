@@ -119,6 +119,7 @@ function drawHudAndNotices(game, gfx, deps) {
   const cpText = game.levelCheckpoints.length
     ? ("CP " + Math.max(0, game.activeCheckpointIndex + 1) + "/" + game.levelCheckpoints.length)
     : "";
+  const runModeText = game.runStartLevelIndex > 0 ? "RUN x0.75" : "RUN x1.0";
 
   let abilityText = "";
   let secondaryLeftText = "";
@@ -288,6 +289,7 @@ function drawHudAndNotices(game, gfx, deps) {
   const row2RightItems = [];
   for (let i = 0; i < rightItemsDemoted.length; i++) row2RightItems.push(rightItemsDemoted[i]);
   if (coreText) row2RightItems.push({ key: "core", text: coreText, color: "#fff" });
+  row2RightItems.push({ key: "run", text: runModeText, color: "#a5cbb9" });
 
   let row2RightX = rightEdgeX;
   for (let i = row2RightItems.length - 1; i >= 0; i--) {

@@ -42,11 +42,12 @@ Out of scope:
 When player selects `CONTINUE`:
 - Run starts at `highestUnlockedLevelIndex`.
 - `score = 0`, `coins = 0`, `lives = 3`, `nextExtraLifeCoins = 200`.
+- Character used on continue restores to the most recently used character from prior gameplay.
 - Character-unlock/profile state remains untouched unless separately specified.
 
 ### FR-5: Score Scaling Rule (Baseline)
 - If `runStartLevelIndex === 0`, `runScoreMultiplier = 1.0`.
-- If `runStartLevelIndex > 0`, `runScoreMultiplier = 0.5`.
+- If `runStartLevelIndex > 0`, `runScoreMultiplier = 0.75`.
 - Multiplier applies to all positive score grants via run scoring path.
 - Do not apply multiplier to non-score counters (coins/lives).
 
@@ -76,9 +77,10 @@ Given active profile and player chooses `CONTINUE`, run starts on level index 4 
 - `score = 0`
 - `coins = 0`
 - `lives = 3`
+- most recently used character restored
 
 ### AC-3: Score Multiplier on Continue
-Given run starts at level index 4 and event grants base `+100`, awarded score is `+50`.
+Given run starts at level index 4 and event grants base `+100`, awarded score is `+75`.
 
 ### AC-4: Full Run Unchanged
 Given run starts at level index 0 and event grants base `+100`, awarded score is `+100`.
@@ -88,8 +90,8 @@ Given continue run, coin and life systems remain unscaled by score multiplier.
 
 ## 7) Balancing Alternatives (If 0.5 Feels Too Harsh)
 
-### Option A — Soft Cap (Recommended Alternative)
-- Non-level-1 starts use `runScoreMultiplier = 0.75` instead of `0.5`.
+### Option A — Soft Cap (Selected Baseline)
+- Non-level-1 starts use `runScoreMultiplier = 0.75`.
 - Pros: less punishing, better for short-session players.
 - Cons: weaker separation between full-run and continue competition.
 
@@ -112,5 +114,5 @@ Given continue run, coin and life systems remain unscaled by score multiplier.
 - Cons: needs additional UI/record tracking.
 
 ## 8) Recommendation
-Ship baseline quickly with FR-5 (`x0.5`) only if strongly prioritizing full-run prestige.
-If retention/approachability is priority, choose Option A (`x0.75`) + explicit run label first.
+Option A (`x0.75`) is selected as baseline for current implementation.
+If full-run prestige needs stricter separation later, revisit multipliers or split boards.

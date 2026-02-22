@@ -65,6 +65,8 @@ const JUKEBOX_SPECIAL_TRACK_KEYS = [
   "JUKEBOX_MIDNIGHT_CIRCUIT"
 ];
 const HIGHSCORE_STORAGE_KEY = "echofall_protocol_high_score";
+const HIGHEST_UNLOCKED_LEVEL_STORAGE_KEY = "echofall_protocol_highest_unlocked_level";
+const LAST_CHARACTER_STORAGE_KEY = "echofall_protocol_last_character_index";
 
 // =========================
 // Art
@@ -181,6 +183,11 @@ class Game {
     this.score = 0;
     this.titleCurrentScore = 0;
     this.highScore = this.loadHighScore();
+    this.highestUnlockedLevelIndex = this.loadHighestUnlockedLevel();
+    this.lastCharacterIndex = this.loadLastCharacterIndex();
+    this.characterIndex = this.lastCharacterIndex;
+    this.runStartLevelIndex = 0;
+    this.runScoreMultiplier = 1;
     this.coins = 0;
     this.lives = 3;
     this.nextExtraLifeCoins = 200;
@@ -220,8 +227,8 @@ class Game {
       scoreTagHiddenFrames: 300,
       selected: 0,
       optionSelected: 0,
-      levelSelectIndex: 0,
-      hasContinue: 0,
+      levelSelectIndex: this.highestUnlockedLevelIndex | 0,
+      hasContinue: this.highestUnlockedLevelIndex > 0 ? 1 : 0,
       jukebox: {
         themes: (() => {
           const themes = Array.from(new Set(LEVEL_THEMES || [])).filter(Boolean);
@@ -927,6 +934,62 @@ class Game {
     }
   }
 
+  loadHighestUnlockedLevel() {
+    try {
+      const raw = localStorage.getItem(HIGHEST_UNLOCKED_LEVEL_STORAGE_KEY);
+      const parsed = Number(raw);
+      const maxLevel = Math.max(0, LEVELS.length - 1);
+      if (!Number.isFinite(parsed)) return 0;
+      return clamp(parsed | 0, 0, maxLevel);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  saveHighestUnlockedLevel() {
+    try {
+      localStorage.setItem(HIGHEST_UNLOCKED_LEVEL_STORAGE_KEY, String(Math.max(0, this.highestUnlockedLevelIndex | 0)));
+    } catch (_) {
+    }
+  }
+
+  updateHighestUnlockedLevel(index) {
+    const maxLevel = Math.max(0, LEVELS.length - 1);
+    const next = clamp(index | 0, 0, maxLevel);
+    if (next <= this.highestUnlockedLevelIndex) return;
+    this.highestUnlockedLevelIndex = next;
+    this.titleScreen.hasContinue = next > 0 ? 1 : 0;
+    this.titleScreen.levelSelectIndex = next;
+    this.saveHighestUnlockedLevel();
+  }
+
+  loadLastCharacterIndex() {
+    try {
+      const raw = localStorage.getItem(LAST_CHARACTER_STORAGE_KEY);
+      const parsed = Number(raw);
+      const maxCharacter = Math.max(0, CHARACTERS.length - 1);
+      if (!Number.isFinite(parsed)) return 0;
+      return clamp(parsed | 0, 0, maxCharacter);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  saveLastCharacterIndex() {
+    try {
+      localStorage.setItem(LAST_CHARACTER_STORAGE_KEY, String(Math.max(0, this.lastCharacterIndex | 0)));
+    } catch (_) {
+    }
+  }
+
+  updateLastCharacterIndex(index) {
+    const maxCharacter = Math.max(0, CHARACTERS.length - 1);
+    const next = clamp(index | 0, 0, maxCharacter);
+    if (next === this.lastCharacterIndex) return;
+    this.lastCharacterIndex = next;
+    this.saveLastCharacterIndex();
+  }
+
   updateHighScore(value) {
     const next = Math.max(0, value | 0);
     if (next <= this.highScore) return;
@@ -968,7 +1031,6 @@ class Game {
     this.glitchrunnerUnlocked = 0;
     this.shadowrunnerUnlocked = 0;
     this.skeletonUnlocked = 0;
-    this.characterIndex = 0;
     this.isPaused = 0;
     this.pauseHelpMode = "";
 
@@ -980,8 +1042,15 @@ class Game {
     this.resetTitleDemoRunner(1);
 
     const targetLevel = clamp(startLevel | 0, 0, Math.max(0, LEVELS.length - 1));
+    const continueRun = targetLevel > 0;
+    const selectedCharacter = continueRun ? this.lastCharacterIndex : 0;
+    this.characterIndex = selectedCharacter;
+    this.updateLastCharacterIndex(this.characterIndex);
+    this.runStartLevelIndex = targetLevel;
+    this.runScoreMultiplier = targetLevel > 0 ? 0.75 : 1;
     this.gameState = "PLAYING";
     this.loadLevel(targetLevel);
+    if (continueRun) this.setCharacter(selectedCharacter);
     if (showOnboardingHelp) this.openPauseHelp("onboarding");
   }
 
@@ -1126,7 +1195,7 @@ class Game {
         }
         if (picked.key === "continue") {
           uiConfirm();
-          this.startNewRun(t.levelSelectIndex | 0);
+          this.startNewRun(this.highestUnlockedLevelIndex | 0);
           return;
         }
         if (picked.key === "level-select") {
@@ -1814,7 +1883,8 @@ class Game {
   setCharacter(index) {
     const oldW = this.player ? this.player.w : 10;
     const oldH = this.player ? this.player.h : 10;
-    this.characterIndex = index;
+    this.characterIndex = clamp(index | 0, 0, Math.max(0, CHARACTERS.length - 1));
+    this.updateLastCharacterIndex(this.characterIndex);
 
     if (!this.player) return;
 
@@ -3545,14 +3615,16 @@ class Game {
     this.shadowrunnerUnlocked = 0;
     this.skeletonUnlocked = 0;
     this.characterIndex = 0;
+    this.runStartLevelIndex = 0;
+    this.runScoreMultiplier = 1;
     this.loadLevel(0);
     this.levelNameBanner = 0;
     this.gameState = "TITLE";
     this.titleScreen.mode = "main";
     this.titleScreen.selected = 0;
     this.titleScreen.optionSelected = 0;
-    this.titleScreen.levelSelectIndex = 0;
-    this.titleScreen.hasContinue = 0;
+    this.titleScreen.levelSelectIndex = this.highestUnlockedLevelIndex | 0;
+    this.titleScreen.hasContinue = this.highestUnlockedLevelIndex > 0 ? 1 : 0;
     this.titleScreen.fireParticles = [];
     this.titleScreen.fireTick = 0;
     this.titleScreen.reentryStingPending = 1;
@@ -3739,6 +3811,7 @@ class Game {
       this.audio.tone(1580, 0.06, 0.04, "sine", 0.035);
     }
     const nextIndex = this.levelIndex + 1;
+    this.updateHighestUnlockedLevel(nextIndex);
     if (nextIndex < LEVELS.length && LEVEL_THEMES[nextIndex] === "SIMBREACH" && !this.glitchrunnerUnlocked) {
       this.glitchrunnerUnlocked = 1;
       this.teleportNotice = "GLITCHRUNNER UNLOCKED: PHASE DASH";
@@ -3762,7 +3835,9 @@ class Game {
   }
 
   addScore(v) {
-    this.score += v;
+    const base = v | 0;
+    const scaled = base > 0 ? Math.floor(base * this.runScoreMultiplier) : base;
+    this.score += scaled;
     this.updateHighScore(this.score);
   }
 
@@ -6684,6 +6759,10 @@ class Game {
         gfx.fillStyle = !item.enabled ? "#557166" : (selected ? "#bfffd9" : "#d2e7de");
         gfx.fillText(label, ((CANVAS_W - width) * 0.5) | 0, (108 + i * 15) | 0);
       }
+      gfx.font = "9px monospace";
+      gfx.fillStyle = "#a5cbb9";
+      const continueHint = "CONTINUE RUN: SCORE x0.75";
+      gfx.fillText(continueHint, ((CANVAS_W - gfx.measureText(continueHint).width) * 0.5) | 0, 165);
     } else if (t.mode === "level-select") {
       gfx.font = "12px monospace";
       gfx.fillStyle = "#bfffd9";
