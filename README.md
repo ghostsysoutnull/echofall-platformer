@@ -21,6 +21,7 @@ Quick index for this workspace.
 - [Mobile Touch MVP Implementation Notes](docs/mobile/MOBILE_TOUCH_MVP_IMPLEMENTATION.md)
 - [Jungle: Ruin Ascent Production Spec](docs/specs/JUNGLE_RUIN_ASCENT_PRODUCTION_SPEC.md)
 - [Storm Foundry Production Spec](docs/specs/STORM_FOUNDRY_PRODUCTION_SPEC.md)
+- [Player Onboarding + Pause Help Screen Tracker](docs/roadmap/PLAYER_ONBOARDING_HELP_SCREEN_TRACKER.md)
 - [Sprite Edit Guide](docs/guides/SPRITE_EDIT_GUIDE.md)
 
 ## Core Files

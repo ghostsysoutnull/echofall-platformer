@@ -34,6 +34,7 @@ This folder is organized by purpose.
 
 ## Roadmap
 - [Game Ideas Roadmap](roadmap/GAME_IDEAS_ROADMAP.md)
+- [Player Onboarding + Pause Help Screen Tracker](roadmap/PLAYER_ONBOARDING_HELP_SCREEN_TRACKER.md)
 
 ## Archive
 Use this folder for superseded or historical docs.
