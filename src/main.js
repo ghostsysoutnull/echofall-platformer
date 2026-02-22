@@ -1921,6 +1921,73 @@ class Game {
       this.drawSprite(SPRITES.bgTugLarge, sx, sy, actor.scale || 1);
     } else if (actor.type === "bird") {
       this.drawSprite(SPRITES.bgBirdSmall, sx, sy, actor.scale || 1);
+    } else if (actor.type === "distantDragon") {
+      const flap = ((Math.sin((actor.phase || 0) * 1.45 + this.player.anim * 0.05) + 1) * 0.5);
+      const wingRise = (flap * 6) | 0;
+      const wingDrop = ((1 - flap) * 5) | 0;
+      const bodyY = sy + 6;
+
+      gfx.fillStyle = "#4f1111";
+      gfx.fillRect((sx + 8) | 0, bodyY | 0, 24, 4);
+      gfx.fillRect((sx + 31) | 0, (bodyY + 1) | 0, 6, 3);
+      gfx.fillRect((sx + 36) | 0, (bodyY + 2) | 0, 2, 2);
+
+      gfx.fillStyle = "#7a1b1b";
+      gfx.fillRect((sx + 10) | 0, (bodyY - 1) | 0, 20, 1);
+      gfx.fillRect((sx + 14) | 0, (bodyY + 4) | 0, 14, 1);
+      gfx.fillRect((sx + 32) | 0, bodyY | 0, 3, 1);
+
+      gfx.fillStyle = "#a33535";
+      gfx.fillRect((sx + 12) | 0, bodyY | 0, 16, 1);
+      gfx.fillRect((sx + 20) | 0, (bodyY + 2) | 0, 7, 1);
+
+      gfx.fillStyle = "#3a0d0d";
+      gfx.fillRect((sx + 2) | 0, (bodyY + 1) | 0, 6, 2);
+      gfx.fillRect(sx | 0, (bodyY + 2) | 0, 2, 1);
+      gfx.fillRect((sx + 5) | 0, bodyY | 0, 2, 1);
+
+      gfx.fillStyle = "#7a1b1b";
+      gfx.fillRect((sx + 7) | 0, (bodyY - 1) | 0, 2, 1);
+      gfx.fillRect((sx + 9) | 0, (bodyY - 2) | 0, 1, 1);
+      gfx.fillRect((sx + 5) | 0, (bodyY + 3) | 0, 3, 1);
+
+      gfx.fillStyle = "#d66a4a";
+      gfx.fillRect((sx + 2) | 0, (bodyY + 1) | 0, 1, 1);
+
+      gfx.fillStyle = "#6a1414";
+      gfx.fillRect((sx + 5) | 0, (sy - 4 + wingRise) | 0, 11, 3);
+      gfx.fillRect((sx + 11) | 0, (sy - 7 + wingRise) | 0, 11, 3);
+      gfx.fillRect((sx + 18) | 0, (sy - 10 + wingRise) | 0, 9, 2);
+      gfx.fillRect((sx + 24) | 0, (sy - 11 + wingRise) | 0, 6, 1);
+
+      gfx.fillStyle = "#8e2323";
+      gfx.fillRect((sx + 8) | 0, (sy - 3 + wingRise) | 0, 10, 2);
+      gfx.fillRect((sx + 14) | 0, (sy - 6 + wingRise) | 0, 10, 2);
+      gfx.fillRect((sx + 21) | 0, (sy - 8 + wingRise) | 0, 7, 1);
+
+      gfx.fillStyle = "#3e0e0e";
+      gfx.fillRect((sx + 7) | 0, (sy + 8 - wingDrop) | 0, 12, 3);
+      gfx.fillRect((sx + 14) | 0, (sy + 11 - wingDrop) | 0, 12, 3);
+      gfx.fillRect((sx + 22) | 0, (sy + 14 - wingDrop) | 0, 9, 2);
+      gfx.fillRect((sx + 28) | 0, (sy + 16 - wingDrop) | 0, 5, 1);
+
+      gfx.fillStyle = "#6a1414";
+      gfx.fillRect((sx + 10) | 0, (sy + 9 - wingDrop) | 0, 10, 2);
+      gfx.fillRect((sx + 16) | 0, (sy + 12 - wingDrop) | 0, 10, 2);
+      gfx.fillRect((sx + 23) | 0, (sy + 14 - wingDrop) | 0, 7, 1);
+
+      gfx.fillStyle = "#2a0808";
+      gfx.fillRect((sx + 4) | 0, (bodyY + 4) | 0, 3, 1);
+      gfx.fillRect((sx + 1) | 0, (bodyY + 5) | 0, 3, 1);
+      gfx.fillRect((sx + 34) | 0, (bodyY + 3) | 0, 2, 1);
+
+      gfx.fillStyle = "#8e2323";
+      gfx.fillRect((sx + 30) | 0, (bodyY - 2) | 0, 1, 1);
+      gfx.fillRect((sx + 27) | 0, (bodyY - 2) | 0, 1, 1);
+      gfx.fillRect((sx + 24) | 0, (bodyY - 2) | 0, 1, 1);
+
+      gfx.fillStyle = "#c34c3b";
+      gfx.fillRect((sx + 3) | 0, (bodyY + 1) | 0, 1, 1);
     } else if (actor.type === "paperKite") {
       this.drawSprite(SPRITES.bgJapanKiteSmall, sx, sy, actor.scale || 1);
     } else if (actor.type === "ghostLantern") {

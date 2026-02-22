@@ -682,7 +682,9 @@ const GAME_LEVELS = [
     name: "TEST BIOME",
     sequence: 999,
     theme: "LIMINAL",
-    backgroundActors: [],
+    backgroundActors: [
+      { type: "distantDragon", theme: "LIMINAL", x: 186, y: 24, vx: -0.07, parallax: 0.08, bobAmp: 0.8, bobSpeed: 0.022, w: 28, h: 12, scale: 1 }
+    ],
     grid: [
       "................................................................................................",
       "................................................................................................",
