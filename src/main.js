@@ -193,12 +193,29 @@ class Game {
 
     this.boneCryptWeather = { rain: [], lightning: 0, lightningCooldown: 0, cloudDriftNear: 0, cloudDriftFar: 0 };
     this.stormMechanics = this.createStormMechanicsState();
+    this.gameState = "PLAYING";
+    this.titleScreen = {
+      frame: 0,
+      mode: "main",
+      selected: 0,
+      optionSelected: 0,
+      levelSelectIndex: 0,
+      hasContinue: 0,
+      fireParticles: [],
+      fireTick: 0,
+      glitchFrames: 0,
+      glitchCooldown: 180,
+      reentryStingPending: 0,
+      logoPulseFrames: 0
+    };
 
     this.bindInput();
     this.fitCanvas();
     addEventListener("resize", () => this.fitCanvas());
 
     this.loadLevel(0);
+    this.levelNameBanner = 0;
+    this.gameState = "TITLE";
   }
 
   createStormMechanicsState() {
@@ -834,6 +851,221 @@ class Game {
     return (this.rngState >>> 0) / 4294967296;
   }
 
+  titleMainItems() {
+    return [
+      { key: "start", label: "START", enabled: 1 },
+      { key: "continue", label: "CONTINUE", enabled: this.titleScreen.hasContinue ? 1 : 0 },
+      { key: "level-select", label: "LEVEL SELECT", enabled: 1 },
+      { key: "options", label: "OPTIONS", enabled: 1 }
+    ];
+  }
+
+  startNewRun(startLevel = 0) {
+    this.score = 0;
+    this.coins = 0;
+    this.lives = 3;
+    this.nextExtraLifeCoins = 200;
+    this.levelDeaths = 0;
+    this.levelKillCount = 0;
+    this.paladinUnlocked = 0;
+    this.glitchrunnerUnlocked = 0;
+    this.shadowrunnerUnlocked = 0;
+    this.skeletonUnlocked = 0;
+    this.characterIndex = 0;
+    this.isPaused = 0;
+
+    this.titleScreen.mode = "main";
+    this.titleScreen.selected = 0;
+    this.titleScreen.optionSelected = 0;
+    this.titleScreen.fireParticles = [];
+    this.titleScreen.fireTick = 0;
+
+    const targetLevel = clamp(startLevel | 0, 0, Math.max(0, LEVELS.length - 1));
+    this.gameState = "PLAYING";
+    this.loadLevel(targetLevel);
+  }
+
+  handleTitleInput(code) {
+    const t = this.titleScreen;
+    const uiMove = () => this.audio.tone(760, 0.02, 0.00, "triangle", 0.02);
+    const uiConfirm = () => this.audio.tone(940, 0.035, 0.00, "sine", 0.03);
+    const uiBack = () => this.audio.tone(520, 0.025, 0.00, "triangle", 0.02);
+    const uiDeny = () => this.audio.tone(220, 0.05, 0.00, "square", 0.02);
+
+    if (code === "KeyX") {
+      this.audio.muted ^= 1;
+      return;
+    }
+    if (code === "Digit9") {
+      this.audio.adjustMusicVolume(-0.05);
+      uiMove();
+      return;
+    }
+    if (code === "Digit0") {
+      this.audio.adjustMusicVolume(0.05);
+      uiMove();
+      return;
+    }
+
+    if (t.mode === "main") {
+      const items = this.titleMainItems();
+      if (code === "ArrowUp") {
+        t.selected = (t.selected - 1 + items.length) % items.length;
+        uiMove();
+        return;
+      }
+      if (code === "ArrowDown") {
+        t.selected = (t.selected + 1) % items.length;
+        uiMove();
+        return;
+      }
+      if (code === "Enter" || code === "Space") {
+        const picked = items[t.selected];
+        if (!picked || !picked.enabled) {
+          uiDeny();
+          return;
+        }
+        if (picked.key === "start") {
+          uiConfirm();
+          this.startNewRun(0);
+          return;
+        }
+        if (picked.key === "continue") {
+          uiConfirm();
+          this.startNewRun(t.levelSelectIndex | 0);
+          return;
+        }
+        if (picked.key === "level-select") {
+          uiConfirm();
+          t.mode = "level-select";
+          t.levelSelectIndex = clamp(this.levelIndex | 0, 0, Math.max(0, LEVELS.length - 1));
+          return;
+        }
+        if (picked.key === "options") {
+          uiConfirm();
+          t.mode = "options";
+          t.optionSelected = 0;
+        }
+      }
+      return;
+    }
+
+    if (t.mode === "level-select") {
+      if (code === "Escape") {
+        uiBack();
+        t.mode = "main";
+        return;
+      }
+      if (code === "ArrowLeft" || code === "ArrowUp") {
+        t.levelSelectIndex = (t.levelSelectIndex - 1 + LEVELS.length) % LEVELS.length;
+        uiMove();
+        return;
+      }
+      if (code === "ArrowRight" || code === "ArrowDown") {
+        t.levelSelectIndex = (t.levelSelectIndex + 1) % LEVELS.length;
+        uiMove();
+        return;
+      }
+      if (code === "Enter" || code === "Space") {
+        uiConfirm();
+        this.startNewRun(t.levelSelectIndex);
+      }
+      return;
+    }
+
+    if (t.mode === "options") {
+      const optionCount = 3;
+      if (code === "Escape") {
+        uiBack();
+        t.mode = "main";
+        return;
+      }
+      if (code === "ArrowUp") {
+        t.optionSelected = (t.optionSelected - 1 + optionCount) % optionCount;
+        uiMove();
+        return;
+      }
+      if (code === "ArrowDown") {
+        t.optionSelected = (t.optionSelected + 1) % optionCount;
+        uiMove();
+        return;
+      }
+      if ((code === "ArrowLeft" || code === "ArrowRight") && t.optionSelected === 1) {
+        this.audio.adjustMusicVolume(code === "ArrowLeft" ? -0.05 : 0.05);
+        uiMove();
+        return;
+      }
+      if (code === "Enter" || code === "Space") {
+        if (t.optionSelected === 0) {
+          this.audio.muted ^= 1;
+          uiConfirm();
+          return;
+        }
+        if (t.optionSelected === 1) {
+          this.audio.adjustMusicVolume(0.05);
+          uiMove();
+          return;
+        }
+        uiBack();
+        t.mode = "main";
+      }
+    }
+  }
+
+  updateTitleScreen() {
+    const t = this.titleScreen;
+    t.frame++;
+
+    if (t.reentryStingPending) {
+      t.reentryStingPending = 0;
+      t.logoPulseFrames = 52;
+      this.audio.tone(360, 0.06, 0.00, "triangle", 0.04);
+      this.audio.tone(540, 0.07, 0.05, "sine", 0.035);
+      this.audio.tone(760, 0.08, 0.11, "triangle", 0.03);
+    }
+
+    if (t.logoPulseFrames > 0) t.logoPulseFrames--;
+
+    if (t.glitchFrames > 0) t.glitchFrames--;
+    else if (--t.glitchCooldown <= 0) {
+      t.glitchFrames = 2 + ((this.rand01() * 3) | 0);
+      t.glitchCooldown = 150 + ((this.rand01() * 170) | 0);
+    }
+
+    t.fireTick++;
+    if (t.fireTick >= 2) {
+      t.fireTick = 0;
+      for (let i = 0; i < 4; i++) {
+        const life = 28 + ((this.rand01() * 30) | 0);
+        t.fireParticles.push({
+          x: 14 + this.rand01() * (CANVAS_W - 28),
+          y: CANVAS_H + this.rand01() * 8,
+          vx: (this.rand01() - 0.5) * 0.34,
+          vy: -(0.9 + this.rand01() * 1.45),
+          sway: this.rand01() * 6.283,
+          t: life,
+          life,
+          size: this.rand01() > 0.6 ? 2 : 1,
+          kind: this.rand01() > 0.5 ? 0 : 1
+        });
+      }
+      if (t.fireParticles.length > 180) t.fireParticles.splice(0, t.fireParticles.length - 180);
+    }
+
+    for (let i = 0; i < t.fireParticles.length; i++) {
+      const p = t.fireParticles[i];
+      if (p.t-- <= 0) { p.dead = 1; continue; }
+      const lifeP = p.life ? (p.t / p.life) : 0;
+      p.sway += 0.24;
+      p.vx = p.vx * 0.93 + Math.sin(p.sway) * 0.05;
+      p.vy = p.vy * 0.98 - 0.01;
+      p.x += p.vx;
+      p.y += p.vy;
+      if (lifeP < 0.08 || p.y < 42) p.dead = 1;
+    }
+    t.fireParticles = t.fireParticles.filter((p) => !p.dead);
+  }
+
   bindInput() {
     const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","Digit1","Digit2","Digit6","Digit7","Digit8","Digit9","Digit0"]);
     const autoUnpauseKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyQ","KeyW","KeyE","Digit1","Digit2"]);
@@ -853,6 +1085,13 @@ class Game {
           this.audio.tone(760, 0.045, 0.00, "triangle", 0.05);
           this.audio.tone(980, 0.05, 0.03, "sine", 0.04);
         }
+        this.keyDown[e.code] = 1;
+        return;
+      }
+
+      if (this.gameState === "TITLE") {
+        if (!this.audio.ctx) this.audio.ensure();
+        this.handleTitleInput(e.code);
         this.keyDown[e.code] = 1;
         return;
       }
@@ -2684,6 +2923,17 @@ class Game {
     this.skeletonUnlocked = 0;
     this.characterIndex = 0;
     this.loadLevel(0);
+    this.levelNameBanner = 0;
+    this.gameState = "TITLE";
+    this.titleScreen.mode = "main";
+    this.titleScreen.selected = 0;
+    this.titleScreen.optionSelected = 0;
+    this.titleScreen.levelSelectIndex = 0;
+    this.titleScreen.hasContinue = 0;
+    this.titleScreen.fireParticles = [];
+    this.titleScreen.fireTick = 0;
+    this.titleScreen.reentryStingPending = 1;
+    this.titleScreen.logoPulseFrames = 0;
   }
 
   currentPlayerSpriteRows() {
@@ -4627,6 +4877,11 @@ class Game {
   }
 
   step() {
+    if (this.gameState === "TITLE") {
+      this.updateTitleScreen();
+      return;
+    }
+
     if (this.levelNameBanner) this.levelNameBanner--;
     if (this.helpTimer > 0) this.helpTimer--;
     if (this.checkpointNotice > 0) this.checkpointNotice--;
@@ -5641,7 +5896,128 @@ class Game {
     }
   }
 
+  drawTitleScreen() {
+    const t = this.titleScreen;
+    gfx.setTransform(1,0,0,1,0,0);
+
+    gfx.fillStyle = "#040708";
+    gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    const nearDrift = (t.frame * 0.18) % CANVAS_W;
+    const farDrift = (t.frame * 0.08) % CANVAS_W;
+    gfx.fillStyle = "#0c1618";
+    for (let i = -1; i < 5; i++) {
+      const x = ((i * 88) - farDrift) | 0;
+      gfx.fillRect(x, 88, 40, 92);
+      gfx.fillRect((x + 28) | 0, 102, 22, 78);
+    }
+    gfx.fillStyle = "#0f1d1f";
+    for (let i = -1; i < 6; i++) {
+      const x = ((i * 62) - nearDrift) | 0;
+      gfx.fillRect(x, 108, 24, 72);
+      gfx.fillRect((x + 14) | 0, 120, 18, 60);
+    }
+
+    for (let i = 0; i < t.fireParticles.length; i++) {
+      const p = t.fireParticles[i];
+      const lifeP = p.life ? (p.t / p.life) : 0;
+      gfx.globalAlpha = Math.max(0.08, Math.min(0.85, lifeP * 1.05));
+      gfx.fillStyle = p.kind === 0 ? (lifeP > 0.5 ? "#6df79b" : "#2fa967") : (lifeP > 0.5 ? "#bfffd9" : "#5cd891");
+      const s = p.size + (lifeP > 0.55 ? 1 : 0);
+      gfx.fillRect((p.x - (s >> 1)) | 0, (p.y - s) | 0, s, s + 1);
+    }
+    gfx.globalAlpha = 1;
+
+    if (t.glitchFrames > 0) {
+      gfx.globalAlpha = 0.09;
+      gfx.fillStyle = "#5affb3";
+      gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      gfx.globalAlpha = 1;
+    }
+
+    const glitchX = t.glitchFrames > 0 ? (((this.rand01() * 4) | 0) - 2) : 0;
+    const glitchY = t.glitchFrames > 0 ? (((this.rand01() * 4) | 0) - 2) : 0;
+
+    const pulseP = t.logoPulseFrames > 0 ? (t.logoPulseFrames / 52) : 0;
+    const pulseScale = 1 + pulseP * 0.12;
+    const pulseGlow = 0.16 + pulseP * 0.26;
+
+    gfx.font = "bold 36px monospace";
+    gfx.globalAlpha = pulseGlow;
+    gfx.fillStyle = "#67f4b0";
+    const glowTitle = "ECHOFALL";
+    const glowW = gfx.measureText(glowTitle).width;
+    const glowX = ((CANVAS_W - glowW * pulseScale) * 0.5 + glitchX) | 0;
+    gfx.setTransform(pulseScale, 0, 0, pulseScale, glowX, (48 + glitchY) | 0);
+    gfx.fillText(glowTitle, 0, 0);
+
+    gfx.setTransform(1,0,0,1,0,0);
+    gfx.globalAlpha = 1;
+    gfx.font = "bold 36px monospace";
+    gfx.fillStyle = "#d8fff0";
+    const mainTitle = "ECHOFALL";
+    const titleW = gfx.measureText(mainTitle).width;
+    gfx.fillText(mainTitle, ((CANVAS_W - titleW) * 0.5 + glitchX) | 0, (52 + glitchY) | 0);
+
+    gfx.font = "bold 16px monospace";
+    gfx.fillStyle = "#7de4b8";
+    const subTitle = "PROTOCOL";
+    const subW = gfx.measureText(subTitle).width;
+    gfx.fillText(subTitle, ((CANVAS_W - subW) * 0.5 - glitchX) | 0, (70 - glitchY) | 0);
+
+    if (t.mode === "main") {
+      const items = this.titleMainItems();
+      gfx.font = "12px monospace";
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const selected = i === t.selected;
+        const label = selected ? ("[ " + item.label + " ]") : item.label;
+        const width = gfx.measureText(label).width;
+        gfx.fillStyle = !item.enabled ? "#557166" : (selected ? "#bfffd9" : "#d2e7de");
+        gfx.fillText(label, ((CANVAS_W - width) * 0.5) | 0, (108 + i * 15) | 0);
+      }
+    } else if (t.mode === "level-select") {
+      gfx.font = "12px monospace";
+      gfx.fillStyle = "#bfffd9";
+      const head = "LEVEL SELECT";
+      gfx.fillText(head, ((CANVAS_W - gfx.measureText(head).width) * 0.5) | 0, 108);
+      gfx.fillStyle = "#e8fff4";
+      gfx.font = "10px monospace";
+      const levelLabel = ("< " + (LEVEL_NAMES[t.levelSelectIndex] || ("LEVEL " + (t.levelSelectIndex + 1))) + " >");
+      gfx.fillText(levelLabel, ((CANVAS_W - gfx.measureText(levelLabel).width) * 0.5) | 0, 126);
+      const hint = "LEFT/RIGHT PICK  ENTER START  ESC BACK";
+      gfx.fillStyle = "#a5cbb9";
+      gfx.fillText(hint, ((CANVAS_W - gfx.measureText(hint).width) * 0.5) | 0, 154);
+    } else {
+      const options = [
+        "MUTE: " + (this.audio.muted ? "ON" : "OFF"),
+        "MUSIC: " + (((this.audio.musicVolume * 100) + 0.5) | 0) + "%",
+        "BACK"
+      ];
+      gfx.font = "12px monospace";
+      gfx.fillStyle = "#bfffd9";
+      const head = "OPTIONS";
+      gfx.fillText(head, ((CANVAS_W - gfx.measureText(head).width) * 0.5) | 0, 108);
+      for (let i = 0; i < options.length; i++) {
+        const selected = i === t.optionSelected;
+        const text = selected ? ("[ " + options[i] + " ]") : options[i];
+        gfx.fillStyle = selected ? "#e8fff4" : "#bddfd0";
+        gfx.fillText(text, ((CANVAS_W - gfx.measureText(text).width) * 0.5) | 0, (126 + i * 14) | 0);
+      }
+    }
+
+    gfx.fillStyle = "#9ab7aa";
+    gfx.font = "9px monospace";
+    const footer = "ARROWS MOVE  ENTER SELECT  ESC BACK  X MUTE";
+    gfx.fillText(footer, ((CANVAS_W - gfx.measureText(footer).width) * 0.5) | 0, 174);
+  }
+
   render() {
+    if (this.gameState === "TITLE") {
+      this.drawTitleScreen();
+      return;
+    }
+
     let shakeX = 0;
     let shakeY = 0;
     if (this.gameOverCinematic.active && this.gameOverCinematic.shake > 0.25) {

@@ -2,10 +2,10 @@
 
 ## 0) Compatibility Matrix (Requested Vision)
 - **Brand title: `ECHOFALL PROTOCOL`:** **Approved**
-- **Dark ruined skyline / cyber-noir mood:** **Target**
-- **Subtle green echo-fire ambient layer:** **Target**
-- **Large centered logo with glitch personality:** **Target**
-- **Simple keyboard-driven main menu:** **Target**
+- **Dark ruined skyline / cyber-noir mood:** **Implemented (Iteration 1)**
+- **Subtle green echo-fire ambient layer:** **Implemented (Iteration 1)**
+- **Large centered logo with glitch personality:** **Implemented (Iteration 1)**
+- **Simple keyboard-driven main menu:** **Implemented (Iteration 1)**
 - **Retro readability first (pixel/mono style):** **Required**
 - **Fast load, no blocking transitions:** **Required**
 
@@ -93,7 +93,7 @@ Selection styling:
   - `audio/sfx.js`
 
 Implementation note:
-- Prefer adding title-screen-specific render/update methods in `Game` class (`updateTitleScreen`, `drawTitleScreen`) and branch early in `step()`/`render()` when in `TITLE` state.
+- Iteration 1 uses title-screen-specific methods in `Game` class (`updateTitleScreen`, `drawTitleScreen`) and early branch in `step()`/`render()` when in `TITLE` state.
 
 ## 9) Performance Budget
 - Maintain 60 FPS on baseline target machine.
@@ -109,14 +109,52 @@ Implementation note:
 - If `CONTINUE` unavailable, show disabled style rather than dead action.
 
 ## 11) QA Checklist
-- [ ] Title appears on boot before gameplay.
-- [ ] Logo remains centered at all supported window scales.
-- [ ] Menu navigation wraps correctly (top/bottom).
-- [ ] Confirm actions route to expected state.
-- [ ] Green fire remains behind menu and never obscures selected option.
-- [ ] Glitch flicker does not reduce title readability.
-- [ ] Mute toggle works from title/options.
+- [x] Title appears on boot before gameplay.
+- [x] Logo remains centered at all supported window scales.
+- [x] Menu navigation wraps correctly (top/bottom).
+- [x] Confirm actions route to expected state.
+- [x] Green fire remains behind menu and never obscures selected option.
+- [x] Glitch flicker does not reduce title readability.
+- [x] Mute toggle works from title/options.
+- [x] Game over flow returns to TITLE screen.
+- [x] Return from game-over triggers title re-entry sting + logo pulse.
 - [ ] No runtime errors when switching TITLE ↔ gameplay repeatedly.
+
+## 13) Iteration Log
+
+### Iteration 1 — MVP Title Screen (Implemented)
+**Implemented in code:**
+- Added `TITLE` state routing in `Game.step()` / `Game.render()`.
+- Added `drawTitleScreen()` and `updateTitleScreen()` in `src/main.js`.
+- Added centered logo (`ECHOFALL` / `PROTOCOL`) with periodic glitch jitter.
+- Added ambient green echo-fire particle layer.
+- Added keyboard-driven menu with modes:
+  - Main (`START`, `CONTINUE` disabled, `LEVEL SELECT`, `OPTIONS`)
+  - Level select submenu
+  - Options submenu (`MUTE`, `MUSIC`, `BACK`)
+- Added title input handling with UI tones and boot-to-title flow.
+
+**Deferred / next steps:**
+- Validate repeated transitions TITLE ↔ gameplay with long runtime soak.
+- Add true `CONTINUE` persistence source (save/checkpoint-backed).
+- Consider background-render module reuse for title parallax unification.
+- Add optional branded subtitle/credits line if desired.
+
+### Iteration 2 — Post-Game-Over Routing Fix (Implemented)
+**Implemented in code:**
+- Fixed post-game-over reset flow to return to `TITLE` state instead of dropping directly into gameplay.
+- Reset title-menu selection state after game-over reset for deterministic landing.
+
+**Deferred / next steps:**
+- `CONTINUE` remains intentionally deferred and still disabled until persistence is implemented.
+
+### Iteration 3 — Title Re-entry Feedback (Implemented)
+**Implemented in code:**
+- Added post-game-over title re-entry sting (short layered tones) on first title update after reset.
+- Added brief logo pulse/glow effect synced to re-entry to reinforce transition feedback.
+
+**Deferred / next steps:**
+- Optional: add a distinct re-entry subtitle line (e.g., “SYSTEM RECOVERED”) for 1–2 seconds.
 
 ## 12) Future Enhancements (Optional)
 - Add animated subtitle variants per unlocked character.
