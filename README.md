@@ -17,6 +17,7 @@ Quick index for this workspace.
 - [Mobile Automated Tests](docs/MOBILE_AUTOMATED_TESTS.md)
 - [GitHub Actions Mobile CI Decision Guide](docs/GITHUB_ACTIONS_MOBILE_CI_DECISION_GUIDE.md)
 - [Mobile Work Change Summary](docs/MOBILE_WORK_CHANGE_SUMMARY.md)
+- [Mobile Touch MVP Implementation Notes](docs/MOBILE_TOUCH_MVP_IMPLEMENTATION.md)
 - [Jungle: Ruin Ascent Production Spec](docs/JUNGLE_RUIN_ASCENT_PRODUCTION_SPEC.md)
 - [Storm Foundry Production Spec](docs/STORM_FOUNDRY_PRODUCTION_SPEC.md)
 - [Sprite Edit Guide](docs/SPRITE_EDIT_GUIDE.md)

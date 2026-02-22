@@ -85,6 +85,10 @@ class Game {
 
     this.keyDown = {};
     this.jumpBuffer = 0;
+    this.touchCapable = (typeof navigator !== "undefined") && (navigator.maxTouchPoints > 0 || "ontouchstart" in globalThis);
+    this.touchControlsEnabled = this.touchCapable ? 1 : 0;
+    this.touchInputTimer = 0;
+    this.touchButtons = { left: 0, right: 0, jump: 0, action: 0 };
 
     this.levelIndex = 0;
     this.characterIndex = 0;
@@ -1345,8 +1349,136 @@ class Game {
     if (t.mode === "jukebox") this.updateTitleJukeboxVisuals();
   }
 
+  getTouchJumpBufferFrames() {
+    return this.touchInputTimer > 0 ? (JUMP_BUFFER_FRAMES + 2) : JUMP_BUFFER_FRAMES;
+  }
+
+  getTouchCoyoteFrames() {
+    return this.touchInputTimer > 0 ? (COYOTE_FRAMES + 2) : COYOTE_FRAMES;
+  }
+
+  clearRuntimeInputState() {
+    this.keyDown = {};
+    this.jumpBuffer = 0;
+    this.touchButtons.left = 0;
+    this.touchButtons.right = 0;
+    this.touchButtons.jump = 0;
+    this.touchButtons.action = 0;
+  }
+
+  touchControlsVisible() {
+    return !!(this.touchCapable && this.touchControlsEnabled && this.gameState !== "TITLE");
+  }
+
+  getTouchControlRects() {
+    const pad = 8;
+    const btnW = 34;
+    const btnH = 24;
+    const y = CANVAS_H - btnH - pad;
+    return {
+      left: { x: pad, y, w: btnW, h: btnH },
+      right: { x: pad + btnW + 8, y, w: btnW, h: btnH },
+      action: { x: CANVAS_W - pad - btnW * 2 - 8, y, w: btnW, h: btnH },
+      jump: { x: CANVAS_W - pad - btnW, y, w: btnW, h: btnH }
+    };
+  }
+
+  touchPointToCanvas(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    if (!rect || !rect.width || !rect.height) return null;
+    const x = ((clientX - rect.left) / rect.width) * CANVAS_W;
+    const y = ((clientY - rect.top) / rect.height) * CANVAS_H;
+    return { x, y };
+  }
+
+  touchActionAt(x, y) {
+    const rects = this.getTouchControlRects();
+    const inRect = (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    if (inRect(rects.left)) return "left";
+    if (inRect(rects.right)) return "right";
+    if (inRect(rects.jump)) return "jump";
+    if (inRect(rects.action)) return "action";
+    return "";
+  }
+
+  applyTouchButtons(nextButtons) {
+    const next = {
+      left: !!nextButtons.left,
+      right: !!nextButtons.right,
+      jump: !!nextButtons.jump,
+      action: !!nextButtons.action
+    };
+
+    const hadAnyBefore = !!(this.touchButtons.left || this.touchButtons.right || this.touchButtons.jump || this.touchButtons.action);
+    const hasAnyNow = !!(next.left || next.right || next.jump || next.action);
+    if (hasAnyNow) this.touchInputTimer = 120;
+
+    if (this.isPaused && hasAnyNow && !hadAnyBefore) {
+      this.isPaused = 0;
+      this.audio.tone(620, 0.04);
+    }
+
+    if (next.jump && !this.touchButtons.jump) this.jumpBuffer = this.getTouchJumpBufferFrames();
+    if (next.action && !this.touchButtons.action && this.gameState !== "TITLE") this.tryActivateCharacterSkill();
+
+    this.touchButtons.left = next.left ? 1 : 0;
+    this.touchButtons.right = next.right ? 1 : 0;
+    this.touchButtons.jump = next.jump ? 1 : 0;
+    this.touchButtons.action = next.action ? 1 : 0;
+
+    this.keyDown.ArrowLeft = this.touchButtons.left;
+    this.keyDown.ArrowRight = this.touchButtons.right;
+    this.keyDown.Space = this.touchButtons.jump;
+    this.keyDown.KeyQ = this.touchButtons.action;
+  }
+
+  syncTouchFromEvent(e) {
+    if (!this.touchControlsVisible()) {
+      this.applyTouchButtons({ left: 0, right: 0, jump: 0, action: 0 });
+      return;
+    }
+
+    const next = { left: 0, right: 0, jump: 0, action: 0 };
+    const touches = e && e.touches ? e.touches : [];
+    for (let i = 0; i < touches.length; i++) {
+      const t = touches[i];
+      const p = this.touchPointToCanvas(t.clientX, t.clientY);
+      if (!p) continue;
+      const action = this.touchActionAt(p.x, p.y);
+      if (action) next[action] = 1;
+    }
+    this.applyTouchButtons(next);
+  }
+
+  drawTouchControlsOverlay() {
+    if (!this.touchControlsVisible()) return;
+    const rects = this.getTouchControlRects();
+    const entries = [
+      { key: "left", label: "◀", rect: rects.left },
+      { key: "right", label: "▶", rect: rects.right },
+      { key: "action", label: "Q", rect: rects.action },
+      { key: "jump", label: "J", rect: rects.jump }
+    ];
+
+    gfx.save();
+    gfx.font = "10px monospace";
+    gfx.textAlign = "center";
+    gfx.textBaseline = "middle";
+    for (let i = 0; i < entries.length; i++) {
+      const it = entries[i];
+      const pressed = !!this.touchButtons[it.key];
+      gfx.fillStyle = pressed ? "#ffffff66" : "#00000055";
+      gfx.fillRect(it.rect.x, it.rect.y, it.rect.w, it.rect.h);
+      gfx.strokeStyle = "#ffffff88";
+      gfx.strokeRect(it.rect.x + 0.5, it.rect.y + 0.5, it.rect.w - 1, it.rect.h - 1);
+      gfx.fillStyle = "#ffffff";
+      gfx.fillText(it.label, it.rect.x + it.rect.w * 0.5, it.rect.y + it.rect.h * 0.5 + 1);
+    }
+    gfx.restore();
+  }
+
   bindInput() {
-    const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","Digit1","Digit2","Digit6","Digit7","Digit8","Digit9","Digit0"]);
+    const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","KeyT","Digit1","Digit2","Digit6","Digit7","Digit8","Digit9","Digit0"]);
     const autoUnpauseKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyQ","KeyW","KeyE","Digit1","Digit2"]);
 
     addEventListener("keydown", (e) => {
@@ -1376,8 +1508,15 @@ class Game {
       }
 
       if (!this.keyDown[e.code]) {
-        if (e.code === "Space" || e.code === "ArrowUp") this.jumpBuffer = JUMP_BUFFER_FRAMES;
+        if (e.code === "Space" || e.code === "ArrowUp") this.jumpBuffer = this.getTouchJumpBufferFrames();
         if (e.code === "KeyX") this.audio.muted ^= 1;
+        if (e.code === "KeyT") {
+          this.touchControlsEnabled ^= 1;
+          this.teleportNotice = this.touchControlsEnabled ? "TOUCH HUD: ON" : "TOUCH HUD: OFF";
+          this.teleportNoticeTimer = 90;
+          this.audio.tone(this.touchControlsEnabled ? 760 : 420, 0.04);
+          if (!this.touchControlsEnabled) this.applyTouchButtons({ left: 0, right: 0, jump: 0, action: 0 });
+        }
         if (e.code === "Digit9") this.audio.adjustMusicVolume(-0.05);
         if (e.code === "Digit0") this.audio.adjustMusicVolume(0.05);
         if (e.code === "Digit7") {
@@ -1462,6 +1601,25 @@ class Game {
       if (preventKeys.has(e.code)) e.preventDefault();
       this.keyDown[e.code] = 0;
     });
+
+    addEventListener("blur", () => {
+      this.clearRuntimeInputState();
+    });
+
+    addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") this.clearRuntimeInputState();
+    });
+
+    if (this.touchCapable) {
+      const handleTouch = (e) => {
+        e.preventDefault();
+        this.syncTouchFromEvent(e);
+      };
+      canvas.addEventListener("touchstart", handleTouch, { passive: false });
+      canvas.addEventListener("touchmove", handleTouch, { passive: false });
+      canvas.addEventListener("touchend", handleTouch, { passive: false });
+      canvas.addEventListener("touchcancel", handleTouch, { passive: false });
+    }
   }
 
   fitCanvas() {
@@ -5213,6 +5371,7 @@ class Game {
     if (this.respawnGrace > 0) this.respawnGrace--;
     if (this.geometryMusicNotice > 0) this.geometryMusicNotice--;
     if (this.teleportNoticeTimer > 0) this.teleportNoticeTimer--;
+    if (this.touchInputTimer > 0) this.touchInputTimer--;
 
     if (this.gameOverCinematic.active) {
       this.updateGameOverCinematic();
@@ -5290,8 +5449,9 @@ class Game {
     else p.jumpBuf = Math.max(0, p.jumpBuf - 1);
 
     // Ground resets
+    const coyoteFrames = this.getTouchCoyoteFrames();
     if (p.onGround) {
-      p.coyote = COYOTE_FRAMES;
+      p.coyote = coyoteFrames;
       p.ninjaAirJumps = character.doubleJumps;
       p.duckFuel = character.duckFlight;
       p.duckFlying = 0;
@@ -6528,6 +6688,8 @@ class Game {
       RELIC_PICKUP_FX,
       getThemeForLevel
     });
+
+    this.drawTouchControlsOverlay();
   }
 }
 
