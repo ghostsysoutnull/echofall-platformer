@@ -59,6 +59,7 @@ canvas.height = CANVAS_H;
 gfx.imageSmoothingEnabled = false;
 
 const JUKEBOX_SPECIAL_TRACK_KEYS = [
+  "JUKEBOX_NEON_COASTLINE",
   "JUKEBOX_OCEAN_DRIVE_86",
   "JUKEBOX_PASSING_BREEZE",
   "JUKEBOX_MIDNIGHT_CIRCUIT"
@@ -1245,6 +1246,7 @@ class Game {
   }
 
   jukeboxTrackLabel(key) {
+    if (key === "JUKEBOX_NEON_COASTLINE") return "Neon Coastline";
     if (key === "JUKEBOX_OCEAN_DRIVE_86") return "Ocean Drive '86";
     if (key === "JUKEBOX_PASSING_BREEZE") return "Passing Breeze";
     if (key === "JUKEBOX_MIDNIGHT_CIRCUIT") return "Midnight Circuit";

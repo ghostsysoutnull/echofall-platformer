@@ -23,6 +23,7 @@
     SHADOWRUN: "SHADOWRUN",
     NITE: "NITE",
     SPACE: "SPACE_01",
+    JUKEBOX_NEON_COASTLINE: "JUKEBOX_NEON_COASTLINE",
     JUKEBOX_OCEAN_DRIVE_86: "JUKEBOX_OCEAN_DRIVE_86",
     JUKEBOX_PASSING_BREEZE: "JUKEBOX_PASSING_BREEZE",
     JUKEBOX_MIDNIGHT_CIRCUIT: "JUKEBOX_MIDNIGHT_CIRCUIT"
@@ -184,10 +185,122 @@
       if (key === "GEOMETRYDREAM_S6") return this.GEOMETRYDREAM_S6(ctx, bus, aux, helpers);
       if (key === "SHADOWRUN") return this.SHADOWRUN(ctx, bus, aux, helpers);
       if (key === "NITE") return this.NITE(ctx, bus, aux, helpers);
+      if (key === "JUKEBOX_NEON_COASTLINE") return this.JUKEBOX_NEON_COASTLINE(ctx, bus, aux, helpers);
       if (key === "JUKEBOX_OCEAN_DRIVE_86") return this.JUKEBOX_OCEAN_DRIVE_86(ctx, bus, aux, helpers);
       if (key === "JUKEBOX_PASSING_BREEZE") return this.JUKEBOX_PASSING_BREEZE(ctx, bus, aux, helpers);
       if (key === "JUKEBOX_MIDNIGHT_CIRCUIT") return this.JUKEBOX_MIDNIGHT_CIRCUIT(ctx, bus, aux, helpers);
       return this.SPACE_01(ctx, bus, aux, helpers);
+    },
+
+    JUKEBOX_NEON_COASTLINE: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      // Deep, warm analog-style pad
+      const padGain = ctx.createGain();
+      padGain.gain.value = 0.25;
+      const padLp = ctx.createBiquadFilter();
+      padLp.type = "lowpass";
+      padLp.frequency.value = 800;
+      padLp.Q.value = 1.2;
+      padGain.connect(padLp);
+      padLp.connect(bus);
+
+      const padFreqs = [110.00, 130.81, 164.81, 220.00]; // Am7
+      for (let i = 0; i < padFreqs.length; i++) {
+        const osc = ctx.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.value = padFreqs[i] * 0.5;
+        
+        // Slight detune for analog warmth
+        const detune = (Math.random() - 0.5) * 10;
+        osc.detune.value = detune;
+        
+        osc.connect(padGain);
+        osc.start();
+        nodes.push(osc);
+      }
+
+      // Slow, sweeping filter LFO
+      const filterLfo = ctx.createOscillator();
+      filterLfo.type = "sine";
+      filterLfo.frequency.value = 0.05;
+      const filterAmt = ctx.createGain();
+      filterAmt.gain.value = 400;
+      filterLfo.connect(filterAmt);
+      filterAmt.connect(padLp.frequency);
+      filterLfo.start();
+      nodes.push(filterLfo, filterAmt);
+
+      // Plucky, resonant bass
+      const bassGain = ctx.createGain();
+      bassGain.gain.value = 0.0001;
+      const bassLp = ctx.createBiquadFilter();
+      bassLp.type = "lowpass";
+      bassLp.frequency.value = 1200;
+      bassLp.Q.value = 3.0;
+      bassGain.connect(bassLp);
+      bassLp.connect(bus);
+
+      const bassOsc = ctx.createOscillator();
+      bassOsc.type = "square";
+      bassOsc.frequency.value = 55.00; // A1
+      bassOsc.connect(bassGain);
+      bassOsc.start();
+      nodes.push(bassGain, bassLp, bassOsc);
+
+      let step = 0;
+      const grooveTimer = setInterval(() => {
+        const now = ctx.currentTime;
+        
+        // Driving 8th note bassline with octave jumps
+        const isOctave = step % 2 !== 0;
+        bassOsc.frequency.setValueAtTime(isOctave ? 110.00 : 55.00, now);
+        
+        bassGain.gain.cancelScheduledValues(now);
+        bassGain.gain.setValueAtTime(0.0001, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.3, now + 0.01);
+        bassGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+
+        // Filter envelope for bass
+        bassLp.frequency.cancelScheduledValues(now);
+        bassLp.frequency.setValueAtTime(2000, now);
+        bassLp.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+
+        // Heavy, gated snare on 2 and 4
+        if (step % 4 === 2) {
+          const n = makeNoiseSource(ctx, 0.3, 0.2);
+          const bp = ctx.createBiquadFilter();
+          bp.type = "bandpass";
+          bp.frequency.value = 1500;
+          bp.Q.value = 0.5;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.exponentialRampToValueAtTime(0.4, now + 0.01);
+          g.gain.setValueAtTime(0.4, now + 0.15); // Gate hold
+          g.gain.exponentialRampToValueAtTime(0.0001, now + 0.18); // Gate release
+          n.connect(bp);
+          bp.connect(g);
+          g.connect(bus);
+          if (aux && aux.delay) g.connect(aux.delay);
+          n.start(now);
+          n.stop(now + 0.2);
+          nodes.push(n, bp, g);
+        }
+
+        // Shimmering, delayed synth lead
+        if (step % 8 === 0 || step % 8 === 3 || step % 8 === 6) {
+           const leadPool = [440.00, 523.25, 659.25, 880.00]; // A minor pentatonic
+           const f = leadPool[(Math.random() * leadPool.length) | 0];
+           nodes.push(...ping({ freq: f, type: "sawtooth", peak: 0.08, dur: 0.2, lpHz: 3000, toDelay: true, bus, aux }));
+        }
+
+        step++;
+      }, 250); // 120 BPM = 500ms per beat = 250ms per 8th note
+      timers.push(grooveTimer);
+
+      return { nodes, timers };
     },
 
     JUKEBOX_OCEAN_DRIVE_86: (ctx, bus, aux, helpers) => {

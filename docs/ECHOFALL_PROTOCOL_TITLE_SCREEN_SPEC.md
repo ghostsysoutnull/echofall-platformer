@@ -154,8 +154,8 @@ Selection styling:
 - `9/0`: music volume down/up.
 
 ### 7.2 Jukebox Special Track (Implemented)
-- Add jukebox-exclusive special track keys: `JUKEBOX_OCEAN_DRIVE_86`, `JUKEBOX_PASSING_BREEZE`, `JUKEBOX_MIDNIGHT_CIRCUIT`.
-- Display labels: `Ocean Drive '86`, `Passing Breeze`, `Midnight Circuit`.
+- Add jukebox-exclusive special track keys: `JUKEBOX_NEON_COASTLINE`, `JUKEBOX_OCEAN_DRIVE_86`, `JUKEBOX_PASSING_BREEZE`, `JUKEBOX_MIDNIGHT_CIRCUIT`.
+- Display labels: `Neon Coastline`, `Ocean Drive '86`, `Passing Breeze`, `Midnight Circuit`.
 - Placement: always pinned as the **last** entries in jukebox track list.
 - Behavior:
   - When a special entry is selected, apply a dedicated warm neon palette variant in jukebox background.
@@ -209,7 +209,7 @@ Implementation note:
 - [x] Jukebox neon-wave background renders with readable track list.
 - [x] Jukebox controls (`Up/Down`, `Enter`, `Esc`, `X`, `9/0`) work as specified.
 - [x] Jukebox preview transitions do not break title/gameplay theme routing.
-- [x] `Ocean Drive '86`, `Passing Breeze`, and `Midnight Circuit` appear as the last jukebox items.
+- [x] `Neon Coastline`, `Ocean Drive '86`, `Passing Breeze`, and `Midnight Circuit` appear as the last jukebox items.
 - [x] Selecting a special track switches jukebox palette; unselecting reverts it.
 - [x] Title background shows animated `CUR` and `HI` score tags.
 - [x] High score updates when score increases and is retained across refresh (localStorage).
@@ -295,7 +295,7 @@ Implementation note:
 
 ### Iteration 7 — Jukebox Special Tracks (Implemented)
 **Implemented in code:**
-- Added original jukebox-only track routes `JUKEBOX_OCEAN_DRIVE_86`, `JUKEBOX_PASSING_BREEZE`, and `JUKEBOX_MIDNIGHT_CIRCUIT` in audio track builder.
+- Added original jukebox-only track routes `JUKEBOX_NEON_COASTLINE`, `JUKEBOX_OCEAN_DRIVE_86`, `JUKEBOX_PASSING_BREEZE`, and `JUKEBOX_MIDNIGHT_CIRCUIT` in audio track builder.
 - Added display label mappings and pinned them as last jukebox entries.
 - Added jukebox palette-switch behavior tied to selected entry:
   - warm sunset neon variant while selected,
