@@ -888,6 +888,16 @@ class Game {
             this.loadLevel(this.levelIndex - 1);
           }
         }
+        if (e.code === "KeyH") {
+          const hudTestIndex = LEVEL_THEMES.findIndex(t => t === "DAY");
+          const hudTestLevel = LEVELS.findIndex((l, i) => LEVEL_NAMES[i] === "HUD TEST");
+          if (hudTestLevel >= 0) {
+            this.loadLevel(hudTestLevel);
+            this.teleportNotice = "HUD TEST BIOME";
+            this.teleportNoticeTimer = 90;
+            this.audio.tone(740, 0.04);
+          }
+        }
 
         if (!this.audio.ctx) { this.audio.ensure(); }
       }
