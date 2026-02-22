@@ -49,6 +49,19 @@ Implement low-risk mobile controls for quick on-device playtesting while preserv
 - Tapping toggles fullscreen when supported and shows status notice.
 - If unsupported/blocked by browser, a notice is displayed.
 
+### 9) Fullscreen touch alignment hardening
+- Canvas transform is reset before drawing touch overlay.
+- This keeps rendered button positions aligned with touch hit-testing in fullscreen and during gameplay transitions.
+- Added fullscreen/orientation listeners to refresh canvas fit when display mode changes.
+
+### 10) Title menu touch navigation
+- Added title touch controls for full navigation:
+  - `▲` / `▼` for vertical menu movement
+  - `◀` / `▶` for horizontal choices
+  - `OK` to confirm/select
+  - `↩` to go back
+- This enables title/options/level-select/jukebox navigation on touch devices.
+
 ## Desktop Impact
 Expected desktop impact is minimal:
 - Keyboard controls remain unchanged.

@@ -89,7 +89,7 @@ class Game {
     this.touchCapable = (typeof navigator !== "undefined") && (navigator.maxTouchPoints > 0 || "ontouchstart" in globalThis || coarsePointer);
     this.touchControlsEnabled = this.touchCapable ? 1 : 0;
     this.touchInputTimer = 0;
-    this.touchButtons = { fullscreen: 0, left: 0, right: 0, jump: 0, action: 0 };
+    this.touchButtons = { fullscreen: 0, up: 0, down: 0, back: 0, left: 0, right: 0, jump: 0, action: 0 };
 
     this.levelIndex = 0;
     this.characterIndex = 0;
@@ -264,6 +264,9 @@ class Game {
     this.bindInput();
     this.fitCanvas();
     addEventListener("resize", () => this.fitCanvas());
+    addEventListener("orientationchange", () => this.fitCanvas());
+    addEventListener("fullscreenchange", () => this.fitCanvas());
+    addEventListener("webkitfullscreenchange", () => this.fitCanvas());
 
     this.loadLevel(0);
     this.levelNameBanner = 0;
@@ -1362,6 +1365,9 @@ class Game {
     this.keyDown = {};
     this.jumpBuffer = 0;
     this.touchButtons.fullscreen = 0;
+    this.touchButtons.up = 0;
+    this.touchButtons.down = 0;
+    this.touchButtons.back = 0;
     this.touchButtons.left = 0;
     this.touchButtons.right = 0;
     this.touchButtons.jump = 0;
@@ -1378,6 +1384,9 @@ class Game {
     const btnH = 24;
     const y = CANVAS_H - btnH - pad;
     return {
+      up: { x: 8, y: 8, w: 24, h: 16 },
+      down: { x: 8, y: 26, w: 24, h: 16 },
+      back: { x: 36, y: 8, w: 24, h: 16 },
       fullscreen: { x: CANVAS_W - pad - 28, y: 8, w: 28, h: 16 },
       left: { x: pad, y, w: btnW, h: btnH },
       right: { x: pad + btnW + 8, y, w: btnW, h: btnH },
@@ -1397,6 +1406,9 @@ class Game {
   touchActionAt(x, y) {
     const rects = this.getTouchControlRects();
     const inRect = (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    if (inRect(rects.up)) return "up";
+    if (inRect(rects.down)) return "down";
+    if (inRect(rects.back)) return "back";
     if (inRect(rects.fullscreen)) return "fullscreen";
     if (inRect(rects.left)) return "left";
     if (inRect(rects.right)) return "right";
@@ -1441,6 +1453,9 @@ class Game {
 
   applyTouchButtons(nextButtons) {
     const next = {
+      up: !!nextButtons.up,
+      down: !!nextButtons.down,
+      back: !!nextButtons.back,
       fullscreen: !!nextButtons.fullscreen,
       left: !!nextButtons.left,
       right: !!nextButtons.right,
@@ -1448,8 +1463,8 @@ class Game {
       action: !!nextButtons.action
     };
 
-    const hadAnyBefore = !!(this.touchButtons.left || this.touchButtons.right || this.touchButtons.jump || this.touchButtons.action);
-    const hasAnyNow = !!(next.left || next.right || next.jump || next.action);
+    const hadAnyBefore = !!(this.touchButtons.left || this.touchButtons.right || this.touchButtons.jump || this.touchButtons.action || this.touchButtons.up || this.touchButtons.down || this.touchButtons.back);
+    const hasAnyNow = !!(next.left || next.right || next.jump || next.action || next.up || next.down || next.back);
     if (hasAnyNow) this.touchInputTimer = 120;
 
     if (next.fullscreen && !this.touchButtons.fullscreen) this.toggleFullscreen();
@@ -1460,6 +1475,9 @@ class Game {
     }
 
     if (this.gameState === "TITLE") {
+      if (next.up && !this.touchButtons.up) this.handleTitleInput("ArrowUp");
+      if (next.down && !this.touchButtons.down) this.handleTitleInput("ArrowDown");
+      if (next.back && !this.touchButtons.back) this.handleTitleInput("Escape");
       if (next.left && !this.touchButtons.left) this.handleTitleInput("ArrowLeft");
       if (next.right && !this.touchButtons.right) this.handleTitleInput("ArrowRight");
       if ((next.jump && !this.touchButtons.jump) || (next.action && !this.touchButtons.action)) {
@@ -1470,6 +1488,9 @@ class Game {
       if (next.action && !this.touchButtons.action) this.tryActivateCharacterSkill();
     }
 
+    this.touchButtons.up = next.up ? 1 : 0;
+    this.touchButtons.down = next.down ? 1 : 0;
+    this.touchButtons.back = next.back ? 1 : 0;
     this.touchButtons.left = next.left ? 1 : 0;
     this.touchButtons.right = next.right ? 1 : 0;
     this.touchButtons.jump = next.jump ? 1 : 0;
@@ -1488,7 +1509,7 @@ class Game {
       return;
     }
 
-    const next = { left: 0, right: 0, jump: 0, action: 0 };
+    const next = { up: 0, down: 0, back: 0, fullscreen: 0, left: 0, right: 0, jump: 0, action: 0 };
     const touches = e && e.touches ? e.touches : [];
     for (let i = 0; i < touches.length; i++) {
       const t = touches[i];
@@ -1503,13 +1524,24 @@ class Game {
   drawTouchControlsOverlay() {
     if (!this.touchControlsVisible()) return;
     const rects = this.getTouchControlRects();
-    const entries = [
-      { key: "fullscreen", label: "FS", rect: rects.fullscreen },
-      { key: "left", label: "◀", rect: rects.left },
-      { key: "right", label: "▶", rect: rects.right },
-      { key: "action", label: "Q", rect: rects.action },
-      { key: "jump", label: "J", rect: rects.jump }
-    ];
+    const entries = this.gameState === "TITLE"
+      ? [
+          { key: "up", label: "▲", rect: rects.up },
+          { key: "down", label: "▼", rect: rects.down },
+          { key: "back", label: "↩", rect: rects.back },
+          { key: "fullscreen", label: "FS", rect: rects.fullscreen },
+          { key: "left", label: "◀", rect: rects.left },
+          { key: "right", label: "▶", rect: rects.right },
+          { key: "action", label: "OK", rect: rects.action },
+          { key: "jump", label: "OK", rect: rects.jump }
+        ]
+      : [
+          { key: "fullscreen", label: "FS", rect: rects.fullscreen },
+          { key: "left", label: "◀", rect: rects.left },
+          { key: "right", label: "▶", rect: rects.right },
+          { key: "action", label: "Q", rect: rects.action },
+          { key: "jump", label: "J", rect: rects.jump }
+        ];
 
     gfx.save();
     gfx.font = "10px monospace";
@@ -6706,8 +6738,10 @@ class Game {
   }
 
   render() {
+    gfx.setTransform(1,0,0,1,0,0);
     if (this.gameState === "TITLE") {
       this.drawTitleScreen();
+      gfx.setTransform(1,0,0,1,0,0);
       this.drawTouchControlsOverlay();
       return;
     }
@@ -6743,6 +6777,7 @@ class Game {
       getThemeForLevel
     });
 
+    gfx.setTransform(1,0,0,1,0,0);
     this.drawTouchControlsOverlay();
   }
 }
