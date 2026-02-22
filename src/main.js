@@ -58,6 +58,8 @@ canvas.width = CANVAS_W;
 canvas.height = CANVAS_H;
 gfx.imageSmoothingEnabled = false;
 
+const JUKEBOX_SPECIAL_TRACK_KEY = "JUKEBOX_NEON_COASTLINE";
+
 // =========================
 // Art
 // =========================
@@ -202,7 +204,11 @@ class Game {
       levelSelectIndex: 0,
       hasContinue: 0,
       jukebox: {
-        themes: Array.from(new Set(LEVEL_THEMES || [])).filter(Boolean),
+        themes: (() => {
+          const themes = Array.from(new Set(LEVEL_THEMES || [])).filter(Boolean);
+          if (!themes.includes(JUKEBOX_SPECIAL_TRACK_KEY)) themes.push(JUKEBOX_SPECIAL_TRACK_KEY);
+          return themes;
+        })(),
         selected: 0,
         current: -1,
         wavePhase: 0,
@@ -1199,6 +1205,11 @@ class Game {
     this.audio.playTheme(theme, { fadeInMs: 260, crossFadeMs: 260 });
     t.jukebox.current = idx;
     t.jukebox.glow = 24;
+  }
+
+  jukeboxTrackLabel(key) {
+    if (key === JUKEBOX_SPECIAL_TRACK_KEY) return "Neon Coastline";
+    return String(key || "");
   }
 
   updateTitleJukeboxVisuals() {
@@ -6284,25 +6295,38 @@ class Game {
     gfx.setTransform(1,0,0,1,0,0);
 
     const pulse = (Math.sin(j.wavePhase * 0.6) + 1) * 0.5;
-    gfx.fillStyle = "#05070f";
+    const specialSelected = list[j.selected] === JUKEBOX_SPECIAL_TRACK_KEY;
+    const baseDark = specialSelected ? "#13070e" : "#05070f";
+    const gradTop = specialSelected ? "#2a0f2d" : "#0a1020";
+    const gradBottom = specialSelected ? "#120617" : "#05070f";
+    const cyan = specialSelected ? "#6fd8ff" : "#57e8ff";
+    const magenta = specialSelected ? "#ff7db8" : "#d95cff";
+    const lime = specialSelected ? "#ffd36b" : "#7dff9b";
+    const panelBg = specialSelected ? "#170d1dcc" : "#031018";
+    const panelStroke = specialSelected ? "#ff7db8" : "#57e8ff";
+    const headColor = specialSelected ? "#ffd6ef" : "#e8fff4";
+    const subColor = specialSelected ? "#ffd1a1" : "#b8ffe2";
+    const normalItem = specialSelected ? "#d4b9cf" : "#97c9bb";
+
+    gfx.fillStyle = baseDark;
     gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
     const grad = gfx.createLinearGradient(0, 0, 0, CANVAS_H);
-    grad.addColorStop(0, "#0a1020");
-    grad.addColorStop(1, "#05070f");
+    grad.addColorStop(0, gradTop);
+    grad.addColorStop(1, gradBottom);
     gfx.globalAlpha = 0.9;
     gfx.fillStyle = grad;
     gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
     gfx.globalAlpha = 0.18 + pulse * 0.10;
-    gfx.fillStyle = "#57e8ff";
+    gfx.fillStyle = cyan;
     gfx.fillRect(0, 82, CANVAS_W, 2);
     gfx.globalAlpha = 0.12 + (1 - pulse) * 0.12;
-    gfx.fillStyle = "#d95cff";
+    gfx.fillStyle = magenta;
     gfx.fillRect(0, 85, CANVAS_W, 1);
 
     gfx.globalAlpha = 0.18;
-    gfx.strokeStyle = "#57e8ff";
+    gfx.strokeStyle = cyan;
     for (let y = 90; y < CANVAS_H; y += 8) {
       const wobble = Math.sin(j.wavePhase + y * 0.04) * 4;
       gfx.beginPath();
@@ -6311,7 +6335,7 @@ class Game {
       gfx.stroke();
     }
     gfx.globalAlpha = 0.16;
-    gfx.strokeStyle = "#d95cff";
+    gfx.strokeStyle = magenta;
     for (let x = -20; x <= CANVAS_W + 20; x += 20) {
       gfx.beginPath();
       gfx.moveTo(x + Math.sin(j.wavePhase2 + x * 0.03) * 3, 90);
@@ -6326,34 +6350,34 @@ class Game {
       gfx.translate(s.x, s.y);
       gfx.rotate(s.rot);
       gfx.globalAlpha = Math.max(0.08, lifeP * 0.35);
-      gfx.fillStyle = (i & 1) ? "#57e8ff" : "#d95cff";
+      gfx.fillStyle = (i & 1) ? cyan : magenta;
       gfx.fillRect(-2, -2, 4, 4);
       gfx.restore();
     }
 
     gfx.globalAlpha = 0.72;
-    gfx.fillStyle = "#031018";
+    gfx.fillStyle = panelBg;
     gfx.fillRect(64, 44, 192, 108);
     gfx.globalAlpha = 1;
-    gfx.strokeStyle = "#57e8ff";
+    gfx.strokeStyle = panelStroke;
     gfx.strokeRect(64.5, 44.5, 191, 107);
 
     const glowP = j.glow > 0 ? (j.glow / 24) : 0;
     if (glowP > 0) {
       gfx.globalAlpha = 0.12 + glowP * 0.20;
-      gfx.fillStyle = "#7dff9b";
+      gfx.fillStyle = lime;
       gfx.fillRect(64, 44, 192, 108);
       gfx.globalAlpha = 1;
     }
 
     gfx.font = "bold 18px monospace";
-    gfx.fillStyle = "#e8fff4";
+    gfx.fillStyle = headColor;
     const head = "JUKEBOX";
     gfx.fillText(head, ((CANVAS_W - gfx.measureText(head).width) * 0.5) | 0, 32);
 
     gfx.font = "10px monospace";
-    gfx.fillStyle = "#b8ffe2";
-    const now = j.current >= 0 && list[j.current] ? list[j.current] : "NONE";
+    gfx.fillStyle = subColor;
+    const now = j.current >= 0 && list[j.current] ? this.jukeboxTrackLabel(list[j.current]) : "NONE";
     const nowText = "NOW PLAYING: " + now;
     gfx.fillText(nowText, ((CANVAS_W - gfx.measureText(nowText).width) * 0.5) | 0, 56);
 
@@ -6365,8 +6389,8 @@ class Game {
       const playing = i === j.current;
       const prefix = selected ? "> " : "  ";
       const suffix = playing ? " *" : "";
-      const text = prefix + list[i] + suffix;
-      gfx.fillStyle = selected ? "#e8fff4" : (playing ? "#7dff9b" : "#97c9bb");
+      const text = prefix + this.jukeboxTrackLabel(list[i]) + suffix;
+      gfx.fillStyle = selected ? headColor : (playing ? lime : normalItem);
       gfx.fillText(text, 80, 74 + (i - rowStart) * 11);
     }
 

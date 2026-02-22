@@ -153,6 +153,15 @@ Selection styling:
 - `X`: mute toggle.
 - `9/0`: music volume down/up.
 
+### 7.2 Jukebox Special Track (Implemented)
+- Add a jukebox-exclusive special track key: `JUKEBOX_NEON_COASTLINE`.
+- Display label: `Neon Coastline`.
+- Placement: always pinned as the **last** entry in jukebox track list.
+- Behavior:
+  - When the `Neon Coastline` entry is selected, apply a dedicated warm neon palette variant in jukebox background.
+  - When selection moves away, revert automatically to default jukebox palette.
+  - Track remains jukebox-only and is not bound to level theme progression.
+
 ## 8) Technical Hooks (Planned Integration)
 - **Main loop / state routing:** `src/main.js`
 - **HUD/text helpers reuse:** `src/core/hud-render.js`
@@ -199,6 +208,8 @@ Implementation note:
 - [x] Jukebox neon-wave background renders with readable track list.
 - [x] Jukebox controls (`Up/Down`, `Enter`, `Esc`, `X`, `9/0`) work as specified.
 - [x] Jukebox preview transitions do not break title/gameplay theme routing.
+- [x] `Neon Coastline` appears as the last jukebox item.
+- [x] Selecting `Neon Coastline` switches jukebox palette; unselecting reverts it.
 - [ ] No runtime errors when switching TITLE ↔ gameplay repeatedly.
 
 ## 13) Iteration Log
@@ -278,6 +289,17 @@ Implementation note:
 
 **Notes:**
 - MVP scope implemented; can add stronger audio-reactive elements in a later polish iteration.
+
+### Iteration 7 — Jukebox Special Track: Neon Coastline (Implemented)
+**Implemented in code:**
+- Added original jukebox-only track route `JUKEBOX_NEON_COASTLINE` in audio track builder.
+- Added display label mapping to `Neon Coastline` and pinned it as last jukebox entry.
+- Added jukebox palette-switch behavior tied to selected entry:
+  - warm sunset neon variant while selected,
+  - automatic revert on unselect.
+
+**Notes:**
+- Track is intentionally not referenced by any level theme mapping.
 
 ## 14) Next Steps (Priority)
 1. **Iteration 4 implementation:** re-entry subtitle (`SYSTEM RECOVERED`) with timed fade.

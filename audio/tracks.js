@@ -22,7 +22,8 @@
     GEOMETRYDREAM_S6: "GEOMETRYDREAM_S6",
     SHADOWRUN: "SHADOWRUN",
     NITE: "NITE",
-    SPACE: "SPACE_01"
+    SPACE: "SPACE_01",
+    JUKEBOX_NEON_COASTLINE: "JUKEBOX_NEON_COASTLINE"
   };
 
   function buildGeometryDreamTrack(ctx, bus, aux, helpers, variant) {
@@ -181,7 +182,120 @@
       if (key === "GEOMETRYDREAM_S6") return this.GEOMETRYDREAM_S6(ctx, bus, aux, helpers);
       if (key === "SHADOWRUN") return this.SHADOWRUN(ctx, bus, aux, helpers);
       if (key === "NITE") return this.NITE(ctx, bus, aux, helpers);
+      if (key === "JUKEBOX_NEON_COASTLINE") return this.JUKEBOX_NEON_COASTLINE(ctx, bus, aux, helpers);
       return this.SPACE_01(ctx, bus, aux, helpers);
+    },
+
+    JUKEBOX_NEON_COASTLINE: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      const padGain = ctx.createGain();
+      padGain.gain.value = 0.20;
+      const padLp = ctx.createBiquadFilter();
+      padLp.type = "lowpass";
+      padLp.frequency.value = 1650;
+      padLp.Q.value = 0.8;
+      padGain.connect(padLp);
+      padLp.connect(bus);
+
+      const padFreqs = [73.42, 110.00, 146.83];
+      for (let i = 0; i < padFreqs.length; i++) {
+        const osc = ctx.createOscillator();
+        osc.type = i === 0 ? "triangle" : "sine";
+        osc.frequency.value = padFreqs[i] * (i === 2 ? 0.5 : 1);
+        osc.connect(padGain);
+        osc.start();
+        nodes.push(osc);
+      }
+
+      const padLfo = ctx.createOscillator();
+      padLfo.type = "sine";
+      padLfo.frequency.value = 0.10;
+      const padAmt = ctx.createGain();
+      padAmt.gain.value = 0.06;
+      padLfo.connect(padAmt);
+      padAmt.connect(padGain.gain);
+      padLfo.start();
+      nodes.push(padGain, padLp, padLfo, padAmt);
+
+      const bassGain = ctx.createGain();
+      bassGain.gain.value = 0.0001;
+      const bassLp = ctx.createBiquadFilter();
+      bassLp.type = "lowpass";
+      bassLp.frequency.value = 520;
+      bassLp.Q.value = 1.0;
+      bassGain.connect(bassLp);
+      bassLp.connect(bus);
+
+      const bassOsc = ctx.createOscillator();
+      bassOsc.type = "sawtooth";
+      bassOsc.frequency.value = 55;
+      bassOsc.connect(bassGain);
+      bassOsc.start();
+      nodes.push(bassGain, bassLp, bassOsc);
+
+      const kickTimer = setInterval(() => {
+        const now = ctx.currentTime;
+        bassGain.gain.cancelScheduledValues(now);
+        bassGain.gain.setValueAtTime(0.0001, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
+        bassGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+
+        if (Math.random() < 0.28) {
+          const n = makeNoiseSource(ctx, 0.25, 0.24);
+          const hp = ctx.createBiquadFilter();
+          hp.type = "highpass";
+          hp.frequency.value = 1900;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.exponentialRampToValueAtTime(0.028, now + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+          n.connect(hp);
+          hp.connect(g);
+          g.connect(bus);
+          n.start(now);
+          n.stop(now + 0.12);
+          nodes.push(n, hp, g);
+        }
+      }, 360);
+      timers.push(kickTimer);
+
+      const leadPool = [293.66, 329.63, 392.00, 440.00, 493.88, 587.33, 659.25, 783.99];
+      const leadTimer = setInterval(() => {
+        const f = leadPool[(Math.random() * leadPool.length) | 0];
+        const peak = 0.062 + Math.random() * 0.020;
+        const dur = 0.11 + Math.random() * 0.08;
+        nodes.push(...ping({ freq: f, type: "triangle", peak, dur, lpHz: 3400, toDelay: true, bus, aux }));
+        if (Math.random() < 0.22) {
+          nodes.push(...ping({ freq: f * 2, type: "sine", peak: peak * 0.55, dur: dur * 0.75, lpHz: 4600, toDelay: false, bus, aux }));
+        }
+      }, 220);
+      timers.push(leadTimer);
+
+      const rideTimer = setInterval(() => {
+        const now = ctx.currentTime;
+        const n = makeNoiseSource(ctx, 0.12, 0.12);
+        const bp = ctx.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.value = 2400 + Math.random() * 600;
+        bp.Q.value = 4.2;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.018, now + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+        n.connect(bp);
+        bp.connect(g);
+        g.connect(bus);
+        if (aux && aux.delay) g.connect(aux.delay);
+        n.start(now);
+        n.stop(now + 0.06);
+        nodes.push(n, bp, g);
+      }, 180);
+      timers.push(rideTimer);
+
+      return { nodes, timers };
     },
 
     DAY: (ctx, bus, aux, helpers) => {
