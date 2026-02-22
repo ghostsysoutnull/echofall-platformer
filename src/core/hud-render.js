@@ -170,7 +170,6 @@ function drawHudAndNotices(game, gfx, deps) {
         ? ("Q " + ((game.skeletonBurst.cooldown / 60) | 0) + "s")
         : (phase2Charged ? "Q READY+" : (phase2Charging ? ("Q CHRG " + Math.max(1, ((game.skeletonBurst.phase2ChargeFrames / 60) | 0)) + "s") : "Q READY"));
     drawHudText(burstText, 258, 11, "#fff");
-    drawHudText("SCORE " + game.score + "/" + ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold, 6, 23, "#fff");
   }
   if (game.hasConductorCoreActive()) {
     const secs = Math.max(1, ((game.conductorCore.timer / 60) | 0));
