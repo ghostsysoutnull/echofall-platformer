@@ -2,6 +2,10 @@
 
 Quick index for this workspace.
 
+## Play Online
+
+- [Play EchoFall Platformer](https://ghostsysoutnull.github.io/echofall-platformer/)
+
 ## Documentation
 
 - [Add Levels Guide](docs/ADD_LEVELS_README.md)
