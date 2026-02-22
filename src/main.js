@@ -89,7 +89,7 @@ class Game {
     this.touchCapable = (typeof navigator !== "undefined") && (navigator.maxTouchPoints > 0 || "ontouchstart" in globalThis || coarsePointer);
     this.touchControlsEnabled = this.touchCapable ? 1 : 0;
     this.touchInputTimer = 0;
-    this.touchButtons = { left: 0, right: 0, jump: 0, action: 0 };
+    this.touchButtons = { fullscreen: 0, left: 0, right: 0, jump: 0, action: 0 };
 
     this.levelIndex = 0;
     this.characterIndex = 0;
@@ -1361,6 +1361,7 @@ class Game {
   clearRuntimeInputState() {
     this.keyDown = {};
     this.jumpBuffer = 0;
+    this.touchButtons.fullscreen = 0;
     this.touchButtons.left = 0;
     this.touchButtons.right = 0;
     this.touchButtons.jump = 0;
@@ -1377,6 +1378,7 @@ class Game {
     const btnH = 24;
     const y = CANVAS_H - btnH - pad;
     return {
+      fullscreen: { x: CANVAS_W - pad - 28, y: 8, w: 28, h: 16 },
       left: { x: pad, y, w: btnW, h: btnH },
       right: { x: pad + btnW + 8, y, w: btnW, h: btnH },
       action: { x: CANVAS_W - pad - btnW * 2 - 8, y, w: btnW, h: btnH },
@@ -1395,6 +1397,7 @@ class Game {
   touchActionAt(x, y) {
     const rects = this.getTouchControlRects();
     const inRect = (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    if (inRect(rects.fullscreen)) return "fullscreen";
     if (inRect(rects.left)) return "left";
     if (inRect(rects.right)) return "right";
     if (inRect(rects.jump)) return "jump";
@@ -1402,8 +1405,43 @@ class Game {
     return "";
   }
 
+  toggleFullscreen() {
+    const doc = document;
+    const fullscreenEl = doc.fullscreenElement || doc.webkitFullscreenElement;
+    const target = canvas;
+
+    if (!fullscreenEl) {
+      const request = target.requestFullscreen || target.webkitRequestFullscreen;
+      if (request) {
+        try {
+          request.call(target);
+          this.teleportNotice = "FULLSCREEN ON";
+          this.teleportNoticeTimer = 90;
+        } catch {
+          this.teleportNotice = "FULLSCREEN BLOCKED";
+          this.teleportNoticeTimer = 90;
+        }
+      } else {
+        this.teleportNotice = "FULLSCREEN UNSUPPORTED";
+        this.teleportNoticeTimer = 90;
+      }
+      return;
+    }
+
+    const exit = doc.exitFullscreen || doc.webkitExitFullscreen;
+    if (exit) {
+      try {
+        exit.call(doc);
+        this.teleportNotice = "FULLSCREEN OFF";
+        this.teleportNoticeTimer = 90;
+      } catch {
+      }
+    }
+  }
+
   applyTouchButtons(nextButtons) {
     const next = {
+      fullscreen: !!nextButtons.fullscreen,
       left: !!nextButtons.left,
       right: !!nextButtons.right,
       jump: !!nextButtons.jump,
@@ -1413,6 +1451,8 @@ class Game {
     const hadAnyBefore = !!(this.touchButtons.left || this.touchButtons.right || this.touchButtons.jump || this.touchButtons.action);
     const hasAnyNow = !!(next.left || next.right || next.jump || next.action);
     if (hasAnyNow) this.touchInputTimer = 120;
+
+    if (next.fullscreen && !this.touchButtons.fullscreen) this.toggleFullscreen();
 
     if (this.isPaused && hasAnyNow && !hadAnyBefore) {
       this.isPaused = 0;
@@ -1434,6 +1474,7 @@ class Game {
     this.touchButtons.right = next.right ? 1 : 0;
     this.touchButtons.jump = next.jump ? 1 : 0;
     this.touchButtons.action = next.action ? 1 : 0;
+    this.touchButtons.fullscreen = next.fullscreen ? 1 : 0;
 
     this.keyDown.ArrowLeft = this.touchButtons.left;
     this.keyDown.ArrowRight = this.touchButtons.right;
@@ -1463,6 +1504,7 @@ class Game {
     if (!this.touchControlsVisible()) return;
     const rects = this.getTouchControlRects();
     const entries = [
+      { key: "fullscreen", label: "FS", rect: rects.fullscreen },
       { key: "left", label: "◀", rect: rects.left },
       { key: "right", label: "▶", rect: rects.right },
       { key: "action", label: "Q", rect: rects.action },
@@ -1622,6 +1664,8 @@ class Game {
     const handleTouch = (e) => {
       this.touchCapable = 1;
       if (!this.touchControlsEnabled) this.touchControlsEnabled = 1;
+      if (!this.audio.ctx) this.audio.ensure();
+      else if (this.audio.ctx.state === "suspended" && this.audio.ctx.resume) this.audio.ctx.resume();
       e.preventDefault();
       this.syncTouchFromEvent(e);
     };

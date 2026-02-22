@@ -40,6 +40,15 @@ Implement low-risk mobile controls for quick on-device playtesting while preserv
 - Added `T` key toggle for touch control overlay visibility.
 - Shows on-screen notice (`TOUCH HUD: ON/OFF`).
 
+### 7) Mobile audio unlock/resume
+- On touch interaction, audio context is explicitly ensured/resumed.
+- This addresses common mobile browser behavior where audio stays muted until a user gesture.
+
+### 8) Fullscreen touch control
+- Added `FS` touch button in overlay.
+- Tapping toggles fullscreen when supported and shows status notice.
+- If unsupported/blocked by browser, a notice is displayed.
+
 ## Desktop Impact
 Expected desktop impact is minimal:
 - Keyboard controls remain unchanged.
