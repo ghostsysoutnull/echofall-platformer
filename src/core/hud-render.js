@@ -356,6 +356,13 @@ function drawHudAndNotices(game, gfx, deps) {
     gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     gfx.globalAlpha = 1;
 
+    if (cinematic.fireActive) {
+      gfx.globalAlpha = 0.14;
+      gfx.fillStyle = "#3ad47a";
+      gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      gfx.globalAlpha = 1;
+    }
+
     for (let i = 0; i < cinematic.particles.length; i++) {
       const p = cinematic.particles[i];
       const lifeP = p.life ? (p.t / p.life) : 1;
@@ -364,6 +371,20 @@ function drawHudAndNotices(game, gfx, deps) {
       gfx.fillRect((p.x - (p.size >> 1)) | 0, (p.y - (p.size >> 1)) | 0, p.size, p.size);
     }
     gfx.globalAlpha = 1;
+
+    if (cinematic.awaitingInput && cinematic.fireParticles && cinematic.fireParticles.length) {
+      for (let i = 0; i < cinematic.fireParticles.length; i++) {
+        const p = cinematic.fireParticles[i];
+        const lifeP = p.life ? (p.t / p.life) : 0;
+        const alpha = Math.max(0.1, Math.min(0.92, lifeP * 1.1));
+        gfx.globalAlpha = alpha;
+        if (p.kind === 0) gfx.fillStyle = lifeP > 0.6 ? "#7cff97" : (lifeP > 0.3 ? "#47cf7c" : "#2d934f");
+        else gfx.fillStyle = lifeP > 0.6 ? "#b1ffd1" : (lifeP > 0.3 ? "#67e6a2" : "#3aa06a");
+        const s = p.size + (lifeP > 0.55 ? 1 : 0);
+        gfx.fillRect((p.x - (s >> 1)) | 0, (p.y - s) | 0, s, s + 1);
+      }
+      gfx.globalAlpha = 1;
+    }
 
     for (let i = 0; i < cinematic.chunks.length; i++) {
       const chunk = cinematic.chunks[i];

@@ -141,9 +141,16 @@ class Game {
       frame: 0,
       nextImpactFrame: 0,
       impactIndex: -1,
-      holdFrames: 118,
+      systemFailureFrame: -1,
+      fireStartDelayFrames: 60,
+      holdFrames: 156,
+      awaitingInput: 0,
+      proceed: 0,
       shake: 0,
       particles: [],
+      fireParticles: [],
+      fireSpawnTick: 0,
+      fireActive: 0,
       chunks: [
         { text: "GA", x: 16, y: 24, w: 128, h: 50, impacted: 0, impactFrame: -1 },
         { text: "ME O", x: 84, y: 66, w: 156, h: 52, impacted: 0, impactFrame: -1 },
@@ -839,6 +846,17 @@ class Game {
         this.audio.tone(620, 0.04);
       }
 
+      if (this.gameOverCinematic.active) {
+        if (!this.audio.ctx) this.audio.ensure();
+        if (this.gameOverCinematic.awaitingInput && !this.gameOverCinematic.proceed) {
+          this.gameOverCinematic.proceed = 1;
+          this.audio.tone(760, 0.045, 0.00, "triangle", 0.05);
+          this.audio.tone(980, 0.05, 0.03, "sine", 0.04);
+        }
+        this.keyDown[e.code] = 1;
+        return;
+      }
+
       if (!this.keyDown[e.code]) {
         if (e.code === "Space" || e.code === "ArrowUp") this.jumpBuffer = JUMP_BUFFER_FRAMES;
         if (e.code === "KeyX") this.audio.muted ^= 1;
@@ -1176,8 +1194,14 @@ class Game {
     this.gameOverCinematic.frame = 0;
     this.gameOverCinematic.nextImpactFrame = 0;
     this.gameOverCinematic.impactIndex = -1;
+    this.gameOverCinematic.systemFailureFrame = -1;
+    this.gameOverCinematic.awaitingInput = 0;
+    this.gameOverCinematic.proceed = 0;
     this.gameOverCinematic.shake = 0;
     this.gameOverCinematic.particles = [];
+    this.gameOverCinematic.fireParticles = [];
+    this.gameOverCinematic.fireSpawnTick = 0;
+    this.gameOverCinematic.fireActive = 0;
     for (let i = 0; i < this.gameOverCinematic.chunks.length; i++) {
       const chunk = this.gameOverCinematic.chunks[i];
       chunk.impacted = 0;
@@ -2478,8 +2502,14 @@ class Game {
     cinematic.frame = 0;
     cinematic.nextImpactFrame = 6;
     cinematic.impactIndex = -1;
+    cinematic.systemFailureFrame = -1;
+    cinematic.awaitingInput = 0;
+    cinematic.proceed = 0;
     cinematic.shake = 0;
     cinematic.particles = [];
+    cinematic.fireParticles = [];
+    cinematic.fireSpawnTick = 0;
+    cinematic.fireActive = 0;
 
     for (let i = 0; i < cinematic.chunks.length; i++) {
       const chunk = cinematic.chunks[i];
@@ -2491,6 +2521,52 @@ class Game {
     this.teleportNoticeTimer = 0;
     this.audio.tone(84, 0.18, 0.00, "sawtooth", 0.10);
     this.audio.tone(61, 0.22, 0.03, "triangle", 0.08);
+  }
+
+  spawnGameOverWaitingFire() {
+    const cinematic = this.gameOverCinematic;
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      const life = 26 + ((this.rand01() * 28) | 0);
+      const x = 18 + this.rand01() * (CANVAS_W - 36);
+      const y = CANVAS_H + 2 + this.rand01() * 10;
+      cinematic.fireParticles.push({
+        x,
+        y,
+        vx: (this.rand01() - 0.5) * 0.42,
+        vy: -(1.35 + this.rand01() * 1.95),
+        sway: this.rand01() * 6.283,
+        t: life,
+        life,
+        size: this.rand01() > 0.55 ? 2 : 1,
+        kind: this.rand01() > 0.5 ? 0 : 1
+      });
+    }
+    if (cinematic.fireParticles.length > 240) {
+      cinematic.fireParticles.splice(0, cinematic.fireParticles.length - 240);
+    }
+  }
+
+  updateGameOverWaitingFire() {
+    const cinematic = this.gameOverCinematic;
+    cinematic.fireSpawnTick++;
+    if (cinematic.fireSpawnTick >= 1) {
+      cinematic.fireSpawnTick = 0;
+      this.spawnGameOverWaitingFire();
+    }
+
+    for (let i = 0; i < cinematic.fireParticles.length; i++) {
+      const p = cinematic.fireParticles[i];
+      if (p.t-- <= 0) { p.dead = 1; continue; }
+      const lifeP = p.life ? (p.t / p.life) : 0;
+      p.sway += 0.24;
+      p.vx = p.vx * 0.92 + Math.sin(p.sway) * 0.06;
+      p.vy = p.vy * 0.98 - 0.012;
+      p.x += p.vx;
+      p.y += p.vy;
+      if (lifeP < 0.10 || p.y < 34) p.dead = 1;
+    }
+    cinematic.fireParticles = cinematic.fireParticles.filter((p) => !p.dead);
   }
 
   spawnGameOverImpactParticles(chunk, intensity = 1) {
@@ -2574,10 +2650,25 @@ class Game {
     cinematic.particles = cinematic.particles.filter((p) => !p.dead);
 
     const doneFrame = cinematic.nextImpactFrame + cinematic.holdFrames;
-    if (cinematic.impactIndex >= cinematic.chunks.length - 1 && cinematic.frame >= doneFrame) {
+    if (!cinematic.awaitingInput && cinematic.impactIndex >= cinematic.chunks.length - 1 && cinematic.frame >= doneFrame) {
+      cinematic.awaitingInput = 1;
+      cinematic.shake = Math.max(cinematic.shake, 1.5);
+    }
+
+    if (cinematic.impactIndex >= cinematic.chunks.length - 1) {
+      if (cinematic.systemFailureFrame < 0) cinematic.systemFailureFrame = cinematic.frame;
+      const fireStartFrame = cinematic.systemFailureFrame + cinematic.fireStartDelayFrames;
+      cinematic.fireActive = cinematic.frame >= fireStartFrame;
+      if (cinematic.fireActive) this.updateGameOverWaitingFire();
+    }
+
+    if (cinematic.awaitingInput && cinematic.proceed) {
       cinematic.active = 0;
+      cinematic.awaitingInput = 0;
+      cinematic.proceed = 0;
       cinematic.shake = 0;
       cinematic.particles = [];
+      cinematic.fireParticles = [];
       this.finalizeGameOverReset();
     }
   }
