@@ -1,0 +1,14 @@
+{
+  "name": "echofall-platformer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:mobile": "playwright test",
+    "test:mobile:headed": "playwright test --headed",
+    "test:mobile:report": "playwright show-report",
+    "pw:install": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.1"
+  }
+}

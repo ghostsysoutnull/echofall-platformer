@@ -6533,6 +6533,118 @@ class Game {
 
 const game = new Game();
 
+if (typeof globalThis !== "undefined") {
+  globalThis.__ECHOFALL_TEST_API__ = {
+    getGame: () => game,
+    getSnapshot: () => ({
+      gameState: game.gameState,
+      isPaused: !!game.isPaused,
+      levelIndex: game.levelIndex,
+      score: game.score,
+      lives: game.lives,
+      coins: game.coins,
+      player: game.player
+        ? {
+            x: game.player.x,
+            y: game.player.y,
+            vx: game.player.vx,
+            vy: game.player.vy,
+            onGround: !!game.player.onGround
+          }
+        : null,
+      robotPulse: {
+        timer: game.robotPulse.timer,
+        cooldown: game.robotPulse.cooldown
+      }
+    }),
+    startPlaying: () => {
+      game.gameState = "PLAYING";
+      game.isPaused = 0;
+      return game.gameState;
+    },
+    resetLevel: () => {
+      game.loadLevel(game.levelIndex | 0);
+      game.isPaused = 0;
+      return game.levelIndex;
+    },
+    runFrames: (count = 1) => {
+      const frames = Math.max(1, count | 0);
+      for (let i = 0; i < frames; i++) {
+        if (!game.isPaused) game.step();
+      }
+      return frames;
+    },
+    setKey: (code, isDown) => {
+      game.keyDown[code] = isDown ? 1 : 0;
+      return !!game.keyDown[code];
+    },
+    triggerJump: () => {
+      game.keyDown.Space = 1;
+      game.jumpBuffer = JUMP_BUFFER_FRAMES;
+      if (!game.isPaused) game.step();
+      game.keyDown.Space = 0;
+      return game.player ? game.player.vy : 0;
+    },
+    selectCharacter: (name) => {
+      const target = String(name || "").toUpperCase();
+      const idx = CHARACTERS.findIndex((c) => (c && c.name ? c.name.toUpperCase() : "") === target);
+      if (idx < 0) return false;
+      game.characterIndex = idx;
+      game.robotPulse.timer = 0;
+      game.robotPulse.cooldown = 0;
+      return true;
+    },
+    resetPlayerToSpawn: () => {
+      if (!game.player) return null;
+      game.player.x = game.levelSpawnX;
+      game.player.y = game.levelSpawnY;
+      game.player.vx = 0;
+      game.player.vy = 0;
+      game.player.onGround = 1;
+      return {
+        x: game.player.x,
+        y: game.player.y
+      };
+    },
+    triggerSkill: () => {
+      const snap = () => ({
+        robotPulseTimer: game.robotPulse.timer,
+        robotPulseCooldown: game.robotPulse.cooldown,
+        rangerGrappleCooldown: game.rangerGrapple.cooldown,
+        rangerGrappleActive: game.rangerGrapple.active,
+        paladinDashCooldown: game.paladinDash.cooldown,
+        paladinDashActive: game.paladinDash.active,
+        duckDiveCooldown: game.duckDive.cooldown,
+        duckDiveActive: game.duckDive.active,
+        bunnyRocketCharges: game.bunnyRocket.charges,
+        bunnyRocketActive: game.bunnyRocket.active,
+        ninjaShadowCooldown: game.ninjaShadow.cooldown,
+        ninjaShadowActive: game.ninjaShadow.active,
+        glitchPhaseCooldown: game.glitchPhase.cooldown,
+        glitchPhaseActive: game.glitchPhase.active,
+        forkCooldown: game.hackerSkill.fork.cooldown,
+        skeletonBurstCooldown: game.skeletonBurst.cooldown,
+        skeletonBurstFlash: game.skeletonBurst.flash
+      });
+      const before = snap();
+      game.tryActivateCharacterSkill();
+      const after = snap();
+      return {
+        characterName: CHARACTERS[game.characterIndex] ? CHARACTERS[game.characterIndex].name : "",
+        activated: Object.keys(before).some((k) => before[k] !== after[k]),
+        before,
+        after,
+        robotPulseTimer: game.robotPulse.timer,
+        robotPulseCooldown: game.robotPulse.cooldown
+      };
+    },
+    clearInput: () => {
+      game.keyDown = {};
+      game.jumpBuffer = 0;
+    }
+  };
+}
+
 let last = performance.now();
 let acc = 0;
 let loopErrorShown = 0;
