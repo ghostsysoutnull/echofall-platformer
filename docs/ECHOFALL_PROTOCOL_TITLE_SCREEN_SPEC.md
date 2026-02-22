@@ -69,6 +69,25 @@ Selection styling:
 - Slow parallax silhouette drift (very low amplitude).
 - No camera shake on title screen.
 
+### 5.4 Rooftop Demo Runner (Title-Only)
+- Add one small background "demo player" actor to illustrate gameplay on the title screen.
+- Behavior loop:
+  1. Spawn on rooftop lane and run horizontally.
+  2. Jump between rooftop gaps with simple arc.
+  3. Fall below skyline/floor line when missing the lane.
+  4. Warp from lower screen back to rooftop start and repeat.
+- Visual style:
+  - Silhouette/pixel look matching title palette.
+  - Optional tiny cyan/green warp flash on re-entry.
+  - Must remain behind menu/logo readability priority.
+- Scope constraints:
+  - Title screen only (`TITLE` state), never active during gameplay.
+  - Non-interactive actor (no collisions, no score/state side effects).
+  - Keep subtle motion; actor should not compete with menu focus.
+- Spawn density:
+  - MVP: exactly 1 actor.
+  - Optional later: max 2 actors with staggered phase.
+
 ## 6) Audio Direction
 - **Ambient Bed:** low synth drone with sparse metallic pings.
 - **UI SFX:**
@@ -94,6 +113,7 @@ Selection styling:
 
 Implementation note:
 - Iteration 1 uses title-screen-specific methods in `Game` class (`updateTitleScreen`, `drawTitleScreen`) and early branch in `step()`/`render()` when in `TITLE` state.
+- Demo runner should be integrated into the same title pipeline (`updateTitleScreen` / `drawTitleScreen`) with isolated title-only state.
 
 ## 9) Performance Budget
 - Maintain 60 FPS on baseline target machine.
@@ -119,6 +139,8 @@ Implementation note:
 - [x] Game over flow returns to TITLE screen.
 - [x] Return from game-over triggers title re-entry sting + logo pulse.
 - [ ] Re-entry subtitle appears for ~1–2 seconds after game-over return.
+- [x] Rooftop demo runner appears only in TITLE and loops run/jump/fall/warp.
+- [x] Demo runner never overlaps critical menu readability zones.
 - [ ] No runtime errors when switching TITLE ↔ gameplay repeatedly.
 
 ## 13) Iteration Log
@@ -168,6 +190,16 @@ Implementation note:
 
 **Notes:**
 - Keep this additive to existing re-entry sting + logo pulse.
+
+### Iteration 5 — Rooftop Demo Runner (Implemented)
+**Implemented in code:**
+- Added one title-only demo runner actor in `titleScreen` state.
+- Implemented loop behavior: `run → jump → fall → warp` with automatic re-entry.
+- Added subtle warp beam/flash and low-contrast silhouette rendering.
+- Kept implementation isolated to title methods (`updateTitleScreen` / `drawTitleScreen`) with no gameplay coupling.
+
+**Notes:**
+- Runner is intentionally small/subtle to preserve menu and logo readability.
 
 ## 14) Next Steps (Priority)
 1. **Iteration 4 implementation:** re-entry subtitle (`SYSTEM RECOVERED`) with timed fade.

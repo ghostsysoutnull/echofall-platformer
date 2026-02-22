@@ -206,7 +206,26 @@ class Game {
       glitchFrames: 0,
       glitchCooldown: 180,
       reentryStingPending: 0,
-      logoPulseFrames: 0
+      logoPulseFrames: 0,
+      demoRunner: {
+        x: 20,
+        y: 86,
+        vx: 0.86,
+        vy: 0,
+        state: "run",
+        roofY: 86,
+        floorY: CANVAS_H + 10,
+        nextJump: 38,
+        jumpsDone: 0,
+        jumpsBeforeFall: 3,
+        warpTimer: 0,
+        warpTotal: 0,
+        warpFromY: CANVAS_H + 10,
+        warpToY: 86,
+        warpFlash: 0,
+        anim: 0,
+        phase: 0
+      }
     };
 
     this.bindInput();
@@ -879,10 +898,105 @@ class Game {
     this.titleScreen.optionSelected = 0;
     this.titleScreen.fireParticles = [];
     this.titleScreen.fireTick = 0;
+    this.resetTitleDemoRunner(1);
 
     const targetLevel = clamp(startLevel | 0, 0, Math.max(0, LEVELS.length - 1));
     this.gameState = "PLAYING";
     this.loadLevel(targetLevel);
+  }
+
+  resetTitleDemoRunner(resetPhase = 0) {
+    const r = this.titleScreen.demoRunner;
+    if (!r) return;
+    r.roofY = 86;
+    r.floorY = CANVAS_H + 10;
+    r.x = 16 + this.rand01() * 20;
+    r.y = r.roofY;
+    r.vx = 0.84 + this.rand01() * 0.22;
+    r.vy = 0;
+    r.state = "run";
+    r.nextJump = 26 + ((this.rand01() * 24) | 0);
+    r.jumpsDone = 0;
+    r.jumpsBeforeFall = 2 + ((this.rand01() * 3) | 0);
+    r.warpTimer = 0;
+    r.warpTotal = 0;
+    r.warpFromY = r.floorY;
+    r.warpToY = r.roofY;
+    r.warpFlash = 0;
+    r.anim = 0;
+    if (resetPhase) r.phase = this.rand01() * 6.283;
+  }
+
+  updateTitleDemoRunner() {
+    const r = this.titleScreen.demoRunner;
+    if (!r) return;
+
+    r.anim++;
+    if (r.warpFlash > 0) r.warpFlash--;
+
+    if (r.state === "run") {
+      r.x += r.vx;
+      r.nextJump--;
+      if (r.nextJump <= 0) {
+        r.state = "jump";
+        r.vy = -2.05 - this.rand01() * 0.42;
+        r.nextJump = 28 + ((this.rand01() * 30) | 0);
+        this.audio.tone(620 + ((this.rand01() * 90) | 0), 0.012, 0.00, "triangle", 0.010);
+      }
+      return;
+    }
+
+    if (r.state === "jump") {
+      r.x += r.vx;
+      r.y += r.vy;
+      r.vy += 0.16;
+      if (r.vy >= 0 && r.y >= r.roofY) {
+        r.jumpsDone++;
+        if (r.jumpsDone >= r.jumpsBeforeFall) {
+          r.state = "fall";
+          r.vy = 0.65;
+          r.warpFlash = 8;
+        } else {
+          r.state = "run";
+          r.y = r.roofY;
+          r.vy = 0;
+        }
+      }
+      return;
+    }
+
+    if (r.state === "fall") {
+      r.x += r.vx * 0.75;
+      r.y += r.vy;
+      r.vy += 0.24;
+      if (r.y >= r.floorY) {
+        r.state = "warp";
+        r.warpTotal = 18 + ((this.rand01() * 6) | 0);
+        r.warpTimer = r.warpTotal;
+        r.warpFromY = r.floorY;
+        r.warpToY = r.roofY;
+        r.warpFlash = 14;
+        this.audio.tone(930, 0.018, 0.00, "sine", 0.012);
+      }
+      return;
+    }
+
+    if (r.state === "warp") {
+      r.warpTimer--;
+      const total = Math.max(1, r.warpTotal);
+      const progress = 1 - (Math.max(0, r.warpTimer) / total);
+      r.y = r.warpFromY + (r.warpToY - r.warpFromY) * progress;
+      if (r.warpTimer <= 0) {
+        r.x = 14 + this.rand01() * 24;
+        r.y = r.roofY;
+        r.vx = 0.84 + this.rand01() * 0.24;
+        r.vy = 0;
+        r.jumpsDone = 0;
+        r.jumpsBeforeFall = 2 + ((this.rand01() * 3) | 0);
+        r.nextJump = 28 + ((this.rand01() * 26) | 0);
+        r.state = "run";
+      }
+    }
   }
 
   handleTitleInput(code) {
@@ -1064,6 +1178,7 @@ class Game {
       if (lifeP < 0.08 || p.y < 42) p.dead = 1;
     }
     t.fireParticles = t.fireParticles.filter((p) => !p.dead);
+    this.updateTitleDemoRunner();
   }
 
   bindInput() {
@@ -2934,6 +3049,7 @@ class Game {
     this.titleScreen.fireTick = 0;
     this.titleScreen.reentryStingPending = 1;
     this.titleScreen.logoPulseFrames = 0;
+    this.resetTitleDemoRunner(1);
   }
 
   currentPlayerSpriteRows() {
@@ -5916,6 +6032,38 @@ class Game {
       const x = ((i * 62) - nearDrift) | 0;
       gfx.fillRect(x, 108, 24, 72);
       gfx.fillRect((x + 14) | 0, 120, 18, 60);
+    }
+
+    const runner = t.demoRunner;
+    if (runner) {
+      const px = runner.x | 0;
+      const py = runner.y | 0;
+
+      if (runner.warpFlash > 0 || runner.state === "warp") {
+        const flashA = runner.warpFlash > 0 ? Math.min(1, runner.warpFlash / 14) : 0.18;
+        gfx.globalAlpha = flashA * 0.55;
+        gfx.fillStyle = "#7ef7be";
+        gfx.fillRect((px + 1) | 0, ((runner.roofY - 6) | 0), 2, ((runner.floorY - runner.roofY + 2) | 0));
+        gfx.globalAlpha = flashA * 0.40;
+        gfx.fillStyle = "#b9ffe0";
+        gfx.fillRect((px + 2) | 0, ((runner.roofY - 3) | 0), 1, ((runner.floorY - runner.roofY - 1) | 0));
+      }
+
+      gfx.globalAlpha = 0.34;
+      gfx.fillStyle = "#8be8c0";
+      const runAlt = ((runner.anim >> 2) & 1) === 0;
+      gfx.fillRect(px, py, 4, 1);
+      gfx.fillRect((px + 1) | 0, (py - 2) | 0, 2, 2);
+      if (runner.state === "run") {
+        gfx.fillRect(px, (py + 1) | 0, 1, 1);
+        gfx.fillRect((px + 3) | 0, (py + 1 + (runAlt ? 0 : 1)) | 0, 1, 1);
+      } else if (runner.state === "jump") {
+        gfx.fillRect((px + 1) | 0, (py + 1) | 0, 1, 1);
+        gfx.fillRect((px + 2) | 0, (py + 1) | 0, 1, 1);
+      } else {
+        gfx.fillRect((px + 1) | 0, (py + 1) | 0, 1, 1);
+      }
+      gfx.globalAlpha = 1;
     }
 
     for (let i = 0; i < t.fireParticles.length; i++) {
