@@ -206,6 +206,9 @@ class Game {
     this.titleScreen = {
       frame: 0,
       mode: "main",
+      scoreTagTimer: 0,
+      scoreTagVisibleFrames: 180,
+      scoreTagHiddenFrames: 300,
       selected: 0,
       optionSelected: 0,
       levelSelectIndex: 0,
@@ -1284,6 +1287,9 @@ class Game {
   updateTitleScreen() {
     const t = this.titleScreen;
     t.frame++;
+
+    const cycle = Math.max(1, t.scoreTagVisibleFrames + t.scoreTagHiddenFrames);
+    t.scoreTagTimer = (t.scoreTagTimer + 1) % cycle;
 
     if (t.reentryStingPending) {
       t.reentryStingPending = 0;
@@ -3417,6 +3423,7 @@ class Game {
 
   drawTitleScoreMessages() {
     const t = this.titleScreen;
+    if (t.scoreTagTimer >= t.scoreTagVisibleFrames) return;
     const frame = t.frame | 0;
     const cur = Math.max(0, this.titleCurrentScore | 0);
     const hi = Math.max(0, this.highScore | 0);

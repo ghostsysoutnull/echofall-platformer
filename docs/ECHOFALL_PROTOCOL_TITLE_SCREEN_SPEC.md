@@ -293,10 +293,10 @@ Implementation note:
 **Notes:**
 - MVP scope implemented; can add stronger audio-reactive elements in a later polish iteration.
 
-### Iteration 7 — Jukebox Special Track: Neon Coastline (Implemented)
+### Iteration 7 — Jukebox Special Tracks (Implemented)
 **Implemented in code:**
-- Added original jukebox-only track route `JUKEBOX_NEON_COASTLINE` in audio track builder.
-- Added display label mapping to `Neon Coastline` and pinned it as last jukebox entry.
+- Added original jukebox-only track routes `JUKEBOX_OCEAN_DRIVE_86`, `JUKEBOX_PASSING_BREEZE`, and `JUKEBOX_MIDNIGHT_CIRCUIT` in audio track builder.
+- Added display label mappings and pinned them as last jukebox entries.
 - Added jukebox palette-switch behavior tied to selected entry:
   - warm sunset neon variant while selected,
   - automatic revert on unselect.
