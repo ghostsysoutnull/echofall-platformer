@@ -1,4 +1,4 @@
-# HUD Test Biome — Requirements
+# Test Biome — Requirements
 
 ## 1) Objective
 Create a dedicated debug biome for testing and showcasing the redesigned HUD layout. Players can quickly access it to verify all HUD elements render correctly across different character states and ability statuses.
@@ -11,7 +11,7 @@ Create a dedicated debug biome for testing and showcasing the redesigned HUD lay
 - Minimal gameplay obstruction to focus on HUD visibility.
 
 ## 3) Definitions
-- `HUD Test Biome`: Debug level themed in DAY, sequence 999, minimal enemies/platforms.
+- `Test Biome`: Debug level themed in LIMINAL, sequence 999, static 1x grid defined directly as an array of strings.
 - `HUD Layer`: Top 26px bar containing score, lives, character name, level name, checkpoints, and ability status.
 - `Right-aligned indicators`: Skill cooldown text, positioned at right edge (CANVAS_W - 6).
 - `Left-aligned info`: Score, lives, level name, checkpoint counter, positioned at left edge.
@@ -19,17 +19,17 @@ Create a dedicated debug biome for testing and showcasing the redesigned HUD lay
 ## 4) Functional Requirements
 
 ### FR-1: Level Access
-- Pressing **'H' key** during gameplay loads the HUD Test Biome.
+- Pressing **'H' key** during gameplay loads the Test Biome.
 - Triggers audio feedback: tone(740, 0.04).
-- Displays notice: "HUD TEST BIOME" for ~1.5 seconds (90 frames at 60fps).
+- Displays notice: "TEST BIOME" for ~1.5 seconds (90 frames at 60fps).
 - Level load succeeds regardless of current level or character state.
 
 ### FR-2: Level Configuration
-- Level name: "HUD TEST"
-- Theme: DAY (default, light background for contrast)
+- Level name: "TEST BIOME"
+- Theme: LIMINAL
 - Sequence: 999 (debug/non-campaign)
 - Minimal background actors: 1 balloon actor (non-interactive)
-- Grid: Simple platformer with one main platform, minimal enemies (≤1 enemy to avoid distraction)
+- Grid: Static 1x array-of-strings platformer layout (no generated/repeated segments)
 - Starting checkpoint at player spawn position
 
 ### FR-3: HUD Header Layout
@@ -72,13 +72,13 @@ All playable characters must be testable:
 
 ### E-1: Key Binding Conflict
 If 'H' conflicts with other debug binds:
-- Priority: 'H' for HUD Test loads immediately.
+- Priority: 'H' for Test Biome loads immediately.
 - Document as intentional override if needed.
 
 ### E-2: Level State Preservation
 - Player retains current character selection.
 - Player retains current score and lives.
-- Checkpoints in HUD Test do not interfere with campaign progression.
+- Checkpoints in Test Biome do not interfere with campaign progression.
 
 ### E-3: Audio/Feedback
 - Tone generation must not fail; falls back gracefully if audio context unavailable.
@@ -86,9 +86,9 @@ If 'H' conflicts with other debug binds:
 
 ## 6) Testing Checklist
 
-- [ ] 'H' key loads HUD Test Biome from any level
+- [ ] 'H' key loads Test Biome from any level
 - [ ] Notification tone plays (740Hz)
-- [ ] "HUD TEST BIOME" notice displays and auto-dismisses
+- [ ] "TEST BIOME" notice displays and auto-dismisses
 - [ ] Top bar extends to 26px height
 - [ ] Row 1: Score, Lives, Character Name visible
 - [ ] Row 1: Ability status right-aligned
@@ -102,7 +102,7 @@ If 'H' conflicts with other debug binds:
 - [ ] Exiting via N/M keys works normally
 
 ## 7) Implementation Notes
-- Level grid uses DAY theme palette and tile sprites.
+- Level grid uses LIMINAL theme visuals and tile sprites at 1x scale.
 - Minimal enemy count to reduce visual noise.
 - Platform layout allows player movement and jumping to test HUD responsiveness.
 - Level ends at checkpoint for quick respawn testing.

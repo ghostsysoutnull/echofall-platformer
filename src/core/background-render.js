@@ -165,6 +165,33 @@ function drawBackground(game, gfx, deps) {
     for (let i=0;i<16;i++){let x=((i*31-(camx*0.5))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,82,7,108);}
     gfx.fillStyle="#ffd58a28";
     for (let i=0;i<24;i++){let x=((i*18-(camx*0.74))|0)%CANVAS_W; x=(x+CANVAS_W)%CANVAS_W; gfx.fillRect(x,16,2,2);} 
+  } else if (theme === "LIMINAL") {
+    gfx.fillStyle = "#d7d7d0"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
+    gfx.fillStyle = "#c9c9c1";
+    gfx.fillRect(0, 104, CANVAS_W, 86);
+
+    gfx.strokeStyle = "#b6b6ae";
+    for (let x = 0; x <= CANVAS_W; x += 16) {
+      gfx.beginPath();
+      gfx.moveTo(x, 0);
+      gfx.lineTo(x, CANVAS_H);
+      gfx.stroke();
+    }
+    for (let y = 8; y <= CANVAS_H; y += 16) {
+      gfx.beginPath();
+      gfx.moveTo(0, y);
+      gfx.lineTo(CANVAS_W, y);
+      gfx.stroke();
+    }
+
+    gfx.fillStyle = "#bcbcb4";
+    gfx.fillRect(56, 62, 40, 50);
+    gfx.fillRect(132, 52, 52, 60);
+    gfx.fillRect(220, 60, 44, 52);
+    gfx.fillStyle = "#a8a8a1";
+    gfx.fillRect(72, 74, 8, 38);
+    gfx.fillRect(154, 68, 8, 44);
+    gfx.fillRect(238, 72, 8, 40);
   } else if (theme === "GEOMETRYDREAM") {
     gfx.fillStyle="#0b1120"; gfx.fillRect(0,0,CANVAS_W,CANVAS_H);
     const p1=((camx*0.18)|0)%CANVAS_W, p2=((camx*0.36)|0)%CANVAS_W;

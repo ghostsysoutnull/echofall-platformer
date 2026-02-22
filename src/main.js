@@ -893,11 +893,10 @@ class Game {
           }
         }
         if (e.code === "KeyH") {
-          const hudTestIndex = LEVEL_THEMES.findIndex(t => t === "DAY");
-          const hudTestLevel = LEVELS.findIndex((l, i) => LEVEL_NAMES[i] === "HUD TEST");
+          const hudTestLevel = LEVELS.findIndex((l, i) => LEVEL_NAMES[i] === "TEST BIOME");
           if (hudTestLevel >= 0) {
             this.loadLevel(hudTestLevel);
-            this.teleportNotice = "HUD TEST BIOME";
+            this.teleportNotice = "TEST BIOME";
             this.teleportNoticeTimer = 90;
             this.audio.tone(740, 0.04);
           }
