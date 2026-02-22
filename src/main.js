@@ -136,6 +136,20 @@ class Game {
     this.playerShatter = [];
     this.deathTimer = 0;
     this.deathReset = 0;
+    this.gameOverCinematic = {
+      active: 0,
+      frame: 0,
+      nextImpactFrame: 0,
+      impactIndex: -1,
+      holdFrames: 118,
+      shake: 0,
+      particles: [],
+      chunks: [
+        { text: "GA", x: 16, y: 24, w: 128, h: 50, impacted: 0, impactFrame: -1 },
+        { text: "ME O", x: 84, y: 66, w: 156, h: 52, impacted: 0, impactFrame: -1 },
+        { text: "VER", x: 44, y: 112, w: 140, h: 52, impacted: 0, impactFrame: -1 }
+      ]
+    };
 
     this.cameraX = 0;
     this.cameraY = 0;
@@ -1158,6 +1172,17 @@ class Game {
     this.playerShatter = [];
     this.deathTimer = 0;
     this.deathReset = 0;
+    this.gameOverCinematic.active = 0;
+    this.gameOverCinematic.frame = 0;
+    this.gameOverCinematic.nextImpactFrame = 0;
+    this.gameOverCinematic.impactIndex = -1;
+    this.gameOverCinematic.shake = 0;
+    this.gameOverCinematic.particles = [];
+    for (let i = 0; i < this.gameOverCinematic.chunks.length; i++) {
+      const chunk = this.gameOverCinematic.chunks[i];
+      chunk.impacted = 0;
+      chunk.impactFrame = -1;
+    }
 
     this.winPending = 0;
     this.levelDeaths = 0;
@@ -2439,20 +2464,135 @@ class Game {
     this.audio.tone(120, 0.10);
 
     if (this.lives < 0) {
-      this.lives = 3;
-      this.score = 0;
-      this.coins = 0;
-      this.nextExtraLifeCoins = 200;
-      this.paladinUnlocked = 0;
-      this.glitchrunnerUnlocked = 0;
-      this.shadowrunnerUnlocked = 0;
-      this.skeletonUnlocked = 0;
-      this.characterIndex = 0;
-      this.loadLevel(0);
+      this.lives = 0;
+      this.beginGameOverCinematic();
     } else {
       if (!reset && this.levelCheckpoints.length) this.respawnAtCheckpoint();
       else this.loadLevel(this.levelIndex);
     }
+  }
+
+  beginGameOverCinematic() {
+    const cinematic = this.gameOverCinematic;
+    cinematic.active = 1;
+    cinematic.frame = 0;
+    cinematic.nextImpactFrame = 6;
+    cinematic.impactIndex = -1;
+    cinematic.shake = 0;
+    cinematic.particles = [];
+
+    for (let i = 0; i < cinematic.chunks.length; i++) {
+      const chunk = cinematic.chunks[i];
+      chunk.impacted = 0;
+      chunk.impactFrame = -1;
+    }
+
+    this.teleportNotice = "";
+    this.teleportNoticeTimer = 0;
+    this.audio.tone(84, 0.18, 0.00, "sawtooth", 0.10);
+    this.audio.tone(61, 0.22, 0.03, "triangle", 0.08);
+  }
+
+  spawnGameOverImpactParticles(chunk, intensity = 1) {
+    const cx = chunk.x + chunk.w * 0.5;
+    const cy = chunk.y + chunk.h * 0.5;
+    const count = 42 + ((18 * intensity) | 0);
+
+    for (let i = 0; i < count; i++) {
+      const edge = i & 3;
+      const life = 16 + ((this.rand01() * 22) | 0);
+      const sideX = edge === 0 ? chunk.x : (edge === 1 ? chunk.x + chunk.w : (chunk.x + this.rand01() * chunk.w));
+      const sideY = edge === 2 ? chunk.y : (edge === 3 ? chunk.y + chunk.h : (chunk.y + this.rand01() * chunk.h));
+      const px = sideX + (this.rand01() - 0.5) * 8;
+      const py = sideY + (this.rand01() - 0.5) * 8;
+      const dx = px - cx;
+      const dy = py - cy;
+      const len = Math.hypot(dx, dy) || 1;
+      const speed = 1.5 + this.rand01() * (2.6 + intensity * 0.4);
+
+      this.gameOverCinematic.particles.push({
+        x: px,
+        y: py,
+        vx: (dx / len) * speed + (this.rand01() - 0.5) * 1.25,
+        vy: (dy / len) * speed - 0.8 - this.rand01() * 0.7,
+        t: life,
+        life,
+        size: this.rand01() > 0.68 ? 2 : 1,
+        kind: this.rand01() > 0.26 ? 0 : 1
+      });
+    }
+
+    for (let i = 0; i < 18; i++) {
+      const life = 18 + ((this.rand01() * 18) | 0);
+      this.gameOverCinematic.particles.push({
+        x: cx + (this.rand01() - 0.5) * chunk.w * 0.8,
+        y: cy + (this.rand01() - 0.5) * chunk.h * 0.8,
+        vx: (this.rand01() - 0.5) * 1.1,
+        vy: -0.4 - this.rand01() * 1.2,
+        t: life,
+        life,
+        size: 1,
+        kind: 2
+      });
+    }
+
+    if (this.gameOverCinematic.particles.length > 260) {
+      this.gameOverCinematic.particles.splice(0, this.gameOverCinematic.particles.length - 260);
+    }
+  }
+
+  updateGameOverCinematic() {
+    const cinematic = this.gameOverCinematic;
+    if (!cinematic.active) return;
+
+    cinematic.frame++;
+    if (cinematic.shake > 0) cinematic.shake *= 0.84;
+
+    if (cinematic.impactIndex + 1 < cinematic.chunks.length && cinematic.frame >= cinematic.nextImpactFrame) {
+      cinematic.impactIndex++;
+      const index = cinematic.impactIndex;
+      const chunk = cinematic.chunks[index];
+      chunk.impacted = 1;
+      chunk.impactFrame = cinematic.frame;
+
+      this.spawnGameOverImpactParticles(chunk, 1 + index * 0.25);
+      cinematic.shake = Math.max(cinematic.shake, 8 - index);
+      cinematic.nextImpactFrame = cinematic.frame + 9;
+
+      this.audio.gameOverImpact(index);
+    }
+
+    for (let i = 0; i < cinematic.particles.length; i++) {
+      const p = cinematic.particles[i];
+      if (p.t-- <= 0) { p.dead = 1; continue; }
+      p.vx *= 0.97;
+      p.vy = p.vy * 0.97 + 0.14;
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.y > CANVAS_H + 8) p.dead = 1;
+    }
+    cinematic.particles = cinematic.particles.filter((p) => !p.dead);
+
+    const doneFrame = cinematic.nextImpactFrame + cinematic.holdFrames;
+    if (cinematic.impactIndex >= cinematic.chunks.length - 1 && cinematic.frame >= doneFrame) {
+      cinematic.active = 0;
+      cinematic.shake = 0;
+      cinematic.particles = [];
+      this.finalizeGameOverReset();
+    }
+  }
+
+  finalizeGameOverReset() {
+    this.lives = 3;
+    this.score = 0;
+    this.coins = 0;
+    this.nextExtraLifeCoins = 200;
+    this.paladinUnlocked = 0;
+    this.glitchrunnerUnlocked = 0;
+    this.shadowrunnerUnlocked = 0;
+    this.skeletonUnlocked = 0;
+    this.characterIndex = 0;
+    this.loadLevel(0);
   }
 
   currentPlayerSpriteRows() {
@@ -4403,6 +4543,11 @@ class Game {
     if (this.geometryMusicNotice > 0) this.geometryMusicNotice--;
     if (this.teleportNoticeTimer > 0) this.teleportNoticeTimer--;
 
+    if (this.gameOverCinematic.active) {
+      this.updateGameOverCinematic();
+      return;
+    }
+
     if (this.deathTimer > 0) {
       this.updatePlayerShatter();
       this.deathTimer--;
@@ -5406,7 +5551,13 @@ class Game {
   }
 
   render() {
-    gfx.setTransform(1,0,0,1,0,0);
+    let shakeX = 0;
+    let shakeY = 0;
+    if (this.gameOverCinematic.active && this.gameOverCinematic.shake > 0.25) {
+      shakeX = ((this.rand01() * 2 - 1) * this.gameOverCinematic.shake) | 0;
+      shakeY = ((this.rand01() * 2 - 1) * this.gameOverCinematic.shake * 0.75) | 0;
+    }
+    gfx.setTransform(1,0,0,1,shakeX,shakeY);
     this.drawBackground();
 
     const t = ((this.player.anim >> 3) % 3);

@@ -29,6 +29,19 @@
       engine.tone(560, 0.05, 0, "square");
       engine.tone(420, 0.08, 0.04, "square");
       engine.tone(240, 0.08, 0.08, "triangle");
+    },
+
+    gameOverImpact(engine, index = 0) {
+      const n = index | 0;
+      const low = Math.max(48, 92 - n * 10);
+      const metal = 300 + n * 110;
+      const hiss = 1500 + n * 120;
+
+      engine.tone(low, 0.14, 0.00, "sawtooth", 0.12);
+      engine.tone(low * 0.5, 0.20, 0.01, "triangle", 0.09);
+      engine.tone(metal, 0.05, 0.012, "square", 0.075);
+      engine.tone(metal + 180, 0.045, 0.028, "square", 0.060);
+      engine.tone(hiss, 0.032, 0.048, "triangle", 0.044);
     }
   };
 

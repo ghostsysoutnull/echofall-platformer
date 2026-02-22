@@ -222,6 +222,18 @@
       this.tone(420, 0.08, 0.04, "square");
       this.tone(240, 0.08, 0.08, "triangle");
     }
+
+    gameOverImpact(index = 0) {
+      if (this.sfx && this.sfx.gameOverImpact) return this.sfx.gameOverImpact(this, index | 0);
+      const n = index | 0;
+      const slam = Math.max(52, 88 - n * 8);
+      const crack = 320 + n * 90;
+      this.tone(slam, 0.12, 0.00, "sawtooth", 0.11);
+      this.tone(slam * 0.5, 0.18, 0.01, "triangle", 0.09);
+      this.tone(crack, 0.045, 0.015, "square", 0.07);
+      this.tone(crack + 170, 0.04, 0.028, "square", 0.05);
+      this.tone(1180 + n * 40, 0.03, 0.044, "triangle", 0.04);
+    }
   }
 
   window.GameAudioEngine = GameAudioEngine;

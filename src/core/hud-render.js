@@ -346,6 +346,69 @@ function drawHudAndNotices(game, gfx, deps) {
     gfx.globalAlpha = 1;
   }
 
+  if (game.gameOverCinematic && game.gameOverCinematic.active) {
+    const cinematic = game.gameOverCinematic;
+    const chunkColors = ["#f3d44a", "#f18b49", "#d95cff"];
+    const textColors = ["#1a1304", "#200a00", "#12051f"];
+
+    gfx.globalAlpha = 0.62;
+    gfx.fillStyle = "#000";
+    gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    gfx.globalAlpha = 1;
+
+    for (let i = 0; i < cinematic.particles.length; i++) {
+      const p = cinematic.particles[i];
+      const lifeP = p.life ? (p.t / p.life) : 1;
+      gfx.globalAlpha = Math.max(0.12, lifeP * 0.9);
+      gfx.fillStyle = p.kind === 2 ? "#fff" : (p.kind === 1 ? "#f18b49" : "#9dd8ff");
+      gfx.fillRect((p.x - (p.size >> 1)) | 0, (p.y - (p.size >> 1)) | 0, p.size, p.size);
+    }
+    gfx.globalAlpha = 1;
+
+    for (let i = 0; i < cinematic.chunks.length; i++) {
+      const chunk = cinematic.chunks[i];
+      if (!chunk.impacted) continue;
+
+      const sinceImpact = cinematic.frame - chunk.impactFrame;
+      const punch = Math.max(0, 1 - (sinceImpact / 9));
+      const bounce = Math.sin(Math.min(1, sinceImpact / 5) * Math.PI) * 5 * punch;
+      const x = chunk.x;
+      const y = chunk.y - bounce;
+
+      gfx.fillStyle = "#000c";
+      gfx.fillRect((x + 3) | 0, (y + 4) | 0, chunk.w, chunk.h);
+
+      gfx.fillStyle = chunkColors[i % chunkColors.length];
+      gfx.fillRect(x | 0, y | 0, chunk.w, chunk.h);
+      gfx.strokeStyle = "#000d";
+      gfx.strokeRect((x + 0.5) | 0, (y + 0.5) | 0, chunk.w - 1, chunk.h - 1);
+
+      gfx.strokeStyle = "#0008";
+      for (let c = 0; c < 4; c++) {
+        const sx = x + ((chunk.w / 5) * (c + 1));
+        const sy = y + 4 + ((sinceImpact + c * 7) % Math.max(8, chunk.h - 8));
+        gfx.beginPath();
+        gfx.moveTo((sx - 6) | 0, sy | 0);
+        gfx.lineTo((sx - 1) | 0, (sy + 3) | 0);
+        gfx.lineTo((sx + 3) | 0, (sy - 1) | 0);
+        gfx.lineTo((sx + 8) | 0, (sy + 2) | 0);
+        gfx.stroke();
+      }
+
+      gfx.fillStyle = textColors[i % textColors.length];
+      gfx.font = "bold 42px monospace";
+      const tw = gfx.measureText(chunk.text).width;
+      const tx = x + ((chunk.w - tw) * 0.5);
+      gfx.fillText(chunk.text, tx | 0, (y + chunk.h - 12) | 0);
+    }
+
+    if (cinematic.impactIndex >= cinematic.chunks.length - 1) {
+      gfx.fillStyle = "#ffffffd0";
+      gfx.font = "12px monospace";
+      gfx.fillText("SYSTEM FAILURE", 102, 171);
+    }
+  }
+
   if (game.isPaused) {
     const panelX = 26;
     const panelY = 44;
