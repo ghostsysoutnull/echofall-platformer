@@ -190,6 +190,7 @@ class Game {
     this.helpTimer = 0;
     this.helpShownBlocks = new Set();
     this.isPaused = 0;
+    this.pauseHelpMode = "";
     this.levelSpawnX = 0;
     this.levelSpawnY = 0;
     this.levelCheckpoints = [];
@@ -942,7 +943,20 @@ class Game {
     ];
   }
 
-  startNewRun(startLevel = 0) {
+  openPauseHelp(mode = "pause") {
+    this.pauseHelpMode = mode === "onboarding" ? "onboarding" : "pause";
+    this.isPaused = 1;
+    this.audio.tone(this.pauseHelpMode === "onboarding" ? 720 : 360, 0.05, 0.00, "triangle", 0.03);
+  }
+
+  closePauseHelp() {
+    this.pauseHelpMode = "";
+    this.isPaused = 0;
+    this.audio.tone(620, 0.04, 0.00, "triangle", 0.03);
+  }
+
+  startNewRun(startLevel = 0, options = null) {
+    const showOnboardingHelp = !!(options && options.showOnboardingHelp);
     this.score = 0;
     this.titleCurrentScore = 0;
     this.coins = 0;
@@ -956,6 +970,7 @@ class Game {
     this.skeletonUnlocked = 0;
     this.characterIndex = 0;
     this.isPaused = 0;
+    this.pauseHelpMode = "";
 
     this.titleScreen.mode = "main";
     this.titleScreen.selected = 0;
@@ -967,6 +982,7 @@ class Game {
     const targetLevel = clamp(startLevel | 0, 0, Math.max(0, LEVELS.length - 1));
     this.gameState = "PLAYING";
     this.loadLevel(targetLevel);
+    if (showOnboardingHelp) this.openPauseHelp("onboarding");
   }
 
   resetTitleDemoRunner(resetPhase = 0) {
@@ -1105,7 +1121,7 @@ class Game {
         }
         if (picked.key === "start") {
           uiConfirm();
-          this.startNewRun(0);
+          this.startNewRun(0, { showOnboardingHelp: 1 });
           return;
         }
         if (picked.key === "continue") {
@@ -1538,8 +1554,11 @@ class Game {
     if (next.fullscreen && !this.touchButtons.fullscreen) this.toggleFullscreen();
 
     if (this.isPaused && hasAnyNow && !hadAnyBefore) {
-      this.isPaused = 0;
-      this.audio.tone(620, 0.04);
+      if (this.pauseHelpMode) this.closePauseHelp();
+      else {
+        this.isPaused = 0;
+        this.audio.tone(620, 0.04);
+      }
     }
 
     if (this.gameState === "TITLE") {
@@ -1631,14 +1650,14 @@ class Game {
 
   bindInput() {
     const preventKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyM","KeyN","KeyW","KeyX","KeyQ","KeyR","KeyP","KeyE","KeyT","Digit1","Digit2","Digit6","Digit7","Digit8","Digit9","Digit0"]);
-    const autoUnpauseKeys = new Set(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyA","KeyD","KeyS","KeyQ","KeyW","KeyE","Digit1","Digit2"]);
 
     addEventListener("keydown", (e) => {
       if (preventKeys.has(e.code)) e.preventDefault();
 
-      if (this.isPaused && autoUnpauseKeys.has(e.code)) {
-        this.isPaused = 0;
-        this.audio.tone(620, 0.04);
+      if (this.isPaused && this.pauseHelpMode && !e.repeat) {
+        this.closePauseHelp();
+        this.keyDown[e.code] = 1;
+        return;
       }
 
       if (this.gameOverCinematic.active) {
@@ -1711,8 +1730,7 @@ class Game {
         if (e.code === "KeyW") this.tryActivateCharacterAltSkill1();
         if (e.code === "KeyE") this.tryActivateCharacterAltSkill2();
         if (e.code === "KeyP") {
-          this.isPaused ^= 1;
-          this.audio.tone(this.isPaused ? 360 : 620, 0.05);
+          this.openPauseHelp("pause");
         }
         if (e.code === "KeyR") this.loadLevel(this.levelIndex);
         if (e.code === "KeyM") {
@@ -1891,6 +1909,7 @@ class Game {
   loadLevel(index) {
     this.levelIndex = index;
     this.isPaused = 0;
+    this.pauseHelpMode = "";
     this.rngState = 1234567 + (this.levelIndex + 1) * 99991;
     const levelTheme = getThemeForLevel(this.levelIndex);
     this.audio.playTheme(levelTheme);

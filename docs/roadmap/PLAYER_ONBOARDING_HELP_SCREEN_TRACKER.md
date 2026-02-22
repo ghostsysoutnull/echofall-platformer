@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-22
 Owner: Gameplay/UI
-Status: Planning
+Status: Implemented (Polish Complete)
 
 ## 1) Initial Vision
 
@@ -60,41 +60,45 @@ Notes:
 
 ### A. State + Input Flow
 
-- [ ] Add onboarding-help state transition after title `START`.
-- [ ] Gate gameplay start until any key confirms help screen.
-- [ ] Route `P` to open same help overlay while playing.
-- [ ] Make any key close overlay and resume gameplay.
+- [x] Add onboarding-help state transition after title `START`.
+- [x] Gate gameplay start until any key confirms help screen.
+- [x] Route `P` to open same help overlay while playing.
+- [x] Make any key close overlay and resume gameplay.
 
 ### B. Rendering
 
-- [ ] Build reusable full-screen help/pause overlay renderer.
-- [ ] Apply vaporwave styling (grid/scanline/glow treatment).
-- [ ] Ensure readability and contrast on all backgrounds.
+- [x] Build reusable full-screen help/pause overlay renderer.
+- [x] Apply vaporwave styling (grid/scanline/glow treatment).
+- [x] Ensure readability and contrast on all backgrounds.
 
 ### C. Replace Existing Pause Panel
 
-- [ ] Retire current compact pause panel.
-- [ ] Use new help overlay as the only pause UI.
+- [x] Retire current compact pause panel.
+- [x] Use new help overlay as the only pause UI.
 
 ### D. QA + Docs
 
 - [ ] Verify title -> help -> game flow.
 - [ ] Verify in-game `P` open/close behavior.
 - [ ] Verify every listed key is accurate to runtime inputs.
-- [ ] Update docs after implementation lands.
+- [x] Update docs after implementation lands.
 
 ## 6) Progress Snapshot
 
 - Vision defined: ✅
 - Requirements captured: ✅
 - Visual direction selected: ✅ (pending final approval)
-- Code changes started: ⛔ Not yet
-- QA started: ⛔ Not yet
+- Code changes started: ✅
+- QA started: 🟡 In progress (manual checks ongoing)
 
 ## 7) Decision Log
 
 - 2026-02-22: Tracker created to establish baseline scope and implementation status.
 - 2026-02-22: Preferred concept set to "Neon Boot Sequence" (can be changed before implementation).
+- 2026-02-22: First pass implemented: START opens onboarding help, any key resumes, P opens same help as pause.
+- 2026-02-22: Readability pass: switched pause/help overlay to regular fonts and higher-contrast colors.
+- 2026-02-22: Layout polish: aligned control columns and shortened key labels to prevent overlap.
+- 2026-02-22: Prompt polish: added solid footer rectangle + animated light sweep behind "PRESS ANY KEY" text.
 
 ## 8) Open Questions
 

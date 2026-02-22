@@ -439,28 +439,127 @@ function drawHudAndNotices(game, gfx, deps) {
   }
 
   if (game.isPaused) {
-    const panelX = 26;
-    const panelY = 44;
-    const panelW = 268;
-    const panelH = 96;
-    const leftColX = panelX + 10;
-    const rightColX = panelX + 150;
+    const onboarding = game.pauseHelpMode === "onboarding";
+    const heading = onboarding ? "PILOT BOOT // CONTROL MATRIX" : "PAUSE // CONTROL MATRIX";
+    const prompt = onboarding ? "PRESS ANY KEY TO DEPLOY" : "PRESS ANY KEY TO RESUME";
+    const leftLabelX = 22;
+    const leftValueX = 76;
+    const rightLabelX = 172;
+    const rightValueX = 252;
 
-    gfx.fillStyle = "#000c";
-    gfx.fillRect(panelX, panelY, panelW, panelH);
-    drawHudText("PAUSED (P)", panelX + 96, panelY + 13, "#fff");
+    gfx.globalAlpha = 0.84;
+    gfx.fillStyle = "#000000";
+    gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    gfx.globalAlpha = 1;
 
-    drawHudText(scoreText, leftColX, panelY + 28, "#C9A06D");
-    drawHudText(coinText, leftColX, panelY + 40, PALETTE.F);
-    drawHudText(lifeText, leftColX, panelY + 52, PALETTE.C);
-    drawHudText("LEVEL " + levelNameFull, leftColX, panelY + 64, "#fff");
-    drawHudText("CHAR " + charNameFull, leftColX, panelY + 76, "#fff");
+    const grad = gfx.createLinearGradient(0, 20, 0, CANVAS_H - 8);
+    grad.addColorStop(0, "#141828");
+    grad.addColorStop(0.5, "#10162a");
+    grad.addColorStop(1, "#0b1120");
+    gfx.fillStyle = grad;
+    gfx.fillRect(10, 24, CANVAS_W - 20, CANVAS_H - 46);
 
-    if (abilityText) drawHudText("SKILL " + abilityText, rightColX, panelY + 28, "#fff");
-    if (cpText) drawHudText(cpText, rightColX, panelY + 40, "#fff");
-    if (coreText) drawHudText(coreText, rightColX, panelY + 52, "#fff");
-    if (secondaryLeftText) drawHudText(secondaryLeftText, rightColX, panelY + 64, "#fff");
-    if (game.audio.muted) drawHudText("MUTE", rightColX, panelY + 76, "#fff");
+    gfx.globalAlpha = 0.12;
+    gfx.strokeStyle = "#7bd8ff";
+    for (let y = 34; y < CANVAS_H - 20; y += 8) {
+      gfx.beginPath();
+      gfx.moveTo(12, y + 0.5);
+      gfx.lineTo(CANVAS_W - 12, y + 0.5);
+      gfx.stroke();
+    }
+    gfx.globalAlpha = 1;
+
+    gfx.strokeStyle = "#ffffff";
+    gfx.strokeRect(10.5, 24.5, CANVAS_W - 21, CANVAS_H - 47);
+    gfx.strokeStyle = "#56e7ff";
+    gfx.strokeRect(14.5, 28.5, CANVAS_W - 29, CANVAS_H - 55);
+
+    gfx.font = "14px Arial";
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText(heading, 22, 42);
+
+    gfx.font = "11px Arial";
+    gfx.fillStyle = "#7be8ff";
+    gfx.fillText("MOVE", 22, 60);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("\u2190/\u2192 or A/D", leftValueX, 60);
+
+    gfx.fillStyle = "#7ee8ff";
+    gfx.fillText("DOWN", leftLabelX, 72);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("\u2193 or S", leftValueX, 72);
+
+    gfx.fillStyle = "#7ee8ff";
+    gfx.fillText("JUMP", leftLabelX, 84);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("Space or \u2191", leftValueX, 84);
+
+    gfx.fillStyle = "#7ee8ff";
+    gfx.fillText("SKILLS", leftLabelX, 96);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("Q / W / E", leftValueX, 96);
+
+    gfx.fillStyle = "#7ee8ff";
+    gfx.fillText("SWAP", leftLabelX, 108);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("1 / 2", leftValueX, 108);
+
+    gfx.fillStyle = "#ff9bdf";
+    gfx.fillText("PAUSE/HELP", rightLabelX, 60);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("P", rightValueX, 60);
+
+    gfx.fillStyle = "#ff90e2";
+    gfx.fillText("RESTART", rightLabelX, 72);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("R", rightValueX, 72);
+
+    gfx.fillStyle = "#ff90e2";
+    gfx.fillText("LEVEL NAV", rightLabelX, 84);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("N / M", rightValueX, 84);
+
+    gfx.fillStyle = "#ff90e2";
+    gfx.fillText("MUTE", rightLabelX, 96);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("X", rightValueX, 96);
+
+    gfx.fillStyle = "#ff90e2";
+    gfx.fillText("MUSIC", rightLabelX, 108);
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("9 / 0", rightValueX, 108);
+
+    gfx.fillStyle = "#ffffff";
+    gfx.fillText("LVL " + levelNameFull, leftLabelX, 126);
+    gfx.fillText("CHAR " + charNameFull, leftLabelX, 138);
+    gfx.fillText(scoreText + "  " + coinText + "  " + lifeText, rightLabelX, 126);
+    if (abilityText) gfx.fillText("SKILL " + abilityText, rightLabelX, 138);
+
+    const promptPanelX = 24;
+    const promptPanelY = 146;
+    const promptPanelW = CANVAS_W - 48;
+    const promptPanelH = 24;
+    const promptAnimT = (typeof performance !== "undefined" ? performance.now() : Date.now()) * 0.0026;
+    const sweepX = promptPanelX + (((Math.sin(promptAnimT) + 1) * 0.5) * promptPanelW);
+
+    gfx.fillStyle = "#020812";
+    gfx.fillRect(promptPanelX, promptPanelY, promptPanelW, promptPanelH);
+
+    const sweepGrad = gfx.createLinearGradient(sweepX - 70, 0, sweepX + 70, 0);
+    sweepGrad.addColorStop(0, "#00000000");
+    sweepGrad.addColorStop(0.5, "#4efad744");
+    sweepGrad.addColorStop(1, "#00000000");
+    gfx.fillStyle = sweepGrad;
+    gfx.fillRect(promptPanelX + 1, promptPanelY + 1, promptPanelW - 2, promptPanelH - 2);
+
+    gfx.strokeStyle = "#63e6ff";
+    gfx.strokeRect(promptPanelX + 0.5, promptPanelY + 0.5, promptPanelW - 1, promptPanelH - 1);
+
+    gfx.fillStyle = "#9affcc";
+    gfx.font = "bold 13px Arial";
+    const promptW = gfx.measureText(prompt).width;
+    const promptX = ((CANVAS_W - promptW) * 0.5) | 0;
+    gfx.fillText(prompt, promptX, 162);
   }
 }
 
