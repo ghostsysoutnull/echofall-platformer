@@ -88,8 +88,8 @@ function drawHudAndNotices(game, gfx, deps) {
     drawHudText("JUMP: Space / Up", 168, 50, "#fff");
     drawHudText("1/2: Switch Character", 24, 62, "#fff");
     drawHudText("Q/W/E: Character Skills", 168, 62, "#fff");
-    drawHudText("R: Restart   N: Prev   M: Next", 96, 74, "#fff");
-    drawHudText("X: Mute  6: Immortal  9/0: BGM -/+", 24, 86, "#fff");
+    drawHudText("P: Pause  R: Restart  N: Prev  M: Next", 72, 74, "#fff");
+    drawHudText("X: Mute  9/0: BGM -/+", 24, 86, "#fff");
   }
 
   if (game.checkpointNotice > 0 && game.activeCheckpointIndex >= 0 && game.levelCheckpoints[game.activeCheckpointIndex]) {
@@ -289,10 +289,6 @@ function drawHudAndNotices(game, gfx, deps) {
     row2RightX -= width + itemGap;
   }
 
-  if (game.immortalMode) {
-    drawHudText("IMMORTAL", 6, 35, "#fff");
-  }
-
   if (CHARACTERS[game.characterIndex].name === "ROBOT" && (game.robotPulse.phase2Notice > 0 || (game.robotPulse.timer > 0 && game.robotPulse.phase2Active))) {
     drawNotice(106, 16, 108, 16, "PHASE 2 ACTIVE", 114, 27, "#000b", "#fff");
   }
@@ -373,7 +369,6 @@ function drawHudAndNotices(game, gfx, deps) {
     if (coreText) drawHudText(coreText, rightColX, panelY + 52, "#fff");
     if (secondaryLeftText) drawHudText(secondaryLeftText, rightColX, panelY + 64, "#fff");
     if (game.audio.muted) drawHudText("MUTE", rightColX, panelY + 76, "#fff");
-    if (game.immortalMode) drawHudText("IMMORTAL", rightColX + 44, panelY + 76, "#fff");
   }
 }
 
