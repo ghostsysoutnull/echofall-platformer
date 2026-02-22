@@ -118,6 +118,7 @@ Implementation note:
 - [x] Mute toggle works from title/options.
 - [x] Game over flow returns to TITLE screen.
 - [x] Return from game-over triggers title re-entry sting + logo pulse.
+- [ ] Re-entry subtitle appears for ~1–2 seconds after game-over return.
 - [ ] No runtime errors when switching TITLE ↔ gameplay repeatedly.
 
 ## 13) Iteration Log
@@ -155,6 +156,24 @@ Implementation note:
 
 **Deferred / next steps:**
 - Optional: add a distinct re-entry subtitle line (e.g., “SYSTEM RECOVERED”) for 1–2 seconds.
+
+### Iteration 4 — Re-entry Subtitle (Planned)
+**Goal:**
+- Add a distinct subtitle line on title re-entry after game-over (example: `SYSTEM RECOVERED`) for ~1–2 seconds.
+
+**Acceptance criteria:**
+- Subtitle only appears on title re-entry path (not on first boot).
+- Subtitle fades/pulses without reducing menu readability.
+- Subtitle auto-clears within ~1–2 seconds and does not block input.
+
+**Notes:**
+- Keep this additive to existing re-entry sting + logo pulse.
+
+## 14) Next Steps (Priority)
+1. **Iteration 4 implementation:** re-entry subtitle (`SYSTEM RECOVERED`) with timed fade.
+2. **Stability pass:** validate repeated TITLE ↔ gameplay transitions for runtime safety.
+3. **Continue system (deferred):** add persistence-backed `CONTINUE` and enable menu item.
+4. **Polish:** optional subtitle variants/credits once flow is stable.
 
 ## 12) Future Enhancements (Optional)
 - Add animated subtitle variants per unlocked character.
