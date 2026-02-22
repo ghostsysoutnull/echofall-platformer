@@ -1926,6 +1926,12 @@ class Game {
       const wingRise = (flap * 6) | 0;
       const wingDrop = ((1 - flap) * 5) | 0;
       const bodyY = sy + 6;
+      const fireCycleFrames = 360;
+      const fireActiveFrames = 180;
+      const fireFrame = this.player.anim % fireCycleFrames;
+      const fireActive = fireFrame >= (fireCycleFrames - fireActiveFrames);
+      const fireT = fireActive ? ((fireFrame - (fireCycleFrames - fireActiveFrames)) / fireActiveFrames) : 0;
+      const firePower = fireActive ? (0.35 + Math.sin(fireT * 3.141592653589793) * 0.65) : 0;
 
       gfx.fillStyle = "#4f1111";
       gfx.fillRect((sx + 8) | 0, bodyY | 0, 24, 4);
@@ -1988,6 +1994,40 @@ class Game {
 
       gfx.fillStyle = "#c34c3b";
       gfx.fillRect((sx + 3) | 0, (bodyY + 1) | 0, 1, 1);
+
+      if (fireActive) {
+        const sourceX = (sx + 1) | 0;
+        const sourceY = (bodyY + 1) | 0;
+        const maxDist = 10 + ((firePower * 16) | 0);
+
+        gfx.fillStyle = "#f28a2e";
+        gfx.fillRect((sourceX - 2) | 0, sourceY, 2, 1);
+        gfx.fillStyle = "#ffd35a";
+        gfx.fillRect((sourceX - 1) | 0, sourceY, 1, 1);
+
+        const pieceCount = 18;
+        for (let i = 0; i < pieceCount; i++) {
+          const launchOffset = i * 0.05;
+          const lifePhase = (fireT * 1.22) - launchOffset;
+          if (lifePhase <= 0 || lifePhase >= 1) continue;
+
+          const travel = (lifePhase * lifePhase) * maxDist;
+          const fade = 1 - lifePhase;
+          const rise = ((i % 5) - 2) * 0.45;
+          const jitter = Math.sin((actor.phase || 0) * 3.0 + i * 1.7 + this.player.anim * 0.18) * 0.75;
+          const px = (sourceX - 1 - travel) | 0;
+          const py = (sourceY + rise + jitter) | 0;
+          const pw = Math.max(1, (1 + fade * 2) | 0);
+
+          if (fade > 0.72) gfx.fillStyle = "#ffd35a";
+          else if (fade > 0.45) gfx.fillStyle = "#f28a2e";
+          else if (fade > 0.2) gfx.fillStyle = "#d6492f";
+          else gfx.fillStyle = "#8e2323";
+
+          gfx.fillRect(px, py, pw, 1);
+          if (pw > 1 && fade > 0.5) gfx.fillRect(px + 1, py + 1, 1, 1);
+        }
+      }
     } else if (actor.type === "paperKite") {
       this.drawSprite(SPRITES.bgJapanKiteSmall, sx, sy, actor.scale || 1);
     } else if (actor.type === "ghostLantern") {
