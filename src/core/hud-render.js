@@ -63,11 +63,19 @@ function drawHudAndNotices(game, gfx, deps) {
   }
 
   if (game.levelNameBanner) {
+    const bannerX = 78;
+    const bannerY = 62;
+    const bannerW = 164;
+    const bannerH = 28;
+    const title = LEVEL_NAMES[game.levelIndex] || "";
     gfx.fillStyle = "#000a";
-    gfx.fillRect(78, 62, 164, 28);
+    gfx.fillRect(bannerX, bannerY, bannerW, bannerH);
     gfx.fillStyle = "#fff";
-    gfx.font = "14px monospace";
-    gfx.fillText(LEVEL_NAMES[game.levelIndex], 94, 82);
+    gfx.font = "16px monospace";
+    const tw = gfx.measureText(title).width;
+    const tx = bannerX + ((bannerW - tw) * 0.5);
+    const ty = bannerY + ((bannerH + 12) * 0.5);
+    gfx.fillText(title, tx | 0, ty | 0);
   }
 
   if (game.geometryMusicNotice > 0 && getThemeForLevel(game.levelIndex) === "GEOMETRYDREAM") {
