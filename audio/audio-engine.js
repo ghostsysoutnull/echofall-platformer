@@ -188,6 +188,20 @@
       this.currentTheme = theme;
     }
 
+    stopTheme({ fadeMs = 240 } = {}) {
+      this.pendingTheme = null;
+      this.currentTheme = null;
+      const prev = this.currentTrack;
+      if (!prev) return;
+      if (!this.ctx) {
+        this.currentTrack = null;
+        return;
+      }
+      this._fadeGain(prev.gain, 0.0, fadeMs);
+      this._cleanupTrackLater(prev, fadeMs);
+      this.currentTrack = null;
+    }
+
     extraLifeJingle() {
       if (this.sfx && this.sfx.extraLife) return this.sfx.extraLife(this);
       this.tone(880, 0.06, 0);

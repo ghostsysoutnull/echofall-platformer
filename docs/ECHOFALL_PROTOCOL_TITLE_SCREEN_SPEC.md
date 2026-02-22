@@ -43,6 +43,10 @@ Suggested anchors:
 - `LEVEL SELECT`
 - `OPTIONS`
 
+### 4.1 Options Submenu Extension (Planned)
+- Add `JUKEBOX` as an option entry under `OPTIONS`.
+- Selecting `JUKEBOX` opens a dedicated title-state mode (`mode: "jukebox"`).
+
 Navigation:
 - `ArrowUp/ArrowDown` = move selection
 - `Enter/Space` = confirm
@@ -88,6 +92,43 @@ Selection styling:
   - MVP: exactly 1 actor.
   - Optional later: max 2 actors with staggered phase.
 
+  ### 5.5 Jukebox Neon-Wave Background (Planned)
+  - Scope: applies only while in `JUKEBOX` screen/mode.
+  - Visual identity:
+    - dark synthwave horizon,
+    - perspective neon grid floor,
+    - cyan/magenta wave ribbons,
+    - subtle geometric drift accents.
+
+  #### 5.5.1 Layer Stack
+  1. **Base Sky Gradient:** deep navy-to-black with slow pulse.
+  2. **Horizon Glow:** low alpha cyan/magenta blend band.
+  3. **Neon Grid Floor:** perspective lines scrolling toward camera.
+  4. **Wave Ribbons:** 1–2 sine-wave bands behind UI list region.
+  5. **Accent Shards:** sparse drifting diamonds/triangles with slow rotation.
+  6. **UI Panel Overlay:** translucent panel ensuring track-list readability.
+
+  #### 5.5.2 Motion Rules
+  - Grid scroll speed: slow-medium, constant.
+  - Wave oscillation: smooth sinusoidal motion, low frequency.
+  - Accent shard drift: very slow, low count.
+  - Optional micro-glitch: max 1–2 frames, infrequent.
+  - No hard flashes/strobes in jukebox mode.
+
+  #### 5.5.3 Color / Contrast Rules
+  - Suggested palette:
+    - base: `#05070f`, `#0a1020`
+    - cyan: `#57e8ff`
+    - magenta: `#d95cff`
+    - lime accent: `#7dff9b`
+    - text: `#e8fff4`
+  - Readability rule: text and selected track state always higher contrast than animated background.
+
+  #### 5.5.4 Audio-Reactive FX (MVP-safe)
+  - Keep visuals only lightly reactive (not full spectrum analyzer).
+  - Current track line can pulse with subtle ring or glow on beat-ish timer.
+  - Track change event may trigger short glow burst + settle.
+
 ## 6) Audio Direction
 - **Ambient Bed:** low synth drone with sparse metallic pings.
 - **UI SFX:**
@@ -102,6 +143,15 @@ Selection styling:
 - `CONTINUE`: restores most recent checkpoint/session state if present.
 - `LEVEL SELECT`: opens existing level navigation screen or minimal selector.
 - `OPTIONS`: audio + controls toggles.
+- `JUKEBOX`: options sub-screen for track preview with neon-wave background.
+
+### 7.1 Jukebox Controls (Planned)
+- `ArrowUp/ArrowDown`: move track selection.
+- `ArrowLeft/ArrowRight`: previous/next track (optional quick cycle).
+- `Enter/Space`: play selected track preview.
+- `Esc`: return to options.
+- `X`: mute toggle.
+- `9/0`: music volume down/up.
 
 ## 8) Technical Hooks (Planned Integration)
 - **Main loop / state routing:** `src/main.js`
@@ -120,6 +170,8 @@ Implementation note:
 - Title FX budget:
   - Fire particles: cap ~120–180 active.
   - Glitch pass: tiny O(1) overlay work per frame except glitch bursts.
+  - Jukebox neon shards: cap ~20–35 active.
+  - Jukebox wave bands: max 2 simultaneous ribbons.
 - Avoid allocations in inner loops when practical.
 
 ## 10) Accessibility & UX
@@ -127,6 +179,8 @@ Implementation note:
 - Respect mute toggle on title screen.
 - Keyboard-only flow must be fully usable.
 - If `CONTINUE` unavailable, show disabled style rather than dead action.
+- Jukebox background animation must not reduce selected-track readability.
+- Jukebox controls must be visible in footer hints.
 
 ## 11) QA Checklist
 - [x] Title appears on boot before gameplay.
@@ -141,6 +195,10 @@ Implementation note:
 - [ ] Re-entry subtitle appears for ~1–2 seconds after game-over return.
 - [x] Rooftop demo runner appears only in TITLE and loops run/jump/fall/warp.
 - [x] Demo runner never overlaps critical menu readability zones.
+- [x] `JUKEBOX` option appears in `OPTIONS` and opens dedicated screen.
+- [x] Jukebox neon-wave background renders with readable track list.
+- [x] Jukebox controls (`Up/Down`, `Enter`, `Esc`, `X`, `9/0`) work as specified.
+- [x] Jukebox preview transitions do not break title/gameplay theme routing.
 - [ ] No runtime errors when switching TITLE ↔ gameplay repeatedly.
 
 ## 13) Iteration Log
@@ -201,11 +259,31 @@ Implementation note:
 **Notes:**
 - Runner is intentionally small/subtle to preserve menu and logo readability.
 
+### Iteration 6 — Jukebox Screen + Neon-Wave Background (Implemented)
+**Implemented in code:**
+- Added `JUKEBOX` entry in options and dedicated title mode (`mode: "jukebox"`).
+- Implemented jukebox controls:
+  - `Up/Down` select
+  - `Left/Right` quick cycle + play
+  - `Enter/Space` play selected
+  - `Esc` back to options
+  - inherited `X` mute and `9/0` volume controls
+- Added neon-wave visual stack for jukebox screen:
+  - dark gradient sky
+  - horizon glow lines
+  - perspective grid motion
+  - drifting neon shard accents
+  - readable translucent track-list panel
+- Wired track preview playback via existing theme tracks (`audio.playTheme(...)`) and clean stop on exit (`audio.stopTheme(...)`).
+
+**Notes:**
+- MVP scope implemented; can add stronger audio-reactive elements in a later polish iteration.
+
 ## 14) Next Steps (Priority)
 1. **Iteration 4 implementation:** re-entry subtitle (`SYSTEM RECOVERED`) with timed fade.
 2. **Stability pass:** validate repeated TITLE ↔ gameplay transitions for runtime safety.
 3. **Continue system (deferred):** add persistence-backed `CONTINUE` and enable menu item.
-4. **Polish:** optional subtitle variants/credits once flow is stable.
+4. **Polish:** stronger audio-reactive jukebox FX and optional track display names.
 
 ## 12) Future Enhancements (Optional)
 - Add animated subtitle variants per unlocked character.

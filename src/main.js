@@ -201,6 +201,15 @@ class Game {
       optionSelected: 0,
       levelSelectIndex: 0,
       hasContinue: 0,
+      jukebox: {
+        themes: Array.from(new Set(LEVEL_THEMES || [])).filter(Boolean),
+        selected: 0,
+        current: -1,
+        wavePhase: 0,
+        wavePhase2: 0,
+        glow: 0,
+        shards: []
+      },
       fireParticles: [],
       fireTick: 0,
       glitchFrames: 0,
@@ -1088,7 +1097,7 @@ class Game {
     }
 
     if (t.mode === "options") {
-      const optionCount = 3;
+      const optionCount = 4;
       if (code === "Escape") {
         uiBack();
         t.mode = "main";
@@ -1120,10 +1129,109 @@ class Game {
           uiMove();
           return;
         }
+        if (t.optionSelected === 2) {
+          uiConfirm();
+          t.mode = "jukebox";
+          if (t.jukebox.current < 0) t.jukebox.selected = 0;
+          return;
+        }
         uiBack();
         t.mode = "main";
       }
+      return;
     }
+
+    if (t.mode === "jukebox") {
+      const list = t.jukebox.themes;
+      if (!list.length) {
+        if (code === "Escape") {
+          uiBack();
+          t.mode = "options";
+          this.audio.stopTheme({ fadeMs: 220 });
+        }
+        return;
+      }
+
+      if (code === "Escape") {
+        uiBack();
+        t.mode = "options";
+        this.audio.stopTheme({ fadeMs: 220 });
+        t.jukebox.current = -1;
+        return;
+      }
+      if (code === "ArrowUp") {
+        t.jukebox.selected = (t.jukebox.selected - 1 + list.length) % list.length;
+        uiMove();
+        return;
+      }
+      if (code === "ArrowDown") {
+        t.jukebox.selected = (t.jukebox.selected + 1) % list.length;
+        uiMove();
+        return;
+      }
+      if (code === "ArrowLeft") {
+        t.jukebox.selected = (t.jukebox.selected - 1 + list.length) % list.length;
+        this.playJukeboxSelectedTheme();
+        uiMove();
+        return;
+      }
+      if (code === "ArrowRight") {
+        t.jukebox.selected = (t.jukebox.selected + 1) % list.length;
+        this.playJukeboxSelectedTheme();
+        uiMove();
+        return;
+      }
+      if (code === "Enter" || code === "Space") {
+        this.playJukeboxSelectedTheme();
+        uiConfirm();
+      }
+    }
+  }
+
+  playJukeboxSelectedTheme() {
+    const t = this.titleScreen;
+    const list = t.jukebox.themes;
+    if (!list.length) return;
+    const idx = clamp(t.jukebox.selected | 0, 0, list.length - 1);
+    const theme = list[idx];
+    if (!theme) return;
+    if (!this.audio.ctx) this.audio.ensure();
+    this.audio.playTheme(theme, { fadeInMs: 260, crossFadeMs: 260 });
+    t.jukebox.current = idx;
+    t.jukebox.glow = 24;
+  }
+
+  updateTitleJukeboxVisuals() {
+    const j = this.titleScreen.jukebox;
+    if (!j) return;
+    j.wavePhase += 0.05;
+    j.wavePhase2 += 0.033;
+    if (j.glow > 0) j.glow--;
+
+    if ((this.titleScreen.frame % 4) === 0) {
+      const y = 100 + ((this.rand01() * 52) | 0);
+      j.shards.push({
+        x: CANVAS_W + 8 + this.rand01() * 24,
+        y,
+        vx: -(0.45 + this.rand01() * 0.45),
+        vy: (this.rand01() - 0.5) * 0.08,
+        rot: this.rand01() * 6.283,
+        vr: (this.rand01() - 0.5) * 0.12,
+        t: 90 + ((this.rand01() * 70) | 0),
+        life: 120
+      });
+    }
+    if (j.shards.length > 35) j.shards.splice(0, j.shards.length - 35);
+
+    for (let i = 0; i < j.shards.length; i++) {
+      const s = j.shards[i];
+      if (s.t-- <= 0) { s.dead = 1; continue; }
+      s.x += s.vx;
+      s.y += s.vy;
+      s.rot += s.vr;
+      if (s.x < -16 || s.y < 78 || s.y > 170) s.dead = 1;
+    }
+    j.shards = j.shards.filter((s) => !s.dead);
   }
 
   updateTitleScreen() {
@@ -1179,6 +1287,7 @@ class Game {
     }
     t.fireParticles = t.fireParticles.filter((p) => !p.dead);
     this.updateTitleDemoRunner();
+    if (t.mode === "jukebox") this.updateTitleJukeboxVisuals();
   }
 
   bindInput() {
@@ -6016,6 +6125,11 @@ class Game {
     const t = this.titleScreen;
     gfx.setTransform(1,0,0,1,0,0);
 
+    if (t.mode === "jukebox") {
+      this.drawJukeboxScreen();
+      return;
+    }
+
     gfx.fillStyle = "#040708";
     gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
@@ -6140,6 +6254,7 @@ class Game {
       const options = [
         "MUTE: " + (this.audio.muted ? "ON" : "OFF"),
         "MUSIC: " + (((this.audio.musicVolume * 100) + 0.5) | 0) + "%",
+        "JUKEBOX",
         "BACK"
       ];
       gfx.font = "12px monospace";
@@ -6158,6 +6273,106 @@ class Game {
     gfx.font = "9px monospace";
     const footer = "ARROWS MOVE  ENTER SELECT  ESC BACK  X MUTE";
     gfx.fillText(footer, ((CANVAS_W - gfx.measureText(footer).width) * 0.5) | 0, 174);
+  }
+
+  drawJukeboxScreen() {
+    const t = this.titleScreen;
+    const j = t.jukebox;
+    const list = j.themes;
+    gfx.setTransform(1,0,0,1,0,0);
+
+    const pulse = (Math.sin(j.wavePhase * 0.6) + 1) * 0.5;
+    gfx.fillStyle = "#05070f";
+    gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    const grad = gfx.createLinearGradient(0, 0, 0, CANVAS_H);
+    grad.addColorStop(0, "#0a1020");
+    grad.addColorStop(1, "#05070f");
+    gfx.globalAlpha = 0.9;
+    gfx.fillStyle = grad;
+    gfx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    gfx.globalAlpha = 0.18 + pulse * 0.10;
+    gfx.fillStyle = "#57e8ff";
+    gfx.fillRect(0, 82, CANVAS_W, 2);
+    gfx.globalAlpha = 0.12 + (1 - pulse) * 0.12;
+    gfx.fillStyle = "#d95cff";
+    gfx.fillRect(0, 85, CANVAS_W, 1);
+
+    gfx.globalAlpha = 0.18;
+    gfx.strokeStyle = "#57e8ff";
+    for (let y = 90; y < CANVAS_H; y += 8) {
+      const wobble = Math.sin(j.wavePhase + y * 0.04) * 4;
+      gfx.beginPath();
+      gfx.moveTo(0, y + wobble);
+      gfx.lineTo(CANVAS_W, y - wobble);
+      gfx.stroke();
+    }
+    gfx.globalAlpha = 0.16;
+    gfx.strokeStyle = "#d95cff";
+    for (let x = -20; x <= CANVAS_W + 20; x += 20) {
+      gfx.beginPath();
+      gfx.moveTo(x + Math.sin(j.wavePhase2 + x * 0.03) * 3, 90);
+      gfx.lineTo(CANVAS_W * 0.5 + (x - CANVAS_W * 0.5) * 0.25, CANVAS_H);
+      gfx.stroke();
+    }
+
+    for (let i = 0; i < j.shards.length; i++) {
+      const s = j.shards[i];
+      const lifeP = s.life ? (s.t / s.life) : 1;
+      gfx.save();
+      gfx.translate(s.x, s.y);
+      gfx.rotate(s.rot);
+      gfx.globalAlpha = Math.max(0.08, lifeP * 0.35);
+      gfx.fillStyle = (i & 1) ? "#57e8ff" : "#d95cff";
+      gfx.fillRect(-2, -2, 4, 4);
+      gfx.restore();
+    }
+
+    gfx.globalAlpha = 0.72;
+    gfx.fillStyle = "#031018";
+    gfx.fillRect(64, 44, 192, 108);
+    gfx.globalAlpha = 1;
+    gfx.strokeStyle = "#57e8ff";
+    gfx.strokeRect(64.5, 44.5, 191, 107);
+
+    const glowP = j.glow > 0 ? (j.glow / 24) : 0;
+    if (glowP > 0) {
+      gfx.globalAlpha = 0.12 + glowP * 0.20;
+      gfx.fillStyle = "#7dff9b";
+      gfx.fillRect(64, 44, 192, 108);
+      gfx.globalAlpha = 1;
+    }
+
+    gfx.font = "bold 18px monospace";
+    gfx.fillStyle = "#e8fff4";
+    const head = "JUKEBOX";
+    gfx.fillText(head, ((CANVAS_W - gfx.measureText(head).width) * 0.5) | 0, 32);
+
+    gfx.font = "10px monospace";
+    gfx.fillStyle = "#b8ffe2";
+    const now = j.current >= 0 && list[j.current] ? list[j.current] : "NONE";
+    const nowText = "NOW PLAYING: " + now;
+    gfx.fillText(nowText, ((CANVAS_W - gfx.measureText(nowText).width) * 0.5) | 0, 56);
+
+    const rowStart = Math.max(0, (j.selected - 3) | 0);
+    const rowEnd = Math.min(list.length, rowStart + 7);
+    gfx.font = "11px monospace";
+    for (let i = rowStart; i < rowEnd; i++) {
+      const selected = i === j.selected;
+      const playing = i === j.current;
+      const prefix = selected ? "> " : "  ";
+      const suffix = playing ? " *" : "";
+      const text = prefix + list[i] + suffix;
+      gfx.fillStyle = selected ? "#e8fff4" : (playing ? "#7dff9b" : "#97c9bb");
+      gfx.fillText(text, 80, 74 + (i - rowStart) * 11);
+    }
+
+    gfx.font = "9px monospace";
+    gfx.fillStyle = "#9ab7aa";
+    const footer = "UP/DOWN SELECT  LEFT/RIGHT CYCLE  ENTER PLAY  ESC BACK";
+    gfx.fillText(footer, ((CANVAS_W - gfx.measureText(footer).width) * 0.5) | 0, 174);
+    gfx.globalAlpha = 1;
   }
 
   render() {
