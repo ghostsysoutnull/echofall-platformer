@@ -1845,6 +1845,20 @@ class Game {
       actor.x += actor.vx || 0;
       actor.phase = (actor.phase || 0) + (actor.bobSpeed || 0);
 
+      if (actor.type === "distantDragon") {
+        const width = Math.max(1, actor.w || 56);
+        const minX = 0;
+        const maxX = Math.max(0, worldW - width);
+        if (actor.x <= minX) {
+          actor.x = minX;
+          actor.vx = Math.abs(actor.vx || 0.07);
+        } else if (actor.x >= maxX) {
+          actor.x = maxX;
+          actor.vx = -Math.abs(actor.vx || 0.07);
+        }
+        continue;
+      }
+
       const wrapPad = 120;
       if (actor.x > worldW + wrapPad) actor.x = -wrapPad;
       else if (actor.x < -wrapPad) actor.x = worldW + wrapPad;
@@ -1922,6 +1936,18 @@ class Game {
     } else if (actor.type === "bird") {
       this.drawSprite(SPRITES.bgBirdSmall, sx, sy, actor.scale || 1);
     } else if (actor.type === "distantDragon") {
+      const dragonWidth = Math.max(56, actor.w || 56);
+      const facingRight = (actor.vx || 0) > 0;
+      if (facingRight) {
+        gfx.save();
+        gfx.translate((sx + dragonWidth) | 0, 0);
+        gfx.scale(-1, 1);
+      }
+      const dragonBaseX = facingRight ? 0 : sx;
+      const drawDragonRect = (x, y, w, h) => {
+        gfx.fillRect((dragonBaseX + x) | 0, y | 0, w, h);
+      };
+
       const flap = ((Math.sin((actor.phase || 0) * 1.45 + this.player.anim * 0.05) + 1) * 0.5);
       const wingRise = (flap * 6) | 0;
       const wingDrop = ((1 - flap) * 5) | 0;
@@ -1934,94 +1960,94 @@ class Game {
       const firePower = fireActive ? (0.35 + Math.sin(fireT * 3.141592653589793) * 0.65) : 0;
 
       gfx.fillStyle = "#4f1111";
-      gfx.fillRect((sx + 8) | 0, bodyY | 0, 24, 4);
-      gfx.fillRect((sx + 31) | 0, (bodyY + 1) | 0, 6, 3);
-      gfx.fillRect((sx + 36) | 0, (bodyY + 2) | 0, 2, 2);
+      drawDragonRect(8, bodyY, 24, 4);
+      drawDragonRect(31, bodyY + 1, 6, 3);
+      drawDragonRect(36, bodyY + 2, 2, 2);
 
       gfx.fillStyle = "#7a1b1b";
-      gfx.fillRect((sx + 10) | 0, (bodyY - 1) | 0, 20, 1);
-      gfx.fillRect((sx + 14) | 0, (bodyY + 4) | 0, 14, 1);
-      gfx.fillRect((sx + 32) | 0, bodyY | 0, 3, 1);
+      drawDragonRect(10, bodyY - 1, 20, 1);
+      drawDragonRect(14, bodyY + 4, 14, 1);
+      drawDragonRect(32, bodyY, 3, 1);
 
       gfx.fillStyle = "#a33535";
-      gfx.fillRect((sx + 12) | 0, bodyY | 0, 16, 1);
-      gfx.fillRect((sx + 20) | 0, (bodyY + 2) | 0, 7, 1);
+      drawDragonRect(12, bodyY, 16, 1);
+      drawDragonRect(20, bodyY + 2, 7, 1);
 
       gfx.fillStyle = "#3a0d0d";
-      gfx.fillRect((sx + 2) | 0, (bodyY + 1) | 0, 6, 2);
-      gfx.fillRect(sx | 0, (bodyY + 2) | 0, 2, 1);
-      gfx.fillRect((sx + 5) | 0, bodyY | 0, 2, 1);
+      drawDragonRect(2, bodyY + 1, 6, 2);
+      drawDragonRect(0, bodyY + 2, 2, 1);
+      drawDragonRect(5, bodyY, 2, 1);
 
       gfx.fillStyle = "#7a1b1b";
-      gfx.fillRect((sx + 7) | 0, (bodyY - 1) | 0, 2, 1);
-      gfx.fillRect((sx + 9) | 0, (bodyY - 2) | 0, 1, 1);
-      gfx.fillRect((sx + 5) | 0, (bodyY + 3) | 0, 3, 1);
+      drawDragonRect(7, bodyY - 1, 2, 1);
+      drawDragonRect(9, bodyY - 2, 1, 1);
+      drawDragonRect(5, bodyY + 3, 3, 1);
 
       gfx.fillStyle = "#d66a4a";
-      gfx.fillRect((sx + 2) | 0, (bodyY + 1) | 0, 1, 1);
+      drawDragonRect(2, bodyY + 1, 1, 1);
 
       gfx.fillStyle = "#6a1414";
-      gfx.fillRect((sx + 5) | 0, (sy - 4 + wingRise) | 0, 11, 3);
-      gfx.fillRect((sx + 11) | 0, (sy - 7 + wingRise) | 0, 11, 3);
-      gfx.fillRect((sx + 18) | 0, (sy - 10 + wingRise) | 0, 9, 2);
-      gfx.fillRect((sx + 24) | 0, (sy - 11 + wingRise) | 0, 6, 1);
+      drawDragonRect(5, sy - 4 + wingRise, 11, 3);
+      drawDragonRect(11, sy - 7 + wingRise, 11, 3);
+      drawDragonRect(18, sy - 10 + wingRise, 9, 2);
+      drawDragonRect(24, sy - 11 + wingRise, 6, 1);
 
       gfx.fillStyle = "#8e2323";
-      gfx.fillRect((sx + 8) | 0, (sy - 3 + wingRise) | 0, 10, 2);
-      gfx.fillRect((sx + 14) | 0, (sy - 6 + wingRise) | 0, 10, 2);
-      gfx.fillRect((sx + 21) | 0, (sy - 8 + wingRise) | 0, 7, 1);
+      drawDragonRect(8, sy - 3 + wingRise, 10, 2);
+      drawDragonRect(14, sy - 6 + wingRise, 10, 2);
+      drawDragonRect(21, sy - 8 + wingRise, 7, 1);
 
       gfx.fillStyle = "#3e0e0e";
-      gfx.fillRect((sx + 7) | 0, (sy + 8 - wingDrop) | 0, 12, 3);
-      gfx.fillRect((sx + 14) | 0, (sy + 11 - wingDrop) | 0, 12, 3);
-      gfx.fillRect((sx + 22) | 0, (sy + 14 - wingDrop) | 0, 9, 2);
-      gfx.fillRect((sx + 28) | 0, (sy + 16 - wingDrop) | 0, 5, 1);
+      drawDragonRect(7, sy + 8 - wingDrop, 12, 3);
+      drawDragonRect(14, sy + 11 - wingDrop, 12, 3);
+      drawDragonRect(22, sy + 14 - wingDrop, 9, 2);
+      drawDragonRect(28, sy + 16 - wingDrop, 5, 1);
 
       gfx.fillStyle = "#6a1414";
-      gfx.fillRect((sx + 10) | 0, (sy + 9 - wingDrop) | 0, 10, 2);
-      gfx.fillRect((sx + 16) | 0, (sy + 12 - wingDrop) | 0, 10, 2);
-      gfx.fillRect((sx + 23) | 0, (sy + 14 - wingDrop) | 0, 7, 1);
+      drawDragonRect(10, sy + 9 - wingDrop, 10, 2);
+      drawDragonRect(16, sy + 12 - wingDrop, 10, 2);
+      drawDragonRect(23, sy + 14 - wingDrop, 7, 1);
 
       gfx.fillStyle = "#2a0808";
-      gfx.fillRect((sx + 4) | 0, (bodyY + 4) | 0, 3, 1);
-      gfx.fillRect((sx + 1) | 0, (bodyY + 5) | 0, 3, 1);
-      gfx.fillRect((sx + 34) | 0, (bodyY + 3) | 0, 2, 1);
+      drawDragonRect(4, bodyY + 4, 3, 1);
+      drawDragonRect(1, bodyY + 5, 3, 1);
+      drawDragonRect(34, bodyY + 3, 2, 1);
 
       const tailSwing = (Math.sin((actor.phase || 0) * 0.9 + this.player.anim * 0.03) * 2.2) | 0;
       gfx.fillStyle = "#3a0d0d";
-      gfx.fillRect((sx + 37) | 0, (bodyY + 2 - tailSwing) | 0, 6, 2);
-      gfx.fillRect((sx + 42) | 0, (bodyY + 1 - tailSwing) | 0, 5, 2);
-      gfx.fillRect((sx + 46) | 0, (bodyY - tailSwing) | 0, 4, 2);
-      gfx.fillRect((sx + 49) | 0, (bodyY - 1 - tailSwing) | 0, 3, 2);
+      drawDragonRect(37, bodyY + 2 - tailSwing, 6, 2);
+      drawDragonRect(42, bodyY + 1 - tailSwing, 5, 2);
+      drawDragonRect(46, bodyY - tailSwing, 4, 2);
+      drawDragonRect(49, bodyY - 1 - tailSwing, 3, 2);
 
       gfx.fillStyle = "#6a1414";
-      gfx.fillRect((sx + 38) | 0, (bodyY + 2 - tailSwing) | 0, 4, 1);
-      gfx.fillRect((sx + 43) | 0, (bodyY + 1 - tailSwing) | 0, 3, 1);
-      gfx.fillRect((sx + 47) | 0, (bodyY - tailSwing) | 0, 2, 1);
+      drawDragonRect(38, bodyY + 2 - tailSwing, 4, 1);
+      drawDragonRect(43, bodyY + 1 - tailSwing, 3, 1);
+      drawDragonRect(47, bodyY - tailSwing, 2, 1);
 
       gfx.fillStyle = "#a33535";
-      gfx.fillRect((sx + 41) | 0, (bodyY + 2 - tailSwing) | 0, 1, 1);
-      gfx.fillRect((sx + 45) | 0, (bodyY + 1 - tailSwing) | 0, 1, 1);
+      drawDragonRect(41, bodyY + 2 - tailSwing, 1, 1);
+      drawDragonRect(45, bodyY + 1 - tailSwing, 1, 1);
 
       gfx.fillStyle = "#4f1111";
-      gfx.fillRect((sx + 51) | 0, (bodyY - 3 - tailSwing) | 0, 2, 1);
-      gfx.fillRect((sx + 52) | 0, (bodyY - 4 - tailSwing) | 0, 2, 1);
-      gfx.fillRect((sx + 53) | 0, (bodyY - 3 - tailSwing) | 0, 2, 1);
-      gfx.fillRect((sx + 52) | 0, (bodyY - 2 - tailSwing) | 0, 2, 1);
+      drawDragonRect(51, bodyY - 3 - tailSwing, 2, 1);
+      drawDragonRect(52, bodyY - 4 - tailSwing, 2, 1);
+      drawDragonRect(53, bodyY - 3 - tailSwing, 2, 1);
+      drawDragonRect(52, bodyY - 2 - tailSwing, 2, 1);
 
       gfx.fillStyle = "#8e2323";
-      gfx.fillRect((sx + 52) | 0, (bodyY - 3 - tailSwing) | 0, 1, 1);
+      drawDragonRect(52, bodyY - 3 - tailSwing, 1, 1);
 
       gfx.fillStyle = "#8e2323";
-      gfx.fillRect((sx + 30) | 0, (bodyY - 2) | 0, 1, 1);
-      gfx.fillRect((sx + 27) | 0, (bodyY - 2) | 0, 1, 1);
-      gfx.fillRect((sx + 24) | 0, (bodyY - 2) | 0, 1, 1);
+      drawDragonRect(30, bodyY - 2, 1, 1);
+      drawDragonRect(27, bodyY - 2, 1, 1);
+      drawDragonRect(24, bodyY - 2, 1, 1);
 
       gfx.fillStyle = "#c34c3b";
-      gfx.fillRect((sx + 3) | 0, (bodyY + 1) | 0, 1, 1);
+      drawDragonRect(3, bodyY + 1, 1, 1);
 
       if (fireActive) {
-        const sourceX = (sx + 1) | 0;
+        const sourceX = dragonBaseX + 1;
         const sourceY = (bodyY + 1) | 0;
         const maxDist = 10 + ((firePower * 16) | 0);
 
@@ -2053,6 +2079,7 @@ class Game {
           if (pw > 1 && fade > 0.5) gfx.fillRect(px + 1, py + 1, 1, 1);
         }
       }
+      if (facingRight) gfx.restore();
     } else if (actor.type === "paperKite") {
       this.drawSprite(SPRITES.bgJapanKiteSmall, sx, sy, actor.scale || 1);
     } else if (actor.type === "ghostLantern") {
