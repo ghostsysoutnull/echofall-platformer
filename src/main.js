@@ -85,7 +85,8 @@ class Game {
 
     this.keyDown = {};
     this.jumpBuffer = 0;
-    this.touchCapable = (typeof navigator !== "undefined") && (navigator.maxTouchPoints > 0 || "ontouchstart" in globalThis);
+    const coarsePointer = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+    this.touchCapable = (typeof navigator !== "undefined") && (navigator.maxTouchPoints > 0 || "ontouchstart" in globalThis || coarsePointer);
     this.touchControlsEnabled = this.touchCapable ? 1 : 0;
     this.touchInputTimer = 0;
     this.touchButtons = { left: 0, right: 0, jump: 0, action: 0 };
@@ -6663,6 +6664,7 @@ class Game {
   render() {
     if (this.gameState === "TITLE") {
       this.drawTitleScreen();
+      this.drawTouchControlsOverlay();
       return;
     }
 
