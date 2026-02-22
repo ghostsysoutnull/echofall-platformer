@@ -143,8 +143,12 @@ class Game {
     this.winPending = 0;
 
     this.score = 0;
+    this.coins = 0;
     this.lives = 3;
-    this.nextExtraLifeScore = 100;
+    this.nextExtraLifeCoins = 200;
+    this.levelDeaths = 0;
+    this.levelKillCount = 0;
+    this.levelKillsByType = {};
     this.helpTimer = 0;
     this.helpShownBlocks = new Set();
     this.isPaused = 0;
@@ -827,7 +831,7 @@ class Game {
         if (e.code === "Digit9") this.audio.adjustMusicVolume(-0.05);
         if (e.code === "Digit0") this.audio.adjustMusicVolume(0.05);
         if (e.code === "Digit7") {
-          this.addScore(70);
+          this.addCoins(70);
           if (!this.skeletonBurst.phase2Charged && this.skeletonBurst.phase2ChargeFrames <= 0) {
             this.skeletonBurst.phase2ChargeFrames = SKELETON_BLOOD_BURST.phaseTwoRechargeFrames;
           }
@@ -1157,6 +1161,9 @@ class Game {
     this.deathReset = 0;
 
     this.winPending = 0;
+    this.levelDeaths = 0;
+    this.levelKillCount = 0;
+    this.levelKillsByType = {};
     this.helpTimer = 0;
     this.helpShownBlocks.clear();
     this.boneCryptWeather.rain = [];
@@ -2262,17 +2269,22 @@ class Game {
   die(reset) {
     if (this.deathTimer > 0) return;
     if (this.immortalMode && !reset) return;
-    if (!reset) this.lives--;
     if (!reset) {
-      this.score = 0;
-      this.nextExtraLifeScore = 100;
+      this.lives--;
+      this.levelDeaths++;
+      const coinsBeforeDeath = Math.max(0, this.coins | 0);
+      const coinsLost = Math.floor(coinsBeforeDeath * 0.25);
+      this.coins = Math.max(0, coinsBeforeDeath - coinsLost);
+      this.teleportNotice = "COIN PENALTY -" + coinsLost;
+      this.teleportNoticeTimer = 70;
     }
     this.audio.tone(120, 0.10);
 
     if (this.lives < 0) {
       this.lives = 3;
       this.score = 0;
-      this.nextExtraLifeScore = 100;
+      this.coins = 0;
+      this.nextExtraLifeCoins = 200;
       this.paladinUnlocked = 0;
       this.glitchrunnerUnlocked = 0;
       this.shadowrunnerUnlocked = 0;
@@ -2454,6 +2466,14 @@ class Game {
 
   win() {
     this.audio.tone(980, 0.10);
+    if (this.levelDeaths === 0) {
+      const flawlessBonus = 1500 + Math.min(1000, this.levelKillCount * 20);
+      this.addScore(flawlessBonus);
+      this.teleportNotice = "FLAWLESS +" + flawlessBonus + " SCORE";
+      this.teleportNoticeTimer = 120;
+      this.audio.tone(1280, 0.06, 0.00, "triangle", 0.04);
+      this.audio.tone(1580, 0.06, 0.04, "sine", 0.035);
+    }
     const nextIndex = this.levelIndex + 1;
     if (nextIndex < LEVELS.length && LEVEL_THEMES[nextIndex] === "SIMBREACH" && !this.glitchrunnerUnlocked) {
       this.glitchrunnerUnlocked = 1;
@@ -2479,24 +2499,42 @@ class Game {
 
   addScore(v) {
     this.score += v;
-    while (this.score >= this.nextExtraLifeScore) {
+  }
+
+  addCoins(v) {
+    this.coins = Math.max(0, (this.coins | 0) + (v | 0));
+    while (this.coins >= this.nextExtraLifeCoins) {
       this.lives++;
-      this.nextExtraLifeScore += 100;
+      this.nextExtraLifeCoins += 200;
       this.audio.extraLifeJingle();
     }
   }
 
+  scoreForEnemyType(type) {
+    if (type === 0) return 100;
+    if (type === 1) return 140;
+    if (type === 2) return 180;
+    if (type === 3) return 220;
+    if (type === 4) return 320;
+    if (type === 5) return 700;
+    if (type === 6) return 260;
+    if (type === 7) return 380;
+    if (type === 8) return 450;
+    if (type === 9) return 900;
+    return 0;
+  }
+
   collectTileReward(tileId, cx, cy) {
     if (tileId === 2) {
-      this.addScore(1);
+      this.addCoins(1);
       this.audio.tone(740, 0.03);
     } else if (tileId === 13) {
-      this.addScore(20);
+      this.addCoins(20);
       this.audio.tone(980, 0.05, 0.00, "triangle", 0.04);
       this.audio.tone(1280, 0.06, 0.04, "sine", 0.035);
       this.spawnRelicPickupBurst(cx, cy);
     } else if (tileId === 5) {
-      this.addScore(10);
+      this.addCoins(10);
       this.audio.tone(1040, 0.05);
     } else if (tileId === 6) {
       this.lives++;
@@ -2571,7 +2609,7 @@ class Game {
       d.vy += (dy / dist) * pull - 0.02;
       if (dist <= ROBOT_MAGNET_PULSE.pickupCollectRadius + 1) {
         d.dead = 1;
-        this.addScore(1);
+        this.addCoins(1);
         this.audio.tone(760, 0.02);
       }
     }
@@ -2714,7 +2752,16 @@ class Game {
   }
 
   handleSpecialEnemyDefeat(enemy) {
-    if (!enemy || enemy.type !== 5) return;
+    if (!enemy || enemy.__scoreApplied) return;
+    enemy.__scoreApplied = 1;
+    const scoreGain = this.scoreForEnemyType(enemy.type | 0);
+    if (scoreGain > 0) {
+      this.addScore(scoreGain);
+      this.levelKillCount++;
+      const typeId = enemy.type | 0;
+      this.levelKillsByType[typeId] = (this.levelKillsByType[typeId] || 0) + 1;
+    }
+    if (enemy.type !== 5) return;
     const x = enemy.x + enemy.w * 0.5;
     const y = enemy.y + enemy.h * 0.5;
     this.spawnOneUpNear(x, y);
@@ -3455,11 +3502,11 @@ class Game {
         this.audio.tone(170, 0.03, 0.00, "square", 0.03);
         return;
       }
-      if (this.score < NINJA_SHADOW_STEP.overdriveCoinCost) {
+      if (this.coins < NINJA_SHADOW_STEP.overdriveCoinCost) {
         this.audio.tone(150, 0.03, 0.00, "square", 0.03);
         return;
       }
-      this.score = Math.max(0, this.score - NINJA_SHADOW_STEP.overdriveCoinCost);
+      this.coins = Math.max(0, this.coins - NINJA_SHADOW_STEP.overdriveCoinCost);
       this.ninjaShadow.overdriveUsed = 1;
       this.teleportNotice = "SHADOW STEP -" + NINJA_SHADOW_STEP.overdriveCoinCost + " COINS";
       this.teleportNoticeTimer = 60;
@@ -3777,6 +3824,7 @@ class Game {
       }
 
       if (this.robotPulse.phase2Active && dist <= ROBOT_MAGNET_PULSE.enemyKillRadius) {
+        this.handleSpecialEnemyDefeat(e);
         e.dead = 1;
         phase2Kills++;
         this.spawnEnemyShatter(e, levelTheme);
@@ -4114,7 +4162,7 @@ class Game {
       if (d.collectDelay > 0) continue;
       if (Math.hypot(cx - (d.x + d.w * 0.5), cy - (d.y + d.h * 0.5)) <= BAT_COMPANION.coinCollectRadius) {
         d.dead = 1;
-        this.addScore(1);
+        this.addCoins(1);
         this.audio.tone(760, 0.02);
       }
     }
@@ -4381,7 +4429,7 @@ class Game {
       d.vy += gr;
       d.vx *= 0.985;
       this.moveAndCollide(d);
-      if (d.collectDelay <= 0 && rectsOverlap(p, d)) { d.dead = 1; this.addScore(1); this.audio.tone(740, 0.03); }
+      if (d.collectDelay <= 0 && rectsOverlap(p, d)) { d.dead = 1; this.addCoins(1); this.audio.tone(740, 0.03); }
     }
     this.coinDrops = this.coinDrops.filter(d => !d.dead);
 
