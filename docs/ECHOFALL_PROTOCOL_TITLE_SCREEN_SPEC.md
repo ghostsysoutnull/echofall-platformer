@@ -154,11 +154,11 @@ Selection styling:
 - `9/0`: music volume down/up.
 
 ### 7.2 Jukebox Special Track (Implemented)
-- Add a jukebox-exclusive special track key: `JUKEBOX_NEON_COASTLINE`.
-- Display label: `Neon Coastline`.
-- Placement: always pinned as the **last** entry in jukebox track list.
+- Add jukebox-exclusive special track keys: `JUKEBOX_OCEAN_DRIVE_86`, `JUKEBOX_PASSING_BREEZE`, `JUKEBOX_MIDNIGHT_CIRCUIT`.
+- Display labels: `Ocean Drive '86`, `Passing Breeze`, `Midnight Circuit`.
+- Placement: always pinned as the **last** entries in jukebox track list.
 - Behavior:
-  - When the `Neon Coastline` entry is selected, apply a dedicated warm neon palette variant in jukebox background.
+  - When a special entry is selected, apply a dedicated warm neon palette variant in jukebox background.
   - When selection moves away, revert automatically to default jukebox palette.
   - Track remains jukebox-only and is not bound to level theme progression.
 
@@ -190,6 +190,7 @@ Implementation note:
 - If `CONTINUE` unavailable, show disabled style rather than dead action.
 - Jukebox background animation must not reduce selected-track readability.
 - Jukebox controls must be visible in footer hints.
+- Animated background score tags must remain low-noise and not interfere with menu readability.
 
 ## 11) QA Checklist
 - [x] Title appears on boot before gameplay.
@@ -208,8 +209,10 @@ Implementation note:
 - [x] Jukebox neon-wave background renders with readable track list.
 - [x] Jukebox controls (`Up/Down`, `Enter`, `Esc`, `X`, `9/0`) work as specified.
 - [x] Jukebox preview transitions do not break title/gameplay theme routing.
-- [x] `Neon Coastline` appears as the last jukebox item.
-- [x] Selecting `Neon Coastline` switches jukebox palette; unselecting reverts it.
+- [x] `Ocean Drive '86`, `Passing Breeze`, and `Midnight Circuit` appear as the last jukebox items.
+- [x] Selecting a special track switches jukebox palette; unselecting reverts it.
+- [x] Title background shows animated `CUR` and `HI` score tags.
+- [x] High score updates when score increases and is retained across refresh (localStorage).
 - [ ] No runtime errors when switching TITLE ↔ gameplay repeatedly.
 
 ## 13) Iteration Log
@@ -300,6 +303,18 @@ Implementation note:
 
 **Notes:**
 - Track is intentionally not referenced by any level theme mapping.
+
+### Iteration 8 — Title Background Score Messages (Implemented)
+**Implemented in code:**
+- Added animated background score tags on title screen:
+  - `CUR` (current run score snapshot),
+  - `HI` (highest score).
+- Added high-score tracking update path from scoring events.
+- Added safe localStorage persistence for high score.
+- Captured current score snapshot before game-over reset when returning to title.
+
+**Notes:**
+- Tags are rendered as subtle drifting/pulsing overlays behind menu content.
 
 ## 14) Next Steps (Priority)
 1. **Iteration 4 implementation:** re-entry subtitle (`SYSTEM RECOVERED`) with timed fade.

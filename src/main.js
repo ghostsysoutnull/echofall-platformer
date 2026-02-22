@@ -58,7 +58,12 @@ canvas.width = CANVAS_W;
 canvas.height = CANVAS_H;
 gfx.imageSmoothingEnabled = false;
 
-const JUKEBOX_SPECIAL_TRACK_KEY = "JUKEBOX_NEON_COASTLINE";
+const JUKEBOX_SPECIAL_TRACK_KEYS = [
+  "JUKEBOX_OCEAN_DRIVE_86",
+  "JUKEBOX_PASSING_BREEZE",
+  "JUKEBOX_MIDNIGHT_CIRCUIT"
+];
+const HIGHSCORE_STORAGE_KEY = "echofall_protocol_high_score";
 
 // =========================
 // Art
@@ -166,6 +171,8 @@ class Game {
     this.winPending = 0;
 
     this.score = 0;
+    this.titleCurrentScore = 0;
+    this.highScore = this.loadHighScore();
     this.coins = 0;
     this.lives = 3;
     this.nextExtraLifeCoins = 200;
@@ -206,7 +213,9 @@ class Game {
       jukebox: {
         themes: (() => {
           const themes = Array.from(new Set(LEVEL_THEMES || [])).filter(Boolean);
-          if (!themes.includes(JUKEBOX_SPECIAL_TRACK_KEY)) themes.push(JUKEBOX_SPECIAL_TRACK_KEY);
+          for (const key of JUKEBOX_SPECIAL_TRACK_KEYS) {
+            if (!themes.includes(key)) themes.push(key);
+          }
           return themes;
         })(),
         selected: 0,
@@ -885,6 +894,30 @@ class Game {
     return (this.rngState >>> 0) / 4294967296;
   }
 
+  loadHighScore() {
+    try {
+      const raw = localStorage.getItem(HIGHSCORE_STORAGE_KEY);
+      const parsed = Number(raw);
+      return Number.isFinite(parsed) && parsed > 0 ? (parsed | 0) : 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  saveHighScore() {
+    try {
+      localStorage.setItem(HIGHSCORE_STORAGE_KEY, String(Math.max(0, this.highScore | 0)));
+    } catch (_) {
+    }
+  }
+
+  updateHighScore(value) {
+    const next = Math.max(0, value | 0);
+    if (next <= this.highScore) return;
+    this.highScore = next;
+    this.saveHighScore();
+  }
+
   titleMainItems() {
     return [
       { key: "start", label: "START", enabled: 1 },
@@ -896,6 +929,7 @@ class Game {
 
   startNewRun(startLevel = 0) {
     this.score = 0;
+    this.titleCurrentScore = 0;
     this.coins = 0;
     this.lives = 3;
     this.nextExtraLifeCoins = 200;
@@ -1208,7 +1242,9 @@ class Game {
   }
 
   jukeboxTrackLabel(key) {
-    if (key === JUKEBOX_SPECIAL_TRACK_KEY) return "Neon Coastline";
+    if (key === "JUKEBOX_OCEAN_DRIVE_86") return "Ocean Drive '86";
+    if (key === "JUKEBOX_PASSING_BREEZE") return "Passing Breeze";
+    if (key === "JUKEBOX_MIDNIGHT_CIRCUIT") return "Midnight Circuit";
     return String(key || "");
   }
 
@@ -3148,6 +3184,8 @@ class Game {
   }
 
   finalizeGameOverReset() {
+    this.titleCurrentScore = Math.max(0, this.score | 0);
+    this.updateHighScore(this.titleCurrentScore);
     this.lives = 3;
     this.score = 0;
     this.coins = 0;
@@ -3374,6 +3412,47 @@ class Game {
 
   addScore(v) {
     this.score += v;
+    this.updateHighScore(this.score);
+  }
+
+  drawTitleScoreMessages() {
+    const t = this.titleScreen;
+    const frame = t.frame | 0;
+    const cur = Math.max(0, this.titleCurrentScore | 0);
+    const hi = Math.max(0, this.highScore | 0);
+
+    const drawTag = (baseX, baseY, label, value, hueA, hueB, phase) => {
+      const bobX = Math.sin(frame * 0.028 + phase) * 2.2;
+      const bobY = Math.sin(frame * 0.021 + phase * 1.7) * 1.8;
+      const pulse = 0.12 + ((Math.sin(frame * 0.04 + phase) + 1) * 0.5) * 0.12;
+      const x = baseX + bobX;
+      const y = baseY + bobY;
+      const w = 106;
+      const h = 15;
+
+      gfx.globalAlpha = 0.24;
+      gfx.fillStyle = "#000";
+      gfx.fillRect((x + 1) | 0, (y + 1) | 0, w, h);
+
+      gfx.globalAlpha = 0.22 + pulse;
+      gfx.fillStyle = hueA;
+      gfx.fillRect(x | 0, y | 0, w, h);
+
+      gfx.globalAlpha = 0.22 + pulse * 0.8;
+      gfx.fillStyle = hueB;
+      const scanW = 18;
+      const scanX = x + ((frame * 1.3 + phase * 23) % (w + scanW)) - scanW;
+      gfx.fillRect(scanX | 0, y | 0, scanW, h);
+
+      gfx.globalAlpha = 0.78;
+      gfx.font = "9px monospace";
+      gfx.fillStyle = "#e8fff4";
+      gfx.fillText(label + " " + value, (x + 6) | 0, (y + 10) | 0);
+    };
+
+    drawTag(8, 20, "CUR", cur, "#1a2a24", "#3aa57e", 0.0);
+    drawTag(CANVAS_W - 114, 20, "HI", hi, "#1f1b2e", "#7a54c7", 2.7);
+    gfx.globalAlpha = 1;
   }
 
   addCoins(v) {
@@ -6201,6 +6280,8 @@ class Game {
     }
     gfx.globalAlpha = 1;
 
+    this.drawTitleScoreMessages();
+
     if (t.glitchFrames > 0) {
       gfx.globalAlpha = 0.09;
       gfx.fillStyle = "#5affb3";
@@ -6295,7 +6376,7 @@ class Game {
     gfx.setTransform(1,0,0,1,0,0);
 
     const pulse = (Math.sin(j.wavePhase * 0.6) + 1) * 0.5;
-    const specialSelected = list[j.selected] === JUKEBOX_SPECIAL_TRACK_KEY;
+    const specialSelected = JUKEBOX_SPECIAL_TRACK_KEYS.includes(list[j.selected]);
     const baseDark = specialSelected ? "#13070e" : "#05070f";
     const gradTop = specialSelected ? "#2a0f2d" : "#0a1020";
     const gradBottom = specialSelected ? "#120617" : "#05070f";

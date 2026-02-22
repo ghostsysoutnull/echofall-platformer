@@ -23,7 +23,9 @@
     SHADOWRUN: "SHADOWRUN",
     NITE: "NITE",
     SPACE: "SPACE_01",
-    JUKEBOX_NEON_COASTLINE: "JUKEBOX_NEON_COASTLINE"
+    JUKEBOX_OCEAN_DRIVE_86: "JUKEBOX_OCEAN_DRIVE_86",
+    JUKEBOX_PASSING_BREEZE: "JUKEBOX_PASSING_BREEZE",
+    JUKEBOX_MIDNIGHT_CIRCUIT: "JUKEBOX_MIDNIGHT_CIRCUIT"
   };
 
   function buildGeometryDreamTrack(ctx, bus, aux, helpers, variant) {
@@ -182,11 +184,13 @@
       if (key === "GEOMETRYDREAM_S6") return this.GEOMETRYDREAM_S6(ctx, bus, aux, helpers);
       if (key === "SHADOWRUN") return this.SHADOWRUN(ctx, bus, aux, helpers);
       if (key === "NITE") return this.NITE(ctx, bus, aux, helpers);
-      if (key === "JUKEBOX_NEON_COASTLINE") return this.JUKEBOX_NEON_COASTLINE(ctx, bus, aux, helpers);
+      if (key === "JUKEBOX_OCEAN_DRIVE_86") return this.JUKEBOX_OCEAN_DRIVE_86(ctx, bus, aux, helpers);
+      if (key === "JUKEBOX_PASSING_BREEZE") return this.JUKEBOX_PASSING_BREEZE(ctx, bus, aux, helpers);
+      if (key === "JUKEBOX_MIDNIGHT_CIRCUIT") return this.JUKEBOX_MIDNIGHT_CIRCUIT(ctx, bus, aux, helpers);
       return this.SPACE_01(ctx, bus, aux, helpers);
     },
 
-    JUKEBOX_NEON_COASTLINE: (ctx, bus, aux, helpers) => {
+    JUKEBOX_OCEAN_DRIVE_86: (ctx, bus, aux, helpers) => {
       const ping = helpers && helpers.ping ? helpers.ping : (() => []);
       const nodes = [];
       const timers = [];
@@ -294,6 +298,188 @@
         nodes.push(n, bp, g);
       }, 180);
       timers.push(rideTimer);
+
+      return { nodes, timers };
+    },
+
+    JUKEBOX_PASSING_BREEZE: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      // Warm, sweeping synth pads
+      const padGain = ctx.createGain();
+      padGain.gain.value = 0.15;
+      const padLp = ctx.createBiquadFilter();
+      padLp.type = "lowpass";
+      padLp.frequency.value = 1200;
+      padLp.Q.value = 0.5;
+      padGain.connect(padLp);
+      padLp.connect(bus);
+
+      const padFreqs = [130.81, 164.81, 196.00, 246.94]; // Cmaj7ish
+      for (let i = 0; i < padFreqs.length; i++) {
+        const osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = padFreqs[i] * 0.5;
+        osc.connect(padGain);
+        osc.start();
+        nodes.push(osc);
+      }
+
+      const padLfo = ctx.createOscillator();
+      padLfo.type = "sine";
+      padLfo.frequency.value = 0.2;
+      const padAmt = ctx.createGain();
+      padAmt.gain.value = 0.08;
+      padLfo.connect(padAmt);
+      padAmt.connect(padGain.gain);
+      padLfo.start();
+      nodes.push(padGain, padLp, padLfo, padAmt);
+
+      // Bouncy, syncopated "slap bass" style synth
+      const bassGain = ctx.createGain();
+      bassGain.gain.value = 0.0001;
+      const bassLp = ctx.createBiquadFilter();
+      bassLp.type = "lowpass";
+      bassLp.frequency.value = 800;
+      bassLp.Q.value = 2.0;
+      bassGain.connect(bassLp);
+      bassLp.connect(bus);
+
+      const bassOsc = ctx.createOscillator();
+      bassOsc.type = "square";
+      bassOsc.frequency.value = 65.41; // C2
+      bassOsc.connect(bassGain);
+      bassOsc.start();
+      nodes.push(bassGain, bassLp, bassOsc);
+
+      let step = 0;
+      const grooveTimer = setInterval(() => {
+        const now = ctx.currentTime;
+        
+        // Bass groove (16th notes, syncopated)
+        if (step % 16 === 0 || step % 16 === 7 || step % 16 === 10) {
+          bassOsc.frequency.setValueAtTime(65.41, now); // C2
+          bassGain.gain.cancelScheduledValues(now);
+          bassGain.gain.setValueAtTime(0.0001, now);
+          bassGain.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
+          bassGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+        } else if (step % 16 === 14) {
+          bassOsc.frequency.setValueAtTime(78.40, now); // Eb2
+          bassGain.gain.cancelScheduledValues(now);
+          bassGain.gain.setValueAtTime(0.0001, now);
+          bassGain.gain.exponentialRampToValueAtTime(0.15, now + 0.01);
+          bassGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+        }
+
+        // Latin-inspired percussion (congas/cowbells)
+        if (step % 4 === 2 || step % 16 === 11) {
+           const f = step % 16 === 11 ? 800 : 600;
+           nodes.push(...ping({ freq: f, type: "sine", peak: 0.08, dur: 0.05, lpHz: 2000, toDelay: false, bus, aux }));
+        }
+
+        // Playful marimba/steel-drum lead
+        if (Math.random() < 0.3 && step % 2 === 0) {
+           const leadPool = [392.00, 440.00, 493.88, 523.25, 587.33, 659.25];
+           const f = leadPool[(Math.random() * leadPool.length) | 0];
+           nodes.push(...ping({ freq: f, type: "triangle", peak: 0.1, dur: 0.08, lpHz: 4000, toDelay: true, bus, aux }));
+        }
+
+        step++;
+      }, 125); // 120 BPM = 500ms per beat = 125ms per 16th note
+      timers.push(grooveTimer);
+
+      return { nodes, timers };
+    },
+
+    JUKEBOX_MIDNIGHT_CIRCUIT: (ctx, bus, aux, helpers) => {
+      const ping = helpers && helpers.ping ? helpers.ping : (() => []);
+      const nodes = [];
+      const timers = [];
+
+      // Deep, aggressive square-wave bass
+      const bassGain = ctx.createGain();
+      bassGain.gain.value = 0.0001;
+      const bassLp = ctx.createBiquadFilter();
+      bassLp.type = "lowpass";
+      bassLp.frequency.value = 400;
+      bassLp.Q.value = 1.5;
+      bassGain.connect(bassLp);
+      bassLp.connect(bus);
+
+      const bassOsc = ctx.createOscillator();
+      bassOsc.type = "square";
+      bassOsc.frequency.value = 41.20; // E1
+      bassOsc.connect(bassGain);
+      bassOsc.start();
+      nodes.push(bassGain, bassLp, bassOsc);
+
+      // Relentless arpeggiator
+      const arpGain = ctx.createGain();
+      arpGain.gain.value = 0.0001;
+      const arpLp = ctx.createBiquadFilter();
+      arpLp.type = "lowpass";
+      arpLp.frequency.value = 2000;
+      arpLp.Q.value = 2.0;
+      arpGain.connect(arpLp);
+      arpLp.connect(bus);
+      if (aux && aux.delay) arpLp.connect(aux.delay);
+
+      const arpOsc = ctx.createOscillator();
+      arpOsc.type = "sawtooth";
+      arpOsc.connect(arpGain);
+      arpOsc.start();
+      nodes.push(arpGain, arpLp, arpOsc);
+
+      let step = 0;
+      const arpNotes = [164.81, 196.00, 246.94, 329.63, 246.94, 196.00]; // E minor arp
+      
+      const seqTimer = setInterval(() => {
+        const now = ctx.currentTime;
+
+        // Rolling 16th note bass
+        bassGain.gain.cancelScheduledValues(now);
+        bassGain.gain.setValueAtTime(0.0001, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+        bassGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+        // Arpeggiator
+        arpOsc.frequency.setValueAtTime(arpNotes[step % arpNotes.length], now);
+        arpGain.gain.cancelScheduledValues(now);
+        arpGain.gain.setValueAtTime(0.0001, now);
+        arpGain.gain.exponentialRampToValueAtTime(0.08, now + 0.005);
+        arpGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+
+        // Heavy gated snare on 2 and 4 (steps 4 and 12)
+        if (step % 8 === 4) {
+          const n = makeNoiseSource(ctx, 0.4, 0.15);
+          const bp = ctx.createBiquadFilter();
+          bp.type = "bandpass";
+          bp.frequency.value = 1200;
+          bp.Q.value = 0.8;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.exponentialRampToValueAtTime(0.3, now + 0.01);
+          g.gain.setValueAtTime(0.3, now + 0.1); // Gate hold
+          g.gain.exponentialRampToValueAtTime(0.0001, now + 0.12); // Gate release
+          n.connect(bp);
+          bp.connect(g);
+          g.connect(bus);
+          n.start(now);
+          n.stop(now + 0.15);
+          nodes.push(n, bp, g);
+        }
+
+        // Piercing synth lead
+        if (step % 32 === 0 || step % 32 === 14) {
+           const f = step % 32 === 0 ? 659.25 : 783.99; // E5 or G5
+           nodes.push(...ping({ freq: f, type: "square", peak: 0.07, dur: 0.4, lpHz: 5000, toDelay: true, bus, aux }));
+        }
+
+        step++;
+      }, 96); // 155 BPM = ~387ms per beat = ~96ms per 16th note
+      timers.push(seqTimer);
 
       return { nodes, timers };
     },
