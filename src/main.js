@@ -3215,6 +3215,7 @@ class Game {
     this.titleScreen.fireTick = 0;
     this.titleScreen.reentryStingPending = 1;
     this.titleScreen.logoPulseFrames = 0;
+    this.audio.playTheme("JUKEBOX_NEON_COASTLINE", { fadeInMs: 260, crossFadeMs: 260 });
     this.resetTitleDemoRunner(1);
   }
 
