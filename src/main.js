@@ -6257,15 +6257,17 @@ class Game {
         "JUKEBOX",
         "BACK"
       ];
+      const optionStartY = 120;
+      const optionStepY = 12;
       gfx.font = "12px monospace";
       gfx.fillStyle = "#bfffd9";
       const head = "OPTIONS";
-      gfx.fillText(head, ((CANVAS_W - gfx.measureText(head).width) * 0.5) | 0, 108);
+      gfx.fillText(head, ((CANVAS_W - gfx.measureText(head).width) * 0.5) | 0, 102);
       for (let i = 0; i < options.length; i++) {
         const selected = i === t.optionSelected;
         const text = selected ? ("[ " + options[i] + " ]") : options[i];
         gfx.fillStyle = selected ? "#e8fff4" : "#bddfd0";
-        gfx.fillText(text, ((CANVAS_W - gfx.measureText(text).width) * 0.5) | 0, (126 + i * 14) | 0);
+        gfx.fillText(text, ((CANVAS_W - gfx.measureText(text).width) * 0.5) | 0, (optionStartY + i * optionStepY) | 0);
       }
     }
 
