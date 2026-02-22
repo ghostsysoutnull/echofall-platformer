@@ -1987,6 +1987,31 @@ class Game {
       gfx.fillRect((sx + 1) | 0, (bodyY + 5) | 0, 3, 1);
       gfx.fillRect((sx + 34) | 0, (bodyY + 3) | 0, 2, 1);
 
+      const tailSwing = (Math.sin((actor.phase || 0) * 0.9 + this.player.anim * 0.03) * 2.2) | 0;
+      gfx.fillStyle = "#3a0d0d";
+      gfx.fillRect((sx + 37) | 0, (bodyY + 2 - tailSwing) | 0, 6, 2);
+      gfx.fillRect((sx + 42) | 0, (bodyY + 1 - tailSwing) | 0, 5, 2);
+      gfx.fillRect((sx + 46) | 0, (bodyY - tailSwing) | 0, 4, 2);
+      gfx.fillRect((sx + 49) | 0, (bodyY - 1 - tailSwing) | 0, 3, 2);
+
+      gfx.fillStyle = "#6a1414";
+      gfx.fillRect((sx + 38) | 0, (bodyY + 2 - tailSwing) | 0, 4, 1);
+      gfx.fillRect((sx + 43) | 0, (bodyY + 1 - tailSwing) | 0, 3, 1);
+      gfx.fillRect((sx + 47) | 0, (bodyY - tailSwing) | 0, 2, 1);
+
+      gfx.fillStyle = "#a33535";
+      gfx.fillRect((sx + 41) | 0, (bodyY + 2 - tailSwing) | 0, 1, 1);
+      gfx.fillRect((sx + 45) | 0, (bodyY + 1 - tailSwing) | 0, 1, 1);
+
+      gfx.fillStyle = "#4f1111";
+      gfx.fillRect((sx + 51) | 0, (bodyY - 3 - tailSwing) | 0, 2, 1);
+      gfx.fillRect((sx + 52) | 0, (bodyY - 4 - tailSwing) | 0, 2, 1);
+      gfx.fillRect((sx + 53) | 0, (bodyY - 3 - tailSwing) | 0, 2, 1);
+      gfx.fillRect((sx + 52) | 0, (bodyY - 2 - tailSwing) | 0, 2, 1);
+
+      gfx.fillStyle = "#8e2323";
+      gfx.fillRect((sx + 52) | 0, (bodyY - 3 - tailSwing) | 0, 1, 1);
+
       gfx.fillStyle = "#8e2323";
       gfx.fillRect((sx + 30) | 0, (bodyY - 2) | 0, 1, 1);
       gfx.fillRect((sx + 27) | 0, (bodyY - 2) | 0, 1, 1);
