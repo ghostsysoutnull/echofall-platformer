@@ -22,6 +22,31 @@ function drawHudAndNotices(game, gfx, deps) {
     if (color) gfx.fillStyle = color;
     gfx.fillText(text, x, y);
   };
+  const measureHudText = (text) => {
+    setHudFont();
+    return gfx.measureText(text).width;
+  };
+  const ellipsizeHudText = (text, maxWidth) => {
+    const src = String(text || "");
+    if (maxWidth <= 0) return "";
+    if (measureHudText(src) <= maxWidth) return src;
+    const ellipsis = "…";
+    if (measureHudText(ellipsis) > maxWidth) return "";
+    let lo = 0;
+    let hi = src.length;
+    while (lo < hi) {
+      const mid = ((lo + hi + 1) / 2) | 0;
+      const candidate = src.slice(0, mid) + ellipsis;
+      if (measureHudText(candidate) <= maxWidth) lo = mid;
+      else hi = mid - 1;
+    }
+    return src.slice(0, lo) + ellipsis;
+  };
+  const compactCharacterName = (name) => {
+    if (name === "GLITCHRUNNER") return "GLITCH";
+    if (name === "SHADOWRUNNER") return "SHADOW";
+    return name;
+  };
   const drawNotice = (x, y, w, h, text, tx, ty, bg = "#000b", fg = "#fff") => {
     gfx.fillStyle = bg;
     gfx.fillRect(x, y, w, h);
@@ -78,111 +103,194 @@ function drawHudAndNotices(game, gfx, deps) {
     gfx.globalAlpha = 1;
   }
 
-  gfx.fillStyle = "#0008";
-  gfx.fillRect(0, 0, CANVAS_W, 14);
-  drawHudText("S" + game.score, 4, 11, "#C9A06D");
-  drawHudText("C" + game.coins, 42, 11, PALETTE.F);
-  drawHudText("♥" + game.lives, 78, 11, PALETTE.C);
-  drawHudText(LEVEL_NAMES[game.levelIndex], 112, 11, "#fff");
-  drawHudText(CHARACTERS[game.characterIndex].name, 210, 11, "#fff");
-  if (game.levelCheckpoints.length) {
-    const cpText = "CP " + Math.max(0, game.activeCheckpointIndex + 1) + "/" + game.levelCheckpoints.length;
-    drawHudText(cpText, 258, 11, "#fff");
-  }
-  const charName = CHARACTERS[game.characterIndex].name;
+  const levelNameFull = LEVEL_NAMES[game.levelIndex] || "";
+  const charNameFull = CHARACTERS[game.characterIndex].name;
+  const scoreText = "S" + game.score;
+  const coinText = "C" + game.coins;
+  const lifeText = "♥" + game.lives;
+  const cpText = game.levelCheckpoints.length
+    ? ("CP " + Math.max(0, game.activeCheckpointIndex + 1) + "/" + game.levelCheckpoints.length)
+    : "";
+
+  let abilityText = "";
+  let secondaryLeftText = "";
+  const charName = charNameFull;
   if (charName === "ROBOT") {
     const phase2Ready = game.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
-    const pulseText = game.robotPulse.timer > 0
+    abilityText = game.robotPulse.timer > 0
       ? (game.robotPulse.phase2Active ? "Q PHASE2" : "Q PULSE")
       : game.robotPulse.cooldown > 0
         ? ("Q " + ((game.robotPulse.cooldown / 60) | 0) + "s")
         : (phase2Ready ? "Q READY+" : "Q READY");
-    drawHudText(pulseText, 258, 11, "#fff");
   } else if (charName === "RANGER") {
-    const grappleText = game.rangerGrapple.active
+    abilityText = game.rangerGrapple.active
       ? "Q GRAPPLE"
       : game.rangerGrapple.cooldown > 0
         ? ("Q " + ((game.rangerGrapple.cooldown / 60) | 0) + "s")
         : "Q READY";
-    drawHudText(grappleText, 258, 11, "#fff");
   } else if (charName === "BUNNY") {
     const hasCharges = game.bunnyRocket.charges > 0;
     const rechargeSecs = Math.max(1, ((game.bunnyRocket.rechargeTimer / 60) | 0));
-    const rocketText = game.bunnyRocket.active
+    abilityText = game.bunnyRocket.active
       ? "Q ROCKET"
       : hasCharges
         ? ("Q x" + game.bunnyRocket.charges)
         : ("Q x0 " + rechargeSecs + "s");
-    drawHudText(rocketText, 258, 11, "#fff");
   } else if (charName === "DUCK") {
-    const diveText = game.duckDive.active
+    abilityText = game.duckDive.active
       ? "Q DIVE"
       : game.duckDive.cooldown > 0
         ? ("Q " + ((game.duckDive.cooldown / 60) | 0) + "s")
         : (game.player && game.player.onGround ? "Q AIR" : "Q READY");
-    drawHudText(diveText, 258, 11, "#fff");
   } else if (charName === "PALADIN") {
-    const dashText = game.paladinDash.active
+    abilityText = game.paladinDash.active
       ? "Q AEGIS"
       : game.paladinDash.cooldown > 0
         ? ("Q " + ((game.paladinDash.cooldown / 60) | 0) + "s")
         : "Q READY";
-    drawHudText(dashText, 258, 11, "#fff");
   } else if (charName === "NINJA") {
     const overdriveReady = game.ninjaShadow.cooldown > 0 && !game.ninjaShadow.overdriveUsed && game.coins >= NINJA_SHADOW_STEP.overdriveCoinCost;
     const overdriveBlocked = game.ninjaShadow.cooldown > 0 && !game.ninjaShadow.overdriveUsed && game.coins < NINJA_SHADOW_STEP.overdriveCoinCost;
-    const shadowText = game.ninjaShadow.active
+    abilityText = game.ninjaShadow.active
       ? "Q SHADOW"
       : overdriveReady
         ? ("Q -" + NINJA_SHADOW_STEP.overdriveCoinCost + "C")
         : overdriveBlocked
           ? ("Q NEED " + NINJA_SHADOW_STEP.overdriveCoinCost)
           : game.ninjaShadow.cooldown > 0
-        ? ("Q " + ((game.ninjaShadow.cooldown / 60) | 0) + "s")
-        : "Q READY";
-    drawHudText(shadowText, 258, 11, "#fff");
+            ? ("Q " + ((game.ninjaShadow.cooldown / 60) | 0) + "s")
+            : "Q READY";
   } else if (charName === "GLITCHRUNNER") {
-    const qText = game.glitchPhase.active
+    abilityText = game.glitchPhase.active
       ? "Q PHASE"
       : game.glitchPhase.cooldown > 0
         ? ("Q " + ((game.glitchPhase.cooldown / 60) | 0) + "s")
         : "Q READY";
-    const echoText = game.glitchPhase.echoReady ? "ECHO READY" : ("ECHO " + Math.max(1, ((game.glitchPhase.echoCooldown / 60) | 0)) + "s");
-    drawHudText(qText, 248, 11, "#fff");
-    drawHudText(echoText, 6, 23, "#fff");
+    secondaryLeftText = game.glitchPhase.echoReady ? "ECHO READY" : ("ECHO " + Math.max(1, ((game.glitchPhase.echoCooldown / 60) | 0)) + "s");
   } else if (charName === "SHADOWRUNNER") {
-    const qText = game.hackerSkill.fork.cooldown > 0 ? ("Q " + ((game.hackerSkill.fork.cooldown / 60) | 0) + "s") : "Q FORK";
     const oneText = game.hackerSkill.spike.cooldown > 0 ? ("1 " + ((game.hackerSkill.spike.cooldown / 60) | 0) + "s") : "1 SPIKE";
     const twoText = game.hackerSkill.swarm.active
       ? ("2 SWARM " + Math.max(1, ((game.hackerSkill.swarm.timer / 60) | 0)) + "s")
       : game.hackerSkill.swarm.cooldown > 0
         ? ("2 " + ((game.hackerSkill.swarm.cooldown / 60) | 0) + "s")
         : "2 SWARM";
-    drawHudText(qText, 238, 11, "#fff");
-    drawHudText(oneText + "  " + twoText, 6, 23, "#fff");
+    abilityText = game.hackerSkill.fork.cooldown > 0 ? ("Q " + ((game.hackerSkill.fork.cooldown / 60) | 0) + "s") : "Q FORK";
+    secondaryLeftText = oneText + "  " + twoText;
   } else if (charName === "SKELETON") {
     const phase2Eligible = game.score >= ROBOT_MAGNET_PULSE.phaseTwoScoreThreshold;
     const phase2Charged = !!game.skeletonBurst.phase2Charged;
     const phase2Charging = phase2Eligible && !phase2Charged && game.skeletonBurst.phase2ChargeFrames > 0;
-    const burstText = game.skeletonBurst.flash > 0
+    abilityText = game.skeletonBurst.flash > 0
       ? (game.skeletonBurst.lastPhase2 ? "Q BLOOD+" : "Q BURST")
       : game.skeletonBurst.cooldown > 0
         ? ("Q " + ((game.skeletonBurst.cooldown / 60) | 0) + "s")
         : (phase2Charged ? "Q READY+" : (phase2Charging ? ("Q CHRG " + Math.max(1, ((game.skeletonBurst.phase2ChargeFrames / 60) | 0)) + "s") : "Q READY"));
-    drawHudText(burstText, 258, 11, "#fff");
   }
-  if (game.hasConductorCoreActive()) {
-    const secs = Math.max(1, ((game.conductorCore.timer / 60) | 0));
-    drawHudText("CORE " + secs + "s", 258, 23, "#fff");
+
+  const coreText = game.hasConductorCoreActive()
+    ? ("CORE " + Math.max(1, ((game.conductorCore.timer / 60) | 0)) + "s")
+    : "";
+
+  gfx.fillStyle = "#0008";
+  gfx.fillRect(0, 0, CANVAS_W, 14);
+  drawHudText(scoreText, 4, 11, "#C9A06D");
+  drawHudText(coinText, 42, 11, PALETTE.F);
+  drawHudText(lifeText, 78, 11, PALETTE.C);
+
+  const hudTopY = 11;
+  const hudRow2Y = 23;
+  const centerStartX = 112;
+  const rightEdgeX = CANVAS_W - 4;
+  const itemGap = 8;
+
+  const rightItemsActive = [];
+  if (abilityText) rightItemsActive.push({ key: "ability", text: abilityText, color: "#fff" });
+  if (cpText) rightItemsActive.push({ key: "cp", text: cpText, color: "#fff" });
+  if (game.audio.muted) rightItemsActive.push({ key: "mute", text: "MUTE", color: "#fff" });
+
+  const rightItemsDemoted = [];
+  const calcRightWidth = (items) => {
+    if (!items.length) return 0;
+    let total = 0;
+    for (let i = 0; i < items.length; i++) total += measureHudText(items[i].text);
+    total += itemGap * (items.length - 1);
+    return total;
+  };
+
+  let levelNameDisplay = levelNameFull;
+  let charNameDisplay = charNameFull;
+  const centerGap = 10;
+  const fitCenterTexts = (maxWidth) => {
+    let levelText = levelNameFull;
+    let charText = charNameFull;
+    let total = measureHudText(levelText) + centerGap + measureHudText(charText);
+    if (total <= maxWidth) return { levelText, charText, overflow: false };
+
+    charText = compactCharacterName(charText);
+    total = measureHudText(levelText) + centerGap + measureHudText(charText);
+    if (total <= maxWidth) return { levelText, charText, overflow: false };
+
+    const levelBudget = Math.max(24, maxWidth - centerGap - measureHudText(charText));
+    levelText = ellipsizeHudText(levelText, levelBudget);
+    total = measureHudText(levelText) + centerGap + measureHudText(charText);
+    if (total <= maxWidth) return { levelText, charText, overflow: false };
+
+    const charBudget = Math.max(20, maxWidth - centerGap - measureHudText(levelText));
+    charText = ellipsizeHudText(charText, charBudget);
+    total = measureHudText(levelText) + centerGap + measureHudText(charText);
+    if (total <= maxWidth) return { levelText, charText, overflow: false };
+
+    levelText = ellipsizeHudText(levelNameFull, Math.max(20, (maxWidth * 0.58) | 0));
+    charText = ellipsizeHudText(charNameFull, Math.max(16, maxWidth - centerGap - measureHudText(levelText)));
+    total = measureHudText(levelText) + centerGap + measureHudText(charText);
+    return { levelText, charText, overflow: total > maxWidth };
+  };
+
+  while (true) {
+    const availableCenter = Math.max(12, rightEdgeX - calcRightWidth(rightItemsActive) - itemGap - centerStartX);
+    const fit = fitCenterTexts(availableCenter);
+    levelNameDisplay = fit.levelText;
+    charNameDisplay = fit.charText;
+    if (!fit.overflow) break;
+
+    const demoteKey = rightItemsActive.some((item) => item.key === "mute")
+      ? "mute"
+      : (rightItemsActive.some((item) => item.key === "cp") ? "cp" : "");
+    if (!demoteKey) break;
+    const idx = rightItemsActive.findIndex((item) => item.key === demoteKey);
+    rightItemsDemoted.push(rightItemsActive[idx]);
+    rightItemsActive.splice(idx, 1);
   }
-  if (game.audio.muted) {
-    drawHudText("MUTE", CANVAS_W - 34, 11, "#fff");
+
+  drawHudText(levelNameDisplay, centerStartX, hudTopY, "#fff");
+  drawHudText(charNameDisplay, centerStartX + measureHudText(levelNameDisplay) + centerGap, hudTopY, "#fff");
+
+  let rightX = rightEdgeX;
+  for (let i = rightItemsActive.length - 1; i >= 0; i--) {
+    const item = rightItemsActive[i];
+    const width = measureHudText(item.text);
+    drawHudText(item.text, rightX - width, hudTopY, item.color);
+    rightX -= width + itemGap;
   }
+
+  if (secondaryLeftText) {
+    drawHudText(secondaryLeftText, 6, hudRow2Y, "#fff");
+  }
+
+  const row2RightItems = [];
+  for (let i = 0; i < rightItemsDemoted.length; i++) row2RightItems.push(rightItemsDemoted[i]);
+  if (coreText) row2RightItems.push({ key: "core", text: coreText, color: "#fff" });
+
+  let row2RightX = rightEdgeX;
+  for (let i = row2RightItems.length - 1; i >= 0; i--) {
+    const item = row2RightItems[i];
+    const width = measureHudText(item.text);
+    drawHudText(item.text, row2RightX - width, hudRow2Y, item.color);
+    row2RightX -= width + itemGap;
+  }
+
   if (game.immortalMode) {
     drawHudText("IMMORTAL", 6, 35, "#fff");
-  }
-  if (game.isPaused) {
-    drawNotice(116, 16, 88, 16, "PAUSED (P)", 124, 27, "#000c", "#fff");
   }
 
   if (CHARACTERS[game.characterIndex].name === "ROBOT" && (game.robotPulse.phase2Notice > 0 || (game.robotPulse.timer > 0 && game.robotPulse.phase2Active))) {
@@ -243,10 +351,29 @@ function drawHudAndNotices(game, gfx, deps) {
   }
 
   if (game.isPaused) {
-    gfx.fillStyle = "#000a";
-    gfx.fillRect(106, 78, 108, 24);
-    gfx.fillStyle = "#fff";
-    drawHudText("PAUSED", 140, 93, "#fff");
+    const panelX = 26;
+    const panelY = 44;
+    const panelW = 268;
+    const panelH = 96;
+    const leftColX = panelX + 10;
+    const rightColX = panelX + 150;
+
+    gfx.fillStyle = "#000c";
+    gfx.fillRect(panelX, panelY, panelW, panelH);
+    drawHudText("PAUSED (P)", panelX + 96, panelY + 13, "#fff");
+
+    drawHudText(scoreText, leftColX, panelY + 28, "#C9A06D");
+    drawHudText(coinText, leftColX, panelY + 40, PALETTE.F);
+    drawHudText(lifeText, leftColX, panelY + 52, PALETTE.C);
+    drawHudText("LEVEL " + levelNameFull, leftColX, panelY + 64, "#fff");
+    drawHudText("CHAR " + charNameFull, leftColX, panelY + 76, "#fff");
+
+    if (abilityText) drawHudText("SKILL " + abilityText, rightColX, panelY + 28, "#fff");
+    if (cpText) drawHudText(cpText, rightColX, panelY + 40, "#fff");
+    if (coreText) drawHudText(coreText, rightColX, panelY + 52, "#fff");
+    if (secondaryLeftText) drawHudText(secondaryLeftText, rightColX, panelY + 64, "#fff");
+    if (game.audio.muted) drawHudText("MUTE", rightColX, panelY + 76, "#fff");
+    if (game.immortalMode) drawHudText("IMMORTAL", rightColX + 44, panelY + 76, "#fff");
   }
 }
 
