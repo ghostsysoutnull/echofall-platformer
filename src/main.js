@@ -5414,7 +5414,7 @@ class Game {
     drawWorldLayer(this, gfx, { TILE_SIZE, CANVAS_W, CANVAS_H, PALETTE, SPRITES, theme, t });
     drawFxLayer(this, gfx, { PALETTE, SPRITES, ONEUP_RADIAL_BURST, RELIC_PICKUP_FX, theme });
 
-    drawEnemyLayer(this, gfx, { theme });
+    drawEnemyLayer(this, gfx, { theme, levelName: LEVEL_NAMES[this.levelIndex] });
     drawPlayerAndEffects(this, gfx, { SPRITES, BUNNY_CARROT_ROCKET });
 
     drawHudAndNotices(this, gfx, {

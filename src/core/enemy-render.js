@@ -1,5 +1,32 @@
 function drawEnemyLayer(game, gfx, deps) {
-  const { theme } = deps;
+  const { theme, levelName } = deps;
+  const enemyLabelForType = (type) => {
+    if (type === 0) return "WALKER";
+    if (type === 1) return "BAT";
+    if (type === 2) return "FALCON";
+    if (type === 3) return "GHOST";
+    if (type === 4) return "VAMP Z";
+    if (type === 5) return "VAMPIRE";
+    if (type === 6) return "BONE WISP";
+    if (type === 7) return "HARBINGER";
+    if (type === 8) return "SHIELD WORKER";
+    if (type === 9) return "FRANKENSTEIN";
+    return "ENEMY";
+  };
+  const drawEnemyLabel = (enemy) => {
+    const label = enemyLabelForType(enemy.type);
+    const ex = (enemy.x - game.cameraX) | 0;
+    const ey = (enemy.y - game.cameraY) | 0;
+    const cx = ex + ((enemy.w * 0.5) | 0);
+    gfx.font = "8px monospace";
+    const w = (gfx.measureText(label).width | 0);
+    const tx = cx - ((w * 0.5) | 0);
+    const ty = ey - 6;
+    gfx.fillStyle = "#000a";
+    gfx.fillRect(tx - 2, ty - 8, w + 4, 10);
+    gfx.fillStyle = "#fff";
+    gfx.fillText(label, tx, ty);
+  };
 
   for (let i = 0; i < game.enemies.length; i++) {
     const enemy = game.enemies[i];
@@ -15,6 +42,7 @@ function drawEnemyLayer(game, gfx, deps) {
       else gfx.fillRect(ex, ey + 2, 2, 6);
       gfx.globalAlpha = 1;
     }
+    if (levelName === "TEST BIOME") drawEnemyLabel(enemy);
     if (theme === "SPACE" && enemy.type) game.drawSpaceThruster(enemy);
   }
 
