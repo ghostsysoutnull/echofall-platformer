@@ -42,11 +42,11 @@ Recommended quick checks (5-10 minutes):
   - Added ignore rules for `node_modules/`, Playwright outputs, and debug logs.
 
 ### Added (planning/docs)
-- `docs/MOBILE_DEVICE_ROADMAP.md`
-- `docs/MOBILE_PHASE1_SPRINT_TASKS.md`
-- `docs/MOBILE_PHASE1_IMPLEMENTATION_NOTES.md`
-- `docs/MOBILE_AUTOMATED_TESTS.md`
-- `docs/GITHUB_ACTIONS_MOBILE_CI_DECISION_GUIDE.md`
+- `docs/mobile/MOBILE_DEVICE_ROADMAP.md`
+- `docs/mobile/MOBILE_PHASE1_SPRINT_TASKS.md`
+- `docs/mobile/MOBILE_PHASE1_IMPLEMENTATION_NOTES.md`
+- `docs/testing/MOBILE_AUTOMATED_TESTS.md`
+- `docs/testing/GITHUB_ACTIONS_MOBILE_CI_DECISION_GUIDE.md`
 
 ## Validation completed
 - Automated suite run: `npm run test:mobile`

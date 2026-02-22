@@ -4,8 +4,8 @@
 Translate the Phase 1 sprint tickets into concrete implementation touchpoints for this codebase, without changing architecture more than necessary.
 
 Related planning docs:
-- `docs/MOBILE_DEVICE_ROADMAP.md`
-- `docs/MOBILE_PHASE1_SPRINT_TASKS.md`
+- `docs/mobile/MOBILE_DEVICE_ROADMAP.md`
+- `docs/mobile/MOBILE_PHASE1_SPRINT_TASKS.md`
 
 ## Architecture Snapshot (Relevant to Phase 1)
 - `src/main.js`
@@ -144,7 +144,7 @@ Related planning docs:
 - Test execution process + lightweight notes update in docs
 
 ### Suggested Implementation Notes
-1. Run manual matrix from `docs/MOBILE_PHASE1_SPRINT_TASKS.md`.
+1. Run manual matrix from `docs/mobile/MOBILE_PHASE1_SPRINT_TASKS.md`.
 2. Record pass/fail by scenario and device/browser.
 3. Log known issues with severity:
    - Blocker: touch-only completion impossible

@@ -8,19 +8,20 @@ Quick index for this workspace.
 
 ## Documentation
 
-- [Add Levels Guide](docs/ADD_LEVELS_README.md)
-- [Level Design Guide](docs/LEVEL_DESIGN_GUIDE.md)
-- [Levels Overview](docs/LEVELS_OVERVIEW.md)
-- [Mobile Device Roadmap](docs/MOBILE_DEVICE_ROADMAP.md)
-- [Mobile Phase 1 Sprint Tasks](docs/MOBILE_PHASE1_SPRINT_TASKS.md)
-- [Mobile Phase 1 Implementation Notes](docs/MOBILE_PHASE1_IMPLEMENTATION_NOTES.md)
-- [Mobile Automated Tests](docs/MOBILE_AUTOMATED_TESTS.md)
-- [GitHub Actions Mobile CI Decision Guide](docs/GITHUB_ACTIONS_MOBILE_CI_DECISION_GUIDE.md)
-- [Mobile Work Change Summary](docs/MOBILE_WORK_CHANGE_SUMMARY.md)
-- [Mobile Touch MVP Implementation Notes](docs/MOBILE_TOUCH_MVP_IMPLEMENTATION.md)
-- [Jungle: Ruin Ascent Production Spec](docs/JUNGLE_RUIN_ASCENT_PRODUCTION_SPEC.md)
-- [Storm Foundry Production Spec](docs/STORM_FOUNDRY_PRODUCTION_SPEC.md)
-- [Sprite Edit Guide](docs/SPRITE_EDIT_GUIDE.md)
+- [Docs Hub](docs/README.md)
+- [Add Levels Guide](docs/guides/ADD_LEVELS_README.md)
+- [Level Design Guide](docs/guides/LEVEL_DESIGN_GUIDE.md)
+- [Levels Overview](docs/guides/LEVELS_OVERVIEW.md)
+- [Mobile Device Roadmap](docs/mobile/MOBILE_DEVICE_ROADMAP.md)
+- [Mobile Phase 1 Sprint Tasks](docs/mobile/MOBILE_PHASE1_SPRINT_TASKS.md)
+- [Mobile Phase 1 Implementation Notes](docs/mobile/MOBILE_PHASE1_IMPLEMENTATION_NOTES.md)
+- [Mobile Automated Tests](docs/testing/MOBILE_AUTOMATED_TESTS.md)
+- [GitHub Actions Mobile CI Decision Guide](docs/testing/GITHUB_ACTIONS_MOBILE_CI_DECISION_GUIDE.md)
+- [Mobile Work Change Summary](docs/mobile/MOBILE_WORK_CHANGE_SUMMARY.md)
+- [Mobile Touch MVP Implementation Notes](docs/mobile/MOBILE_TOUCH_MVP_IMPLEMENTATION.md)
+- [Jungle: Ruin Ascent Production Spec](docs/specs/JUNGLE_RUIN_ASCENT_PRODUCTION_SPEC.md)
+- [Storm Foundry Production Spec](docs/specs/STORM_FOUNDRY_PRODUCTION_SPEC.md)
+- [Sprite Edit Guide](docs/guides/SPRITE_EDIT_GUIDE.md)
 
 ## Core Files
 
@@ -35,4 +36,4 @@ Quick index for this workspace.
 
 ## Notes
 
-- Enemy-kill player death uses a sprite-shatter effect; see the section **"Player enemy-death shatter effect"** in [Sprite Edit Guide](docs/SPRITE_EDIT_GUIDE.md).
+- Enemy-kill player death uses a sprite-shatter effect; see the section **"Player enemy-death shatter effect"** in [Sprite Edit Guide](docs/guides/SPRITE_EDIT_GUIDE.md).

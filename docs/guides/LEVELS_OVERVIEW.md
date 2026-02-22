@@ -11,8 +11,8 @@ This document is a source-of-truth style overview of all current levels and leve
 All values here are based on current `src/levels/*`, `src/main.js`, and `src/sprites/*`.
 
 Related production specs:
-- `STORMFOUNDRY` 6x: `docs/STORM_FOUNDRY_PRODUCTION_SPEC.md`
-- `JUNGLE: RUIN ASCENT` hand-authored expansion: `docs/JUNGLE_RUIN_ASCENT_PRODUCTION_SPEC.md`
+- `STORMFOUNDRY` 6x: `docs/specs/STORM_FOUNDRY_PRODUCTION_SPEC.md`
+- `JUNGLE: RUIN ASCENT` hand-authored expansion: `docs/specs/JUNGLE_RUIN_ASCENT_PRODUCTION_SPEC.md`
 
 ## Campaign sequence (2026-02-21)
 
@@ -445,7 +445,7 @@ Each line includes sequence, theme, width, checkpoints/light-zones, authored act
 ## 8) Maintenance Notes
 
 - Storm Foundry production baseline:
-	- use `docs/STORM_FOUNDRY_PRODUCTION_SPEC.md` for 6x act ranges, mechanic state machines, marker grammar, tuning budgets, and variant templates
+	- use `docs/specs/STORM_FOUNDRY_PRODUCTION_SPEC.md` for 6x act ranges, mechanic state machines, marker grammar, tuning budgets, and variant templates
 
 - If you add a new theme:
 	- add physics profile in `PHYSICS_BY_THEME`

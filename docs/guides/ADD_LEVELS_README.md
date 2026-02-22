@@ -5,7 +5,7 @@
 - `src/levels/game-levels.js` — authored `GAME_LEVELS` entries (name, sequence, theme, grid)
 - `src/levels/derived.js` — derived arrays and `validateLevel()` helper
 - `src/main.js` — runtime (loads levels through `src/levels/index.js`)
-- `docs/LEVEL_DESIGN_GUIDE.md` — level design constraints and marker legend
+- `docs/guides/LEVEL_DESIGN_GUIDE.md` — level design constraints and marker legend
 
 ## Workflow
 
