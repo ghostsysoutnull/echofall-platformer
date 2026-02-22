@@ -1708,6 +1708,14 @@ class Game {
   }
 
   fitCanvas() {
+    const doc = document;
+    const fullscreenEl = doc.fullscreenElement || doc.webkitFullscreenElement;
+    const isCanvasFullscreen = fullscreenEl === canvas;
+    if (isCanvasFullscreen) {
+      canvas.style.width = Math.max(1, innerWidth) + "px";
+      canvas.style.height = Math.max(1, innerHeight) + "px";
+      return;
+    }
     const s = Math.max(1, Math.floor(Math.min(innerWidth / CANVAS_W, innerHeight / CANVAS_H)));
     canvas.style.width = CANVAS_W * s + "px";
     canvas.style.height = CANVAS_H * s + "px";
