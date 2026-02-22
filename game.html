@@ -6,8 +6,48 @@
   html, body { margin: 0; height: 100%; display: grid; place-items: center; background: #0b1020; overflow: hidden; }
   #c { image-rendering: pixelated; image-rendering: crisp-edges; box-shadow: 0 10px 40px #0008; border: 2px solid #000; touch-action: none; }
   #c:fullscreen, #c:-webkit-full-screen { border: 0; box-shadow: none; width: 100vw !important; height: 100vh !important; }
+  #touch-ui { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+  #touch-ui.hidden { display: none; }
+  #touch-ui .btn {
+    position: fixed;
+    pointer-events: auto;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    font: 600 12px monospace;
+    color: #fff;
+    background: #0008;
+    border: 1px solid #ffffffaa;
+    border-radius: 6px;
+    min-width: 34px;
+    min-height: 24px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+  }
+  #touch-ui .btn:active, #touch-ui .btn.pressed { background: #ffffff66; }
+  #touch-ui .t-up { left: 8px; top: 8px; width: 24px; height: 16px; min-width: 24px; min-height: 16px; }
+  #touch-ui .t-down { left: 8px; top: 28px; width: 24px; height: 16px; min-width: 24px; min-height: 16px; }
+  #touch-ui .t-back { left: 36px; top: 8px; width: 24px; height: 16px; min-width: 24px; min-height: 16px; }
+  #touch-ui .t-fs { right: 8px; top: 8px; width: 28px; height: 16px; min-width: 28px; min-height: 16px; }
+  #touch-ui .t-left { left: 8px; bottom: 8px; width: 34px; height: 24px; }
+  #touch-ui .t-right { left: 50px; bottom: 8px; width: 34px; height: 24px; }
+  #touch-ui .t-action { right: 50px; bottom: 8px; width: 34px; height: 24px; }
+  #touch-ui .t-jump { right: 8px; bottom: 8px; width: 34px; height: 24px; }
+  #touch-ui .title-only { display: none; }
+  #touch-ui.title-mode .title-only { display: grid; }
 </style>
 <canvas id="c"></canvas>
+<div id="touch-ui" class="hidden">
+  <button type="button" class="btn t-up title-only" data-touch-action="up">▲</button>
+  <button type="button" class="btn t-down title-only" data-touch-action="down">▼</button>
+  <button type="button" class="btn t-back title-only" data-touch-action="back">↩</button>
+  <button type="button" class="btn t-fs" data-touch-action="fullscreen">FS</button>
+  <button type="button" class="btn t-left" data-touch-action="left">◀</button>
+  <button type="button" class="btn t-right" data-touch-action="right">▶</button>
+  <button type="button" class="btn t-action" data-touch-action="action">Q</button>
+  <button type="button" class="btn t-jump" data-touch-action="jump">J</button>
+</div>
 
 <script src="audio/sfx.js"></script>
 <script src="audio/tracks.js?v=20260221a"></script>

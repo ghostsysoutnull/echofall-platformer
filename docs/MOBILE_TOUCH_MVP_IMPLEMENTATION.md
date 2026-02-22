@@ -98,3 +98,12 @@ This MVP intentionally does **not** include:
 - expanded accessibility options
 
 Those remain in later roadmap phases.
+
+## Strategy Update (Fullscreen Hitbox Reliability)
+- Replaced canvas hitbox interaction as the primary touch input path with a DOM-based touch UI layer (`#touch-ui`) pinned to viewport coordinates.
+- Kept game input wiring centralized in `src/main.js` so DOM touch actions still drive the same gameplay/title input paths.
+- Canvas touch hit-testing remains as fallback only when DOM touch UI is unavailable.
+
+Why this strategy:
+- Fullscreen and mobile browser UI changes can make canvas-space hit-testing brittle across devices.
+- DOM controls tied to viewport coordinates are stable in fullscreen and avoid coordinate drift issues.

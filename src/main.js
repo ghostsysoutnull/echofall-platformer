@@ -90,6 +90,8 @@ class Game {
     this.touchControlsEnabled = this.touchCapable ? 1 : 0;
     this.touchInputTimer = 0;
     this.touchButtons = { fullscreen: 0, up: 0, down: 0, back: 0, left: 0, right: 0, jump: 0, action: 0 };
+    this.touchUiRoot = null;
+    this.touchUiButtons = {};
 
     this.levelIndex = 0;
     this.characterIndex = 0;
@@ -262,6 +264,7 @@ class Game {
     };
 
     this.bindInput();
+    this.initTouchUi();
     this.fitCanvas();
     addEventListener("resize", () => this.fitCanvas());
     addEventListener("orientationchange", () => this.fitCanvas());
@@ -1372,6 +1375,71 @@ class Game {
     this.touchButtons.right = 0;
     this.touchButtons.jump = 0;
     this.touchButtons.action = 0;
+    this.refreshTouchUiState();
+  }
+
+  initTouchUi() {
+    const root = document.getElementById("touch-ui");
+    if (!root) return;
+    this.touchUiRoot = root;
+    const nodes = root.querySelectorAll("[data-touch-action]");
+    nodes.forEach((node) => {
+      const action = node.getAttribute("data-touch-action") || "";
+      if (!action) return;
+      this.touchUiButtons[action] = node;
+
+      const press = (e) => {
+        e.preventDefault();
+        this.touchCapable = 1;
+        if (!this.touchControlsEnabled) this.touchControlsEnabled = 1;
+        if (!this.audio.ctx) this.audio.ensure();
+        else if (this.audio.ctx.state === "suspended" && this.audio.ctx.resume) this.audio.ctx.resume();
+        this.setTouchButton(action, 1);
+      };
+      const release = (e) => {
+        e.preventDefault();
+        this.setTouchButton(action, 0);
+      };
+
+      node.addEventListener("pointerdown", press, { passive: false });
+      node.addEventListener("pointerup", release, { passive: false });
+      node.addEventListener("pointercancel", release, { passive: false });
+      node.addEventListener("pointerleave", release, { passive: false });
+      node.addEventListener("contextmenu", (e) => e.preventDefault());
+    });
+
+    this.refreshTouchUiState();
+  }
+
+  setTouchButton(action, isDown) {
+    const next = {
+      up: this.touchButtons.up,
+      down: this.touchButtons.down,
+      back: this.touchButtons.back,
+      fullscreen: this.touchButtons.fullscreen,
+      left: this.touchButtons.left,
+      right: this.touchButtons.right,
+      jump: this.touchButtons.jump,
+      action: this.touchButtons.action
+    };
+    if (Object.prototype.hasOwnProperty.call(next, action)) next[action] = isDown ? 1 : 0;
+    this.applyTouchButtons(next);
+  }
+
+  refreshTouchUiState() {
+    if (!this.touchUiRoot) return;
+    const visible = this.touchControlsVisible();
+    this.touchUiRoot.classList.toggle("hidden", !visible);
+    this.touchUiRoot.classList.toggle("title-mode", this.gameState === "TITLE");
+
+    const actionBtn = this.touchUiButtons.action;
+    const jumpBtn = this.touchUiButtons.jump;
+    if (actionBtn) actionBtn.textContent = this.gameState === "TITLE" ? "OK" : "Q";
+    if (jumpBtn) jumpBtn.textContent = this.gameState === "TITLE" ? "OK" : "J";
+
+    for (const [key, node] of Object.entries(this.touchUiButtons)) {
+      node.classList.toggle("pressed", !!this.touchButtons[key]);
+    }
   }
 
   touchControlsVisible() {
@@ -1522,6 +1590,7 @@ class Game {
   }
 
   drawTouchControlsOverlay() {
+    if (this.touchUiRoot) return;
     if (!this.touchControlsVisible()) return;
     const rects = this.getTouchControlRects();
     const entries = this.gameState === "TITLE"
@@ -1599,6 +1668,7 @@ class Game {
           this.teleportNoticeTimer = 90;
           this.audio.tone(this.touchControlsEnabled ? 760 : 420, 0.04);
           if (!this.touchControlsEnabled) this.applyTouchButtons({ left: 0, right: 0, jump: 0, action: 0 });
+          this.refreshTouchUiState();
         }
         if (e.code === "Digit9") this.audio.adjustMusicVolume(-0.05);
         if (e.code === "Digit0") this.audio.adjustMusicVolume(0.05);
@@ -1693,18 +1763,20 @@ class Game {
       if (document.visibilityState !== "visible") this.clearRuntimeInputState();
     });
 
-    const handleTouch = (e) => {
-      this.touchCapable = 1;
-      if (!this.touchControlsEnabled) this.touchControlsEnabled = 1;
-      if (!this.audio.ctx) this.audio.ensure();
-      else if (this.audio.ctx.state === "suspended" && this.audio.ctx.resume) this.audio.ctx.resume();
-      e.preventDefault();
-      this.syncTouchFromEvent(e);
-    };
-    canvas.addEventListener("touchstart", handleTouch, { passive: false });
-    canvas.addEventListener("touchmove", handleTouch, { passive: false });
-    canvas.addEventListener("touchend", handleTouch, { passive: false });
-    canvas.addEventListener("touchcancel", handleTouch, { passive: false });
+    if (!document.getElementById("touch-ui")) {
+      const handleTouch = (e) => {
+        this.touchCapable = 1;
+        if (!this.touchControlsEnabled) this.touchControlsEnabled = 1;
+        if (!this.audio.ctx) this.audio.ensure();
+        else if (this.audio.ctx.state === "suspended" && this.audio.ctx.resume) this.audio.ctx.resume();
+        e.preventDefault();
+        this.syncTouchFromEvent(e);
+      };
+      canvas.addEventListener("touchstart", handleTouch, { passive: false });
+      canvas.addEventListener("touchmove", handleTouch, { passive: false });
+      canvas.addEventListener("touchend", handleTouch, { passive: false });
+      canvas.addEventListener("touchcancel", handleTouch, { passive: false });
+    }
   }
 
   fitCanvas() {
@@ -6746,6 +6818,7 @@ class Game {
   }
 
   render() {
+    this.refreshTouchUiState();
     gfx.setTransform(1,0,0,1,0,0);
     if (this.gameState === "TITLE") {
       this.drawTitleScreen();
