@@ -231,7 +231,7 @@ Implementation note:
 
 **Deferred / next steps:**
 - Validate repeated transitions TITLE ↔ gameplay with long runtime soak.
-- Add true `CONTINUE` persistence source (save/checkpoint-backed).
+- Add true `CONTINUE` persistence source (save/checkpoint-backed), following `CONTINUE_PROGRESS_AND_SCORE_REQUIREMENTS.md`.
 - Consider background-render module reuse for title parallax unification.
 - Add optional branded subtitle/credits line if desired.
 

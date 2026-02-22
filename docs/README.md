@@ -4,6 +4,7 @@ This folder is organized by purpose.
 
 ## Specs
 - [Coin Death Penalty Requirements](specs/COIN_DEATH_PENALTY_REQUIREMENTS.md)
+- [Continue Progress + Score Requirements](specs/CONTINUE_PROGRESS_AND_SCORE_REQUIREMENTS.md)
 - [Dragon Background Object Spec](specs/DRAGON_BACKGROUND_OBJECT_SPEC.md)
 - [EchoFall Protocol Title Screen Spec](specs/ECHOFALL_PROTOCOL_TITLE_SCREEN_SPEC.md)
 - [Jungle: Ruin Ascent Production Spec](specs/JUNGLE_RUIN_ASCENT_PRODUCTION_SPEC.md)
