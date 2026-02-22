@@ -1367,7 +1367,7 @@ class Game {
   }
 
   touchControlsVisible() {
-    return !!(this.touchCapable && this.touchControlsEnabled && this.gameState !== "TITLE");
+    return !!(this.touchCapable && this.touchControlsEnabled);
   }
 
   getTouchControlRects() {
@@ -1418,8 +1418,16 @@ class Game {
       this.audio.tone(620, 0.04);
     }
 
-    if (next.jump && !this.touchButtons.jump) this.jumpBuffer = this.getTouchJumpBufferFrames();
-    if (next.action && !this.touchButtons.action && this.gameState !== "TITLE") this.tryActivateCharacterSkill();
+    if (this.gameState === "TITLE") {
+      if (next.left && !this.touchButtons.left) this.handleTitleInput("ArrowLeft");
+      if (next.right && !this.touchButtons.right) this.handleTitleInput("ArrowRight");
+      if ((next.jump && !this.touchButtons.jump) || (next.action && !this.touchButtons.action)) {
+        this.handleTitleInput("Enter");
+      }
+    } else {
+      if (next.jump && !this.touchButtons.jump) this.jumpBuffer = this.getTouchJumpBufferFrames();
+      if (next.action && !this.touchButtons.action) this.tryActivateCharacterSkill();
+    }
 
     this.touchButtons.left = next.left ? 1 : 0;
     this.touchButtons.right = next.right ? 1 : 0;
@@ -1610,16 +1618,16 @@ class Game {
       if (document.visibilityState !== "visible") this.clearRuntimeInputState();
     });
 
-    if (this.touchCapable) {
-      const handleTouch = (e) => {
-        e.preventDefault();
-        this.syncTouchFromEvent(e);
-      };
-      canvas.addEventListener("touchstart", handleTouch, { passive: false });
-      canvas.addEventListener("touchmove", handleTouch, { passive: false });
-      canvas.addEventListener("touchend", handleTouch, { passive: false });
-      canvas.addEventListener("touchcancel", handleTouch, { passive: false });
-    }
+    const handleTouch = (e) => {
+      this.touchCapable = 1;
+      if (!this.touchControlsEnabled) this.touchControlsEnabled = 1;
+      e.preventDefault();
+      this.syncTouchFromEvent(e);
+    };
+    canvas.addEventListener("touchstart", handleTouch, { passive: false });
+    canvas.addEventListener("touchmove", handleTouch, { passive: false });
+    canvas.addEventListener("touchend", handleTouch, { passive: false });
+    canvas.addEventListener("touchcancel", handleTouch, { passive: false });
   }
 
   fitCanvas() {
